@@ -1,0 +1,211 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", Arial, sans-serif;
+}
+
+body {
+    background: #f1f5f9;
+    color: #222;
+}
+
+/* ---------- HEADER GERAL ---------- */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #003866;
+    padding: 15px 40px;
+    color: white;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    z-index: 1000;
+}
+
+/* LOGO */
+header .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+header .logo img {
+    height: 60px;
+}
+
+header .logo h1 {
+    font-size: 22px;
+}
+
+/* ---------- MENU DESKTOP ---------- */
+nav {
+    display: flex;
+    gap: 25px;
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    font-size: 17px;
+    font-weight: 500;
+}
+
+nav a:hover {
+    color: #d6e6ff;
+}
+
+/* ---------- BOTÃO HAMBURGER (MOBILE) ---------- */
+.menu-btn {
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.menu-btn span {
+    width: 28px;
+    height: 3px;
+    background: white;
+    border-radius: 5px;
+    transition: 0.3s;
+}
+
+/* ---------- RESPONSIVO ---------- */
+@media (max-width: 820px) {
+
+    nav {
+        position: absolute;
+        top: 80px;
+        right: 0;
+        width: 200px;
+        background: #003866;
+        flex-direction: column;
+        padding: 20px;
+        gap: 15px;
+        display: none; /* esconde o menu */
+    }
+
+    nav.show {
+        display: flex; /* aparece quando o JS ativa */
+    }
+
+    .menu-btn {
+        display: flex;
+    }
+}
+
+/* BANNER */
+.banner {
+    background: linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.5)),
+                url("img/banner.jpg") center/cover no-repeat;
+    height: 380px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    text-align: center;
+    padding: 20px;
+}
+
+.banner h2 {
+    font-size: 2.4rem;
+    font-weight: bold;
+}
+
+.banner p {
+    font-size: 1.2rem;
+    margin-top: 10px;
+}
+
+.btn {
+    background: #005bbb;
+    padding: 12px 25px;
+    margin-top: 20px;
+    color: white;
+    font-weight: bold;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: 0.2s;
+}
+
+.btn:hover {
+    background: #004999;
+}
+
+/* SERVIÇOS */
+.servicos {
+    padding: 60px 40px;
+    text-align: center;
+}
+
+.servicos h2 {
+    font-size: 2rem;
+    margin-bottom: 30px;
+}
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #dcdcdc;
+    box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+    transition: 0.2s;
+}
+
+.card:hover {
+    transform: scale(1.03);
+    background: #e8f1ff;
+}
+
+/* GALERIA */
+.galeria {
+    padding: 60px 40px;
+    text-align: center;
+}
+
+.grid {
+    margin-top: 25px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+}
+
+.grid img {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+/* CONTATO */
+.contato {
+    padding: 60px;
+    text-align: center;
+    background: #ffffff;
+    margin-top: 40px;
+    border-top: 3px solid #005bbb;
+}
+
+.contato p {
+    margin: 10px 0;
+    font-size: 18px;
+}
+
+/* FOOTER */
+footer {
+    background: #003d73;
+    text-align: center;
+    padding: 20px;
+    color: white;
+    margin-top: 20px;
+    font-weight: 500;
+}
