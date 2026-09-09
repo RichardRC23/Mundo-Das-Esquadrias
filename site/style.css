@@ -8,6 +8,11 @@
 body {
     background: #f1f5f9;
     color: #222;
+    padding-top: 90px; /* espaço para o header fixo */
+}
+
+section {
+    scroll-margin-top: 100px; /* espaço para o header fixo ao navegar por âncoras */
 }
 
 /* ---------- HEADER GERAL ---------- */
@@ -208,4 +213,138 @@ footer {
     color: white;
     margin-top: 20px;
     font-weight: 500;
+}
+
+@media (max-width: 820px) {
+    header {
+        padding: 12px 20px;
+    }
+    
+    header .logo h1 {
+        font-size: 16px;
+    }
+
+    header .logo img {
+        height: 48px;
+    }
+
+    .cards,
+    .grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .servicos,
+    .galeria,
+    .contato {
+        padding: 45px 20px;
+    }
+
+    .banner h2 {
+        font-size: 1.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .cards,
+    .grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ÁREA DE LOGIN E CADASTRO */
+.auth-page {
+    min-height: 100vh;
+    padding: 40px 20px;
+    background: linear-gradient(135deg, #003866, #005bbb);
+}
+
+.auth-container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.voltar {
+    display: inline-block;
+    color: white;
+    text-decoration: none;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+.auth-card {
+    background: white;
+    border-radius: 16px;
+    padding: 35px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+}
+
+.auth-card > h1 {
+    text-align: center;
+    color: #003866;
+    margin-bottom: 10px;
+}
+
+.auth-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 40px;
+    margin-top: 25px;
+}
+
+.auth-grid form {
+    display: flex;
+    flex-direction: column;
+}
+
+.auth-grid h2 {
+    color: #003866;
+    margin-bottom: 18px;
+}
+
+.auth-grid label {
+    margin: 10px 0 6px;
+    font-weight: 500;
+}
+
+.auth-grid input {
+    padding: 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+.auth-grid input:focus {
+    outline: 2px solid #005bbb;
+    border-color: #005bbb;
+}
+
+.auth-grid .btn {
+    border: 0;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.mensagem {
+    min-height: 24px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.mensagem.erro {
+    color: #c62828;
+}
+
+.mensagem.sucesso {
+    color: #15803d;
+}
+
+@media (max-width: 700px) {
+    .auth-card {
+        padding: 25px 20px;
+    }
+
+    .auth-grid {
+        grid-template-columns: 1fr;
+        gap: 25px;
+    }
 }
