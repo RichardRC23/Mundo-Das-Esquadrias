@@ -1,28 +1,25 @@
 const mensagem = document.getElementById('mensagem');
 
-function mostrarMensagem(texto, tipo = "error") {
+function mostrarMensagem(texto, tipo = "erro") {
   mensagem.textContent = texto;
   mensagem.className = `mensagem ${tipo}`;
 }
 
 async function enviar(url, dados) {
-  const resposta = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(dados),
-  });
+  return ContaAPI.request(url, { method: "POST", body: dados });
+}
 
-  const resultado = await resposta.json();
-
-  if (!resposta.ok) {
-    throw new Error(resultado.erro || "Ocorreu um erro.");
-  }
-
-  return resultado;
+const destino = new URLSearchParams(location.search).get("next") === "perfil" ? "perfil.html" : "index.html";
+let enviando = false;
+function ocupado(value) {
+  enviando = value;
+  document.querySelectorAll('button[type="submit"]').forEach((button) => { button.disabled = value; });
 }
 
 document.getElementById("form-login").addEventListener("submit", async (evento) => {
   evento.preventDefault();
+  if (enviando) return;
+  ocupado(true);
 
   try {
     await enviar("/api/login", {
@@ -31,14 +28,17 @@ document.getElementById("form-login").addEventListener("submit", async (evento) 
     });
 
     mostrarMensagem("Login realizado com sucesso!", "sucesso");
-    setTimeout(() => (window.location.href = "index.html"), 800);
+    setTimeout(() => window.location.replace(destino), 500);
   } catch (erro) {
     mostrarMensagem(erro.message);
+    ocupado(false);
   }
 });
 
 document.getElementById("form-cadastro").addEventListener("submit", async (evento) => {
   evento.preventDefault();
+  if (enviando) return;
+  ocupado(true);
 
   try {
     await enviar("/api/cadastro", {
@@ -49,8 +49,9 @@ document.getElementById("form-cadastro").addEventListener("submit", async (event
     });
 
     mostrarMensagem("Cadastro realizado com sucesso!", "sucesso");
-    setTimeout(() => (window.location.href = "index.html"), 800);
+    setTimeout(() => window.location.replace(destino), 500);
   } catch (erro) {
     mostrarMensagem(erro.message);
+    ocupado(false);
   }
 });

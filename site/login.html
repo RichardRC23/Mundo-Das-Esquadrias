@@ -19,7 +19,7 @@
             <h1>
                 Área do Cliente
             </h1>
-            <p id="mensagem" class="mensagem"></p>
+            <p id="mensagem" class="mensagem" role="status" aria-live="polite"></p>
                 <!-- Mensagem de erro será exibida aqui -->
             <div class="auth-grid">
                 <form id="form-login">
@@ -30,12 +30,12 @@
                     <label for="identificador">
                         Email ou telefone
                     </label>
-                    <input type="text" id="identificador" name="identificador" required>
+                    <input id="identificador" type="text" required>
 
-                    <label for="senha">
+                    <label for="senha-login">
                         Senha
                     </label>
-                    <input type="password" id="senha" name="senha" required>
+                    <input id="senha-login" type="password" minlength="8" required>
 
                     <button class="btn" type="submit">
                         Entrar
@@ -75,6 +75,7 @@
         </section>
     </main>
 
-   <script src="login.js"></script> 
+   <script src="api.js"></script>
+   <script src="login.js"></script>
 </body>
 </html>
