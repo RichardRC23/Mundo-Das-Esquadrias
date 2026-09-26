@@ -17,6 +17,7 @@
     <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H5v20h14V7l-5-5Z M14 2v6h5 M8 12h8 M8 16h6"/></symbol>
     <symbol id="i-repeat" viewBox="0 0 24 24"><path d="M20 8a8 8 0 0 0-14-3L3 8m0-5v5h5M4 16a8 8 0 0 0 14 3l3-3m0 5v-5h-5"/></symbol>
     <symbol id="i-card" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="M2 10h20M6 16h4"/></symbol>
+    <symbol id="i-quote" viewBox="0 0 24 24"><path d="M4 4h16v16H4zM8 9h8M8 13h6M8 17h4"/></symbol>
     <symbol id="i-arrow" viewBox="0 0 24 24"><path d="m5 12h14m-5-5 5 5-5 5"/></symbol>
     <symbol id="i-help" viewBox="0 0 24 24"><path d="M21 11a9 9 0 0 1-9 9H4l-2 2V11a10 10 0 0 1 19 0Z M8 10h.01M12 10h.01M16 10h.01"/></symbol>
     <symbol id="i-exit" viewBox="0 0 24 24"><path d="M9 3H3v18h6M10 12h12m-4-4 4 4-4 4"/></symbol>
@@ -31,12 +32,14 @@
     <nav class="account-nav" aria-label="Área do cliente">
       <a href="#inicio" data-page="inicio" aria-current="page"><svg><use href="#i-grid"/></svg>Visão geral</a>
       <a href="#perfil" data-page="perfil"><svg><use href="#i-user"/></svg>Meu perfil</a>
+      <a href="#orcamentos" data-page="orcamentos"><svg><use href="#i-quote"/></svg>Orçamentos</a>
       <a href="#compras" data-page="compras"><svg><use href="#i-bag"/></svg>Minhas compras</a>
       <a href="#contratos" data-page="contratos"><svg><use href="#i-file"/></svg>Meus contratos</a>
       <a href="#assinaturas" data-page="assinaturas"><svg><use href="#i-repeat"/></svg>Assinaturas</a>
       <a href="#pagamentos" data-page="pagamentos"><svg><use href="#i-card"/></svg>Pagamentos</a>
     </nav>
     <div class="sidebar-bottom">
+      <a class="admin-link" id="admin-link" href="admin.html" hidden><svg><use href="#i-grid"/></svg>Painel administrativo</a>
       <a class="support-link" href="https://wa.me/5521964070134" target="_blank" rel="noopener noreferrer"><svg><use href="#i-help"/></svg>Precisa de ajuda?<span>Fale com nossa equipe ↗</span></a>
       <div class="sidebar-user"><span class="avatar small" data-avatar>ME</span><span><strong data-full-name>Sua conta</strong><small>Área do cliente</small></span></div>
       <button class="logout" id="btn-sair" type="button"><svg><use href="#i-exit"/></svg>Sair da conta</button>
@@ -60,6 +63,7 @@
               <a href="#compras" class="summary"><span class="icon-box"><svg><use href="#i-bag"/></svg></span><span>Compras registradas<strong id="total-compras">—</strong></span><span class="summary-arrow">↗</span></a>
               <a href="#contratos" class="summary"><span class="icon-box mint"><svg><use href="#i-file"/></svg></span><span>Meus contratos<strong id="total-contratos">—</strong></span><span class="summary-arrow">↗</span></a>
               <a href="#assinaturas" class="summary"><span class="icon-box sand"><svg><use href="#i-repeat"/></svg></span><span>Assinaturas ativas<strong id="total-assinaturas">—</strong></span><span class="summary-arrow">↗</span></a>
+              <a href="#orcamentos" class="summary"><span class="icon-box"><svg><use href="#i-quote"/></svg></span><span>Orçamentos solicitados<strong id="total-orcamentos">—</strong></span><span class="summary-arrow">↗</span></a>
             </div>
           </div>
           <div class="section-heading"><div><h2>Uma conta, tudo conectado.</h2><p>Acesse o que você precisa com facilidade.</p></div></div>
@@ -68,7 +72,7 @@
             <a href="#pagamentos" class="quick-card"><svg class="quick-icon"><use href="#i-card"/></svg><h3>Preferências de pagamento</h3><p id="resumo-pagamento">Escolha como prefere pagar seus próximos projetos.</p><span>Ver pagamentos <svg><use href="#i-arrow"/></svg></span></a>
             <a href="#contratos" class="quick-card"><svg class="quick-icon"><use href="#i-file"/></svg><h3>Documentos à mão</h3><p>Consulte seus contratos e os documentos disponibilizados.</p><span>Ver contratos <svg><use href="#i-arrow"/></svg></span></a>
           </div>
-          <div class="service-banner"><span class="icon-box"><svg><use href="#i-help"/></svg></span><div><h3>Seu próximo projeto começa com uma conversa.</h3><p>Conte com nossa equipe para tirar suas dúvidas.</p></div><a class="button secondary" href="https://wa.me/5521964070134" target="_blank" rel="noopener noreferrer">Solicitar orçamento ↗</a></div>
+          <div class="service-banner"><span class="icon-box"><svg><use href="#i-help"/></svg></span><div><h3>Seu próximo projeto começa com uma conversa.</h3><p>Conte com nossa equipe para tirar suas dúvidas.</p></div><a class="button secondary" href="orcamento.html">Solicitar orçamento →</a></div>
         </section>
         <section id="painel-perfil" data-panel="perfil" aria-label="Meu perfil" hidden>
           <div class="profile-grid">
@@ -77,6 +81,7 @@
           </div>
         </section>
         <div id="erro-conta" class="error-panel" hidden><p>Não foi possível consultar compras e pagamentos.</p><button type="button" class="button secondary" id="retry-conta">Tentar novamente</button></div>
+        <section id="painel-orcamentos" data-panel="orcamentos" aria-label="Meus orçamentos" hidden><div class="panel"><div class="section-heading"><div><h2>Solicitações de orçamento</h2><p>Acompanhe os pedidos enviados e a situação da análise.</p></div><a class="button primary" href="orcamento.html">Novo orçamento</a></div><div id="lista-orcamentos" class="record-list"></div></div></section>
         <section id="painel-compras" data-panel="compras" aria-label="Minhas compras" hidden><div class="panel"><div class="section-heading"><div><h2>Histórico de compras</h2><p>Pedidos registrados e faturas dos seus serviços.</p></div><span class="pill">SEUS PROJETOS</span></div><div id="lista-compras" class="record-list"></div><p class="hint" id="limite-compras" hidden>Exibindo os registros mais recentes. Consulte o atendimento para o histórico completo.</p></div></section>
         <section id="painel-contratos" data-panel="contratos" aria-label="Meus contratos" hidden><div class="panel"><div class="section-heading"><div><h2>Contratos e documentos</h2><p>Veja a situação de cada contrato e baixe os arquivos disponíveis.</p></div><span class="pill">ORGANIZADO PARA VOCÊ</span></div><div id="lista-contratos" class="record-list"></div><p class="hint" id="limite-contratos" hidden>Exibindo os registros mais recentes. Consulte o atendimento para o histórico completo.</p></div></section>
         <section id="painel-assinaturas" data-panel="assinaturas" aria-label="Assinaturas recorrentes" hidden><div class="panel"><div class="section-heading"><div><h2>Seus serviços recorrentes</h2><p>Planos, periodicidade e próximas renovações.</p></div><a class="text-link" href="#pagamentos">Gerenciar pagamentos →</a></div><div id="lista-assinaturas" class="record-list"></div><p class="hint" id="limite-assinaturas" hidden>Há mais assinaturas. Consulte o portal de pagamentos ou o atendimento.</p></div></section>

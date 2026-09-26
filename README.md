@@ -6,6 +6,20 @@ Na pasta principal, execute `npm.cmd start` no Windows (ou `npm start`). Abra ht
 
 O link do menu exibe **Logar/Cadastrar** quando não há sessão e **Minha conta** depois do login. O perfil está em `/perfil.html`; visitantes são encaminhados ao login e voltam ao perfil após entrar.
 
+O botão **Solicitar Orçamento** abre `/orcamento.html`, um formulário guiado para alumínio, vidro, medidas, acabamentos e instalação. A solicitação recebe um protocolo, fica salva no banco e pode ser continuada pelo WhatsApp. O formulário não inventa preço: o valor final depende da validação técnica e de uma tabela comercial que ainda deverá ser cadastrada.
+
+Clientes autenticados acompanham seus protocolos em **Minha conta → Orçamentos**. A situação exibida é atualizada pela empresa no painel administrativo.
+
+## Painel administrativo e preços
+
+O painel está em `/admin.html` e exige uma conta marcada como administradora no banco. Contas comuns recebem acesso negado e nunca conseguem consultar contatos de outros clientes. Para promover uma conta existente, execute localmente:
+
+`npm.cmd run admin:promote -- email-da-conta@exemplo.com`
+
+O comando não cria usuário nem altera senha; apenas concede a função administrativa à conta encontrada. Não coloque o e-mail do administrador no código público.
+
+No painel é possível consultar solicitações, alterar a situação do atendimento e cadastrar preços por categoria e modelo. Cada regra usa preço por metro quadrado, valor mínimo do item e instalação por unidade. O formulário só apresenta estimativa quando todos os modelos do pedido possuem uma regra ativa. Os valores devem ser cadastrados pela empresa com sua tabela comercial real.
+
 Para testar com Live Server, deixe o Node rodando e abra `http://localhost:5500/site/index.html` (ou `/index.html` se o Live Server usa `site` como raiz). O arquivo `api.js` reconhece a porta 5500 e usa o Node na porta 3000, mantendo o mesmo hostname para os cookies. Em produção, o site e a API devem usar o mesmo domínio HTTPS.
 
 ## Área do cliente
@@ -29,6 +43,6 @@ O `.env`, os bancos em `data` e `node_modules` foram retirados do índice do Git
 
 ## Verificação
 
-`npm.cmd test` executa testes com bancos temporários separados, sem Stripe real. Cobrem login, sessão, CSRF, acesso entre contas, perfil, foto, contratos e preferência de pagamento. A prévia visual de desenvolvimento `node test/preview.cjs` roda em 3100 com dados fictícios isolados; não use esse script para publicar o site.
+`npm.cmd test` executa testes com bancos temporários separados, sem Stripe real. Cobrem login, sessão, CSRF, acesso entre contas, perfil, foto, contratos, orçamentos, administração, preços e preferência de pagamento. A prévia visual de desenvolvimento `node test/preview.cjs` roda em 3100 com dados fictícios isolados; não use esse script para publicar o site.
 
 O armazenamento de sessões usa a mesma versão atual do `sqlite3` declarada pelo projeto, sem uma segunda cópia antiga. Execute `npm.cmd audit` e os testes antes de cada publicação.

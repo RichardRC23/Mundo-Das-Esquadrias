@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Painel administrativo | Mundo das Esquadrias</title>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <aside class="admin-sidebar">
+    <a class="admin-brand" href="index.html"><span class="brand-shape">M</span><span>Mundo das<strong>Esquadrias</strong><small>ADMINISTRAÇÃO</small></span></a>
+    <nav aria-label="Painel administrativo">
+      <button type="button" data-view="inicio" class="active"><span>⌂</span>Visão geral</button>
+      <button type="button" data-view="orcamentos"><span>▤</span>Orçamentos</button>
+      <button type="button" data-view="precos"><span>R$</span>Tabela de preços</button>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="perfil.html">← Minha conta</a>
+      <a href="index.html">← Voltar ao site</a>
+      <button type="button" id="admin-logout">Sair</button>
+    </div>
+  </aside>
+
+  <div class="admin-workspace">
+    <header class="admin-topbar"><button class="mobile-menu" id="mobile-menu" type="button" aria-label="Abrir menu">☰</button><span>PAINEL DA EMPRESA</span><div><strong id="admin-name">Administrador</strong><small>Mundo das Esquadrias</small></div></header>
+    <main>
+      <div id="admin-loading" class="admin-state">Carregando painel…</div>
+      <section id="admin-denied" class="access-card" hidden><span>!</span><h1>Acesso administrativo necessário</h1><p>Esta conta não tem permissão para visualizar informações dos clientes ou alterar preços.</p><a href="perfil.html" class="button secondary">Voltar à minha conta</a></section>
+      <p id="admin-message" class="admin-message" role="status" hidden></p>
+
+      <div id="admin-content" hidden>
+        <section data-panel="inicio">
+          <div class="page-title"><div><span class="eyebrow">VISÃO GERAL</span><h1>O negócio em um só lugar.</h1><p>Acompanhe novos pedidos e mantenha sua tabela comercial atualizada.</p></div><a href="orcamento.html" class="button secondary" target="_blank" rel="noopener">Ver formulário público ↗</a></div>
+          <div class="metric-grid">
+            <article class="metric featured"><span>Novos atendimentos</span><strong id="metric-pending">—</strong><small>aguardando andamento</small></article>
+            <article class="metric"><span>Total de orçamentos</span><strong id="metric-quotes">—</strong><small>solicitações registradas</small></article>
+            <article class="metric"><span>Orçamentos aprovados</span><strong id="metric-approved">—</strong><small>projetos confirmados</small></article>
+            <article class="metric"><span>Preços ativos</span><strong id="metric-prices">—</strong><small>regras de estimativa</small></article>
+          </div>
+          <div class="dashboard-grid">
+            <section class="admin-panel"><div class="panel-heading"><div><h2>Pedidos recentes</h2><p>Últimas solicitações recebidas.</p></div><button type="button" class="text-button" data-go="orcamentos">Ver todos →</button></div><div id="recent-quotes" class="compact-list"></div></section>
+            <section class="admin-panel attention"><span class="attention-icon">i</span><h2>Estimativas responsáveis</h2><p>O site só apresenta um valor quando todos os modelos do pedido possuem preço ativo. O cliente sempre verá que é uma estimativa sujeita à avaliação técnica.</p><button type="button" class="button light" data-go="precos">Gerenciar preços</button></section>
+          </div>
+        </section>
+
+        <section data-panel="orcamentos" hidden>
+          <div class="page-title"><div><span class="eyebrow">ATENDIMENTO</span><h1>Orçamentos recebidos</h1><p>Consulte medidas, contato e andamento de cada solicitação.</p></div><label class="filter">Situação<select id="quote-filter"><option value="">Todas</option><option value="recebido">Recebido</option><option value="em_analise">Em análise</option><option value="aguardando_cliente">Aguardando cliente</option><option value="aprovado">Aprovado</option><option value="concluido">Concluído</option><option value="cancelado">Cancelado</option></select></label></div>
+          <div id="admin-quotes" class="quote-list"></div>
+        </section>
+
+        <section data-panel="precos" hidden>
+          <div class="page-title"><div><span class="eyebrow">TABELA COMERCIAL</span><h1>Preços para estimativas</h1><p>Cadastre somente valores reais. Eles serão usados no formulário público.</p></div></div>
+          <div class="pricing-layout">
+            <form id="price-form" class="admin-panel price-form">
+              <div class="panel-heading"><div><h2 id="price-form-title">Novo preço</h2><p>Valor por m², mínimo do item e instalação por unidade.</p></div></div>
+              <input type="hidden" id="price-id">
+              <label>Categoria<select id="price-category" required><option value="porta">Porta</option><option value="janela">Janela</option><option value="box">Box</option><option value="fachada">Fachada</option><option value="guarda_corpo">Guarda-corpo</option><option value="fechamento">Fechamento</option><option value="espelho">Espelho ou vidro</option><option value="cobertura">Cobertura</option><option value="manutencao">Manutenção</option><option value="outro">Outro</option></select></label>
+              <label>Modelo exato<input id="price-model" maxlength="100" required placeholder="Ex.: De correr" list="model-suggestions"><datalist id="model-suggestions"></datalist></label>
+              <label>Descrição <small>(opcional)</small><input id="price-description" maxlength="300" placeholder="Ex.: linha padrão, sem ferragens especiais"></label>
+              <div class="money-grid"><label>Preço por m²<input id="price-square" type="number" min="0.01" max="10000000" step="0.01" required placeholder="0,00"></label><label>Valor mínimo<input id="price-minimum" type="number" min="0" max="10000000" step="0.01" value="0"></label><label>Instalação/unidade<input id="price-installation" type="number" min="0" max="10000000" step="0.01" value="0"></label></div>
+              <label class="switch"><input id="price-active" type="checkbox" checked><span></span>Disponível para estimativas</label>
+              <div class="form-actions"><button class="button primary" type="submit">Salvar preço</button><button class="button secondary" id="price-cancel" type="button" hidden>Cancelar edição</button></div>
+            </form>
+            <section class="admin-panel"><div class="panel-heading"><div><h2>Preços cadastrados</h2><p id="prices-count">Nenhuma regra cadastrada.</p></div></div><div id="prices-list" class="price-list"></div></section>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+  <script src="api.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

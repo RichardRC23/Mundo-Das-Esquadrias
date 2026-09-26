@@ -2,16 +2,18 @@
   const $ = (id) => document.getElementById(id);
   let usuario;
   let conta;
+  let orcamentos = [];
   const pages = {
     inicio: ["Tudo sobre seus projetos.", "Seu perfil, serviços e pagamentos, em um só lugar."],
     perfil: ["Seu perfil, do seu jeito.", "Um espaço para manter seus dados sempre atualizados."],
+    orcamentos: ["Seus projetos começam aqui.", "Acompanhe cada solicitação de orçamento enviada."],
     compras: ["Cada projeto tem uma história.", "Consulte seus pedidos e acompanhe as faturas disponíveis."],
     contratos: ["Tudo no seu lugar.", "Seus contratos, documentos e informações importantes."],
     assinaturas: ["Cuidado que continua.", "Acompanhe seus planos e serviços recorrentes."],
     pagamentos: ["Mais praticidade para você.", "Organize suas preferências e métodos de pagamento."],
   };
   const methods = { pix: "Pix", boleto: "boleto", cartao: "cartão" };
-  const labels = { pendente: "Pendente", pago: "Pago", paid: "Pago", open: "Em aberto", active: "Ativa", trialing: "Período de teste", canceled: "Cancelada", incomplete: "Incompleta", incomplete_expired: "Expirada", paused: "Pausada", past_due: "Pagamento pendente", unpaid: "Não paga", uncollectible: "Não recebida", void: "Anulada", assinado: "Assinado", aguardando_assinatura: "Aguardando assinatura", concluido: "Concluído", em_andamento: "Em andamento", cancelado: "Cancelado" };
+  const labels = { recebido: "Recebido", em_analise: "Em análise", aguardando_cliente: "Aguardando você", aprovado: "Aprovado", pendente: "Pendente", pago: "Pago", paid: "Pago", open: "Em aberto", active: "Ativa", trialing: "Período de teste", canceled: "Cancelada", incomplete: "Incompleta", incomplete_expired: "Expirada", paused: "Pausada", past_due: "Pagamento pendente", unpaid: "Não paga", uncollectible: "Não recebida", void: "Anulada", assinado: "Assinado", aguardando_assinatura: "Aguardando assinatura", concluido: "Concluído", em_andamento: "Em andamento", cancelado: "Cancelado" };
   function node(tag, className, content) {
     const el = document.createElement(tag);
     if (className) el.className = className;
@@ -73,6 +75,7 @@
     $("primeiro-nome").textContent = usuario.nome.trim().split(/\s+/)[0];
     const since = data(usuario.criado_em);
     $("data-cadastro").textContent = since ? `Cliente desde ${since}` : "";
+    $("admin-link").hidden = usuario.papel !== "admin";
     avatar();
   }
   function showPage() {
@@ -172,19 +175,51 @@
       target.append(row);
     });
   }
+  function renderQuotes() {
+    const target = $("lista-orcamentos");
+    $("total-orcamentos").textContent = String(orcamentos.length);
+    if (!orcamentos.length) {
+      empty(target, "quote", "Nenhum orçamento solicitado", "Use o botão Novo orçamento para contar o que você precisa e receber um protocolo.");
+      return;
+    }
+    target.replaceChildren();
+    orcamentos.forEach((quote) => {
+      const row = node("article", "record");
+      const box = node("span", "icon-box"); box.append(icon("quote"));
+      const info = node("div", "record-info");
+      info.append(node("h3", "", quote.codigo));
+      const productNames = quote.itens.map((item) => item.modelo || "Item").join(", ");
+      info.append(node("p", "", `${quote.itens.length} ${quote.itens.length === 1 ? "item" : "itens"}: ${productNames}`));
+      info.append(node("p", "date", `Enviado em ${data(quote.criado_em)} · ${quote.instalacao ? "Com instalação" : "Somente fornecimento"}`));
+      const right = node("div", "record-meta");
+      right.append(node("strong", "", dinheiro(quote.estimativa_centavos, "BRL")));
+      const positive = ["aprovado", "concluido"].includes(quote.status);
+      const pending = ["recebido", "em_analise", "aguardando_cliente"].includes(quote.status);
+      right.append(node("span", `badge${positive ? " positive" : pending ? " pending" : ""}`, labels[quote.status] || quote.status));
+      row.append(box, info, right);
+      target.append(row);
+    });
+  }
   async function carregarConta() {
     $("erro-conta").hidden = true;
     $("retry-conta").disabled = true;
     $("pagamento-fields").disabled = true;
     try {
-      conta = await ContaAPI.request("/api/conta");
+      const [accountData, quoteData] = await Promise.all([
+        ContaAPI.request("/api/conta"), ContaAPI.request("/api/orcamentos"),
+      ]);
+      conta = accountData;
+      orcamentos = quoteData.orcamentos;
       renderAccount();
+      renderQuotes();
       $("pagamento-fields").disabled = false;
     } catch (error) {
       conta = null;
       $("erro-conta").hidden = false;
       $("erro-conta").querySelector("p").textContent = error.message;
       ["total-compras", "total-contratos", "total-assinaturas"].forEach((id) => { $(id).textContent = "—"; });
+      $("total-orcamentos").textContent = "—";
+      $("lista-orcamentos").replaceChildren(node("p", "hint", "Orçamentos indisponíveis. Tente consultar novamente."));
       ["compras", "contratos", "assinaturas"].forEach((type) => {
         $(`lista-${type}`).replaceChildren(node("p", "hint", "Informações indisponíveis. Tente consultar novamente."));
         $(`limite-${type}`).hidden = true;

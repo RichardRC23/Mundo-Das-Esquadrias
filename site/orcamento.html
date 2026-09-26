@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Solicite seu orçamento personalizado de esquadrias de alumínio, vidros, box e fachadas.">
+  <title>Solicitar orçamento | Mundo das Esquadrias</title>
+  <link rel="stylesheet" href="orcamento.css">
+</head>
+<body>
+  <header class="quote-header">
+    <a class="brand" href="index.html" aria-label="Voltar ao início">
+      <img src="/img/Mundo das Esquadrias 2.jpg" alt="Mundo das Esquadrias">
+      <span><strong>Mundo das Esquadrias</strong><small>Alumínio &amp; Vidros</small></span>
+    </a>
+    <a class="account-link" id="quote-account-link" href="login.html">Logar/Cadastrar</a>
+  </header>
+
+  <main>
+    <section class="quote-hero">
+      <div>
+        <span class="eyebrow">Orçamento personalizado</span>
+        <h1>Conte o que você precisa.<br><em>Nós cuidamos do projeto.</em></h1>
+        <p>Monte seu pedido em poucos passos. Você pode incluir alumínio, vidro e vários ambientes no mesmo orçamento.</p>
+      </div>
+      <aside class="hero-note">
+        <span class="note-icon" aria-hidden="true">✓</span>
+        <div><strong>Sem compromisso</strong><small>As medidas podem ser aproximadas. Confirmamos tudo na visita técnica.</small></div>
+      </aside>
+    </section>
+
+    <section class="quote-shell" aria-labelledby="quote-title">
+      <div class="progress-wrap">
+        <div class="progress-line"><span id="progress-fill"></span></div>
+        <ol class="progress" aria-label="Etapas do orçamento">
+          <li class="active" data-progress="1"><span>1</span><small>Produto</small></li>
+          <li data-progress="2"><span>2</span><small>Medidas</small></li>
+          <li data-progress="3"><span>3</span><small>Contato</small></li>
+          <li data-progress="4"><span>4</span><small>Revisão</small></li>
+        </ol>
+      </div>
+
+      <form id="quote-form" novalidate>
+        <div class="step active" data-step="1">
+          <div class="step-heading">
+            <span class="step-kicker">Etapa 1 de 4</span>
+            <h2 id="quote-title">O que você deseja fazer?</h2>
+            <p>Escolha uma opção. Depois você poderá adicionar outros itens ao mesmo orçamento.</p>
+          </div>
+          <div class="product-grid" id="product-grid">
+            <button type="button" class="product-card" data-category="porta" data-material="aluminio_vidro">
+              <span class="product-icon">▯</span><strong>Portas</strong><small>De correr, giro, pivotante e outras</small>
+            </button>
+            <button type="button" class="product-card" data-category="janela" data-material="aluminio_vidro">
+              <span class="product-icon">▦</span><strong>Janelas</strong><small>Correr, maxim-ar, basculante e outras</small>
+            </button>
+            <button type="button" class="product-card" data-category="box" data-material="vidro">
+              <span class="product-icon">◇</span><strong>Box de banheiro</strong><small>Frontal, canto, até o teto e especiais</small>
+            </button>
+            <button type="button" class="product-card" data-category="fachada" data-material="aluminio_vidro">
+              <span class="product-icon">▤</span><strong>Fachadas</strong><small>Comerciais e residenciais</small>
+            </button>
+            <button type="button" class="product-card" data-category="guarda_corpo" data-material="aluminio_vidro">
+              <span class="product-icon">▱</span><strong>Guarda-corpo</strong><small>Varandas, escadas e mezaninos</small>
+            </button>
+            <button type="button" class="product-card" data-category="fechamento" data-material="aluminio_vidro">
+              <span class="product-icon">▥</span><strong>Fechamentos</strong><small>Varanda, área gourmet e divisórias</small>
+            </button>
+            <button type="button" class="product-card" data-category="espelho" data-material="vidro">
+              <span class="product-icon">◫</span><strong>Espelhos e vidros</strong><small>Espelhos, tampos, prateleiras e painéis</small>
+            </button>
+            <button type="button" class="product-card" data-category="cobertura" data-material="aluminio_vidro">
+              <span class="product-icon">⌂</span><strong>Coberturas</strong><small>Claraboias, toldos e estruturas</small>
+            </button>
+            <button type="button" class="product-card" data-category="manutencao" data-material="manutencao">
+              <span class="product-icon">⌁</span><strong>Manutenção</strong><small>Roldanas, ajustes, vidros e reparos</small>
+            </button>
+            <button type="button" class="product-card" data-category="outro" data-material="outro">
+              <span class="product-icon">＋</span><strong>Outro projeto</strong><small>Descreva uma necessidade diferente</small>
+            </button>
+          </div>
+          <p class="field-error" id="product-error" role="alert"></p>
+          <div class="step-actions end"><button type="button" class="button primary" data-next>Continuar <span>→</span></button></div>
+        </div>
+
+        <div class="step" data-step="2">
+          <div class="step-heading compact">
+            <span class="step-kicker">Etapa 2 de 4</span>
+            <h2>Detalhes e medidas</h2>
+            <p>Não precisa ser exato agora. Use centímetros e informe a medida aproximada do vão.</p>
+          </div>
+          <div class="selected-product" id="selected-product"></div>
+
+          <div class="form-grid">
+            <label class="field full">
+              <span>Modelo ou tipo</span>
+              <select id="item-modelo" required></select>
+            </label>
+            <label class="field">
+              <span>Material principal</span>
+              <select id="item-material" required>
+                <option value="aluminio_vidro">Alumínio com vidro</option>
+                <option value="aluminio">Somente alumínio</option>
+                <option value="vidro">Somente vidro</option>
+                <option value="manutencao">Manutenção / reparo</option>
+                <option value="outro">Outro / ainda não sei</option>
+              </select>
+            </label>
+            <fieldset class="field color-field" id="color-field">
+              <legend>Cor do alumínio</legend>
+              <div class="swatches">
+                <label title="Branco"><input type="radio" name="cor" value="Branco" checked><span class="swatch white"></span><small>Branco</small></label>
+                <label title="Preto"><input type="radio" name="cor" value="Preto"><span class="swatch black"></span><small>Preto</small></label>
+                <label title="Bronze"><input type="radio" name="cor" value="Bronze"><span class="swatch bronze"></span><small>Bronze</small></label>
+                <label title="Natural fosco"><input type="radio" name="cor" value="Natural fosco"><span class="swatch silver"></span><small>Natural</small></label>
+                <label title="Amadeirado"><input type="radio" name="cor" value="Amadeirado"><span class="swatch wood"></span><small>Madeira</small></label>
+                <label title="A definir"><input type="radio" name="cor" value="A definir"><span class="swatch custom">+</span><small>Outra</small></label>
+              </div>
+            </fieldset>
+            <label class="field aluminum-field">
+              <span>Linha ou perfil do alumínio <small>(se souber)</small></span>
+              <select id="item-linha-aluminio">
+                <option value="A definir">A definir pela equipe</option>
+                <option value="Linha 16">Linha 16</option><option value="Linha 20">Linha 20</option>
+                <option value="Linha 25">Linha 25</option><option value="Linha 30">Linha 30</option>
+                <option value="Suprema">Suprema</option><option value="Gold">Gold</option>
+                <option value="Modular">Modular</option><option value="Fachada">Linha de fachada</option>
+                <option value="Outro perfil">Outro perfil</option>
+              </select>
+            </label>
+            <label class="field glass-field">
+              <span>Cor ou acabamento do vidro</span>
+              <select id="item-vidro">
+                <option value="Incolor">Incolor</option>
+                <option value="Fumê">Fumê</option>
+                <option value="Verde">Verde</option>
+                <option value="Bronze">Bronze</option>
+                <option value="Extra clear">Extra clear</option>
+                <option value="Refletivo">Refletivo</option>
+                <option value="Jateado ou fantasia">Jateado ou fantasia</option>
+                <option value="Espelho">Espelho</option>
+                <option value="A definir">Ainda não sei</option>
+              </select>
+            </label>
+            <label class="field glass-field">
+              <span>Composição do vidro</span>
+              <select id="item-composicao-vidro">
+                <option value="A definir">A definir conforme segurança e uso</option>
+                <option value="Temperado">Temperado</option><option value="Laminado">Laminado</option>
+                <option value="Comum">Comum</option><option value="Insulado">Insulado / duplo</option>
+                <option value="Aramado">Aramado</option><option value="Outro">Outro</option>
+              </select>
+            </label>
+            <label class="field glass-field">
+              <span>Espessura do vidro</span>
+              <select id="item-espessura">
+                <option value="A definir">A definir após avaliação</option>
+                <option value="4 mm">4 mm</option><option value="6 mm">6 mm</option>
+                <option value="8 mm">8 mm</option><option value="10 mm">10 mm</option>
+                <option value="12 mm">12 mm</option><option value="Laminado">Laminado / composição especial</option>
+              </select>
+            </label>
+            <label class="field"><span>Largura aproximada <small>(cm)</small></span><input id="item-largura" type="number" min="10" max="1500" step="0.1" placeholder="Ex.: 120" required></label>
+            <label class="field"><span>Altura aproximada <small>(cm)</small></span><input id="item-altura" type="number" min="10" max="1500" step="0.1" placeholder="Ex.: 210" required></label>
+            <label class="field"><span>Quantidade</span><input id="item-quantidade" type="number" min="1" max="50" value="1" required></label>
+            <label class="field"><span>Ambiente</span><input id="item-ambiente" maxlength="80" placeholder="Ex.: sala, banheiro, varanda"></label>
+            <label class="field full"><span>Detalhes deste item <small>(opcional)</small></span><textarea id="item-detalhes" maxlength="500" rows="3" placeholder="Conte sobre abertura, acabamento, local ou alguma necessidade especial."></textarea></label>
+          </div>
+          <p class="field-error" id="item-error" role="alert"></p>
+          <button type="button" class="button add-item" id="add-item">＋ Adicionar este item ao orçamento</button>
+          <div class="items-panel" id="items-panel" hidden>
+            <div class="items-title"><h3>Itens adicionados</h3><span id="items-count"></span></div>
+            <div id="items-list"></div>
+          </div>
+          <div class="step-actions">
+            <button type="button" class="button ghost" data-back>← Voltar</button>
+            <div class="action-group">
+              <button type="button" class="button secondary" id="another-item" hidden>＋ Outro item</button>
+              <button type="button" class="button primary" data-next>Continuar <span>→</span></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="step" data-step="3">
+          <div class="step-heading compact">
+            <span class="step-kicker">Etapa 3 de 4</span>
+            <h2>Onde podemos falar com você?</h2>
+            <p>Usaremos estes dados apenas para analisar e responder à sua solicitação.</p>
+          </div>
+          <div class="form-grid contact-grid">
+            <label class="field full"><span>Nome completo</span><input id="contact-name" autocomplete="name" maxlength="120" required></label>
+            <label class="field"><span>WhatsApp / telefone</span><input id="contact-phone" autocomplete="tel" inputmode="tel" maxlength="30" placeholder="(21) 99999-9999" required></label>
+            <label class="field"><span>E-mail <small>(opcional)</small></span><input id="contact-email" type="email" autocomplete="email" maxlength="254" placeholder="voce@email.com"></label>
+            <label class="field"><span>Cidade</span><input id="contact-city" autocomplete="address-level2" maxlength="100" value="Rio de Janeiro" required></label>
+            <label class="field"><span>Bairro <small>(opcional)</small></span><input id="contact-neighborhood" autocomplete="address-level3" maxlength="100"></label>
+            <fieldset class="field full install-field">
+              <legend>Você deseja instalação?</legend>
+              <label><input type="radio" name="instalacao" value="sim" checked><span><strong>Sim, com instalação</strong><small>Inclua mão de obra e visita técnica</small></span></label>
+              <label><input type="radio" name="instalacao" value="nao"><span><strong>Não, somente fornecimento</strong><small>Quero apenas os materiais/produtos</small></span></label>
+            </fieldset>
+            <label class="field full"><span>Observações gerais <small>(opcional)</small></span><textarea id="contact-notes" maxlength="1000" rows="4" placeholder="Prazo desejado, acesso ao imóvel, referência do projeto ou outras informações."></textarea></label>
+          </div>
+          <p class="field-error" id="contact-error" role="alert"></p>
+          <div class="step-actions"><button type="button" class="button ghost" data-back>← Voltar</button><button type="button" class="button primary" data-next>Revisar orçamento <span>→</span></button></div>
+        </div>
+
+        <div class="step" data-step="4">
+          <div class="step-heading compact">
+            <span class="step-kicker">Etapa 4 de 4</span>
+            <h2>Confira sua solicitação</h2>
+            <p>O preço será calculado pela equipe após validar materiais, medidas e condições de instalação.</p>
+          </div>
+          <div id="review-content" class="review-content"></div>
+          <div class="price-notice" id="price-notice"><span>i</span><p><strong>Por que o valor não aparece agora?</strong> Cada projeto é feito sob medida. A equipe confirmará perfil, tipo de vidro, ferragens, acesso e instalação antes de informar o preço final.</p></div>
+          <label class="consent"><input type="checkbox" id="quote-consent" required><span>Confirmo que os dados estão corretos e autorizo o contato da Mundo das Esquadrias sobre este orçamento.</span></label>
+          <p class="field-error" id="submit-error" role="alert"></p>
+          <div class="step-actions"><button type="button" class="button ghost" data-back>← Corrigir dados</button><button type="submit" class="button primary submit-button" id="submit-quote">Enviar solicitação <span>→</span></button></div>
+        </div>
+      </form>
+
+      <div class="success-card" id="quote-success" hidden>
+        <span class="success-icon">✓</span>
+        <span class="step-kicker">Solicitação recebida</span>
+        <h2>Orçamento enviado com sucesso!</h2>
+        <p>Seu protocolo é <strong id="success-code"></strong>. Guarde esse número para acompanhar o atendimento.</p>
+        <p class="success-estimate" id="success-estimate" hidden></p>
+        <div class="success-actions">
+          <a class="button whatsapp" id="whatsapp-link" href="#" target="_blank" rel="noopener">Continuar pelo WhatsApp</a>
+          <a class="button ghost" href="index.html">Voltar ao início</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="quote-footer"><p>© 2026 Mundo das Esquadrias · Rio de Janeiro</p><a href="index.html#contato">Precisa de ajuda?</a></footer>
+  <script src="api.js"></script>
+  <script src="orcamento.js"></script>
+</body>
+</html>

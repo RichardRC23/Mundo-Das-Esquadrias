@@ -114,7 +114,7 @@ function assertClientError(response) {
 test("private account and photo routes require a real authenticated session", async (t) => {
   const { client } = await fixture(t);
   const anonymous = client();
-  for (const route of ["/api/usuario", "/api/perfil", "/api/conta", "/api/perfil/foto"]) {
+  for (const route of ["/api/usuario", "/api/perfil", "/api/conta", "/api/perfil/foto", "/api/orcamentos"]) {
     const response = await anonymous.request(route);
     assert.equal(response.status, 401, `${route}: ${response.body}`);
   }
@@ -351,4 +351,100 @@ test("contract downloads enforce ownership and reject unsafe stored paths", asyn
   assert.equal((await client().request(route)).status, 401);
   await db.run("UPDATE contratos SET documento_arquivo = ? WHERE id = ?", ["../usuarios.db", contract.lastID]);
   assert.equal((await alice.request(route)).status, 404);
+});
+
+test("quote requests validate measurements, generate protocols, and stay isolated by account", async (t) => {
+  const { db, client } = await fixture(t);
+  const item = {
+    categoria: "janela", material: "aluminio_vidro", modelo: "De correr",
+    linha_aluminio: "Suprema", cor: "Preto", tipo_vidro: "Incolor",
+    composicao_vidro: "Temperado", espessura_vidro: "8 mm",
+    largura_cm: 120, altura_cm: 100, quantidade: 2, ambiente: "Sala", detalhes: "",
+  };
+  const contact = {
+    nome: "Visitante", telefone: "21999990009", email: "visitante@example.test",
+    cidade: "Rio de Janeiro", bairro: "Centro", instalacao: true, itens: [item],
+  };
+
+  const visitor = client();
+  await visitor.csrf();
+  const invalid = await visitor.request("/api/orcamentos", {
+    method: "POST", json: { ...contact, itens: [{ ...item, largura_cm: 0 }] },
+  });
+  assert.equal(invalid.status, 400, invalid.body);
+  const publicQuote = await visitor.request("/api/orcamentos", { method: "POST", json: contact });
+  assert.equal(publicQuote.status, 201, publicQuote.body);
+  assert.match(publicQuote.data.orcamento.codigo, /^MDE-\d{4}-\d{6}$/);
+  assert.equal((await visitor.request("/api/orcamentos")).status, 401);
+
+  const alice = client();
+  const bob = client();
+  const aliceUser = await alice.register();
+  await bob.register({ email: "bob@example.test", telefone: "21999990002" });
+  const ownQuote = await alice.request("/api/orcamentos", {
+    method: "POST", json: { ...contact, nome: "Cliente de Teste" },
+  });
+  assert.equal(ownQuote.status, 201, ownQuote.body);
+  const mine = await alice.request("/api/orcamentos");
+  assert.equal(mine.status, 200, mine.body);
+  assert.equal(mine.data.orcamentos.length, 1);
+  assert.equal(mine.data.orcamentos[0].itens[0].modelo, "De correr");
+  assert.deepEqual((await bob.request("/api/orcamentos")).data.orcamentos, []);
+  const stored = await db.get("SELECT usuario_id, itens_json FROM orcamentos WHERE codigo = ?", [ownQuote.data.orcamento.codigo]);
+  assert.equal(stored.usuario_id, aliceUser.id);
+  assert.equal(JSON.parse(stored.itens_json)[0].quantidade, 2);
+});
+
+test("only administrators manage quotes and real price rules produce customer estimates", async (t) => {
+  const { db, client } = await fixture(t);
+  const admin = client();
+  const customer = client();
+  const adminUser = await admin.register({ email: "admin@example.test", telefone: "21999990005" });
+  const denied = await admin.request("/api/admin/resumo");
+  assert.equal(denied.status, 403, denied.body);
+  await db.run("UPDATE usuarios SET papel = 'admin' WHERE id = ?", [adminUser.id]);
+  assert.equal((await admin.request("/api/admin/resumo")).status, 200);
+
+  const price = await admin.request("/api/admin/precos", {
+    method: "POST",
+    json: {
+      categoria: "janela", modelo: "De correr", descricao: "Tabela real de teste",
+      preco_m2_centavos: 100000, preco_minimo_centavos: 80000,
+      instalacao_centavos: 20000, ativo: true,
+    },
+  });
+  assert.equal(price.status, 201, price.body);
+  assert.equal((await admin.request("/api/admin/precos", {
+    method: "POST",
+    json: { categoria: "janela", modelo: "De correr", preco_m2_centavos: 100000 },
+  })).status, 409);
+  const publicCatalog = await client().request("/api/catalogo/precos");
+  assert.equal(publicCatalog.status, 200, publicCatalog.body);
+  assert.equal(publicCatalog.data.precos.length, 1);
+
+  await customer.register({ email: "orcamento@example.test", telefone: "21999990006" });
+  const created = await customer.request("/api/orcamentos", {
+    method: "POST",
+    json: {
+      nome: "Cliente Orçamento", telefone: "21999990006", cidade: "Rio de Janeiro", instalacao: true,
+      itens: [{
+        categoria: "janela", material: "aluminio_vidro", modelo: "De correr",
+        largura_cm: 120, altura_cm: 100, quantidade: 2,
+      }],
+    },
+  });
+  assert.equal(created.status, 201, created.body);
+  assert.equal(created.data.orcamento.estimativa_centavos, 280000);
+  const own = await customer.request("/api/orcamentos");
+  assert.equal(own.data.orcamentos[0].estimativa_centavos, 280000);
+
+  const adminQuotes = await admin.request("/api/admin/orcamentos");
+  assert.equal(adminQuotes.status, 200, adminQuotes.body);
+  assert.equal(adminQuotes.data.orcamentos[0].telefone, "21999990006");
+  const quoteId = adminQuotes.data.orcamentos[0].id;
+  const updated = await admin.request(`/api/admin/orcamentos/${quoteId}/status`, {
+    method: "PUT", json: { status: "aprovado" },
+  });
+  assert.equal(updated.status, 200, updated.body);
+  assert.equal((await customer.request("/api/orcamentos")).data.orcamentos[0].status, "aprovado");
 });

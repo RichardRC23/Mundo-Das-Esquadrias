@@ -9,7 +9,8 @@ async function enviar(url, dados) {
   return ContaAPI.request(url, { method: "POST", body: dados });
 }
 
-const destino = new URLSearchParams(location.search).get("next") === "perfil" ? "perfil.html" : "index.html";
+const nextPage = new URLSearchParams(location.search).get("next");
+const destino = ({ perfil: "perfil.html", admin: "admin.html" })[nextPage] || "index.html";
 let enviando = false;
 function ocupado(value) {
   enviando = value;

@@ -13,6 +13,8 @@ const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 const { initPayments } = require("./lib/payments");
+const { initOrcamentos } = require("./lib/orcamentos");
+const { initAdmin } = require("./lib/admin");
 
 const fail = (status, message) => Object.assign(new Error(message), { status });
 const text = (value) => typeof value === "string" ? value.trim() : "";
@@ -66,7 +68,7 @@ async function createApp(options = {}) {
     telefone TEXT UNIQUE, senha_hash TEXT NOT NULL, criado_em TEXT DEFAULT CURRENT_TIMESTAMP
   )`);
   const columns = await db.all("PRAGMA table_info(usuarios)");
-  for (const [name, type] of [["foto_blob", "BLOB"], ["foto_versao", "TEXT"], ["preferencia_pagamento", "TEXT"]]) {
+  for (const [name, type] of [["foto_blob", "BLOB"], ["foto_versao", "TEXT"], ["preferencia_pagamento", "TEXT"], ["papel", "TEXT NOT NULL DEFAULT 'cliente'"]]) {
     if (!columns.some((column) => column.name === name)) await db.run(`ALTER TABLE usuarios ADD COLUMN ${name} ${type}`);
   }
 
@@ -131,8 +133,14 @@ async function createApp(options = {}) {
     }
     next();
   };
+  const exigirAdmin = async (req, res, next) => {
+    if (!req.session.usuario) return res.status(401).json({ erro: "Faça login para acessar o painel administrativo." });
+    const user = await db.get("SELECT papel FROM usuarios WHERE id = ?", [req.session.usuario.id]);
+    if (user?.papel !== "admin") return res.status(403).json({ erro: "Esta área é exclusiva para administradores." });
+    next();
+  };
   const perfil = async (id) => {
-    const user = await db.get("SELECT id,nome,email,telefone,criado_em,foto_versao,preferencia_pagamento FROM usuarios WHERE id = ?", [id]);
+    const user = await db.get("SELECT id,nome,email,telefone,criado_em,foto_versao,preferencia_pagamento,papel FROM usuarios WHERE id = ?", [id]);
     if (!user) throw fail(401, "Faça login para acessar sua conta.");
     user.foto_url = user.foto_versao ? `/api/perfil/foto?v=${encodeURIComponent(user.foto_versao)}` : null;
     delete user.foto_versao;
@@ -168,7 +176,7 @@ async function createApp(options = {}) {
   });
   app.get("/api/usuario", exigirLogin, async (req, res) => {
     const user = await perfil(req.session.usuario.id);
-    res.json({ usuario: { id: user.id, nome: user.nome, foto_url: user.foto_url } });
+    res.json({ usuario: { id: user.id, nome: user.nome, foto_url: user.foto_url, papel: user.papel } });
   });
   app.get("/api/perfil", exigirLogin, async (req, res) => res.json({ usuario: await perfil(req.session.usuario.id) }));
   app.put("/api/perfil", exigirLogin, changesLimit, async (req, res) => {
@@ -213,6 +221,8 @@ async function createApp(options = {}) {
   });
   app.use("/api/pagamentos", changesLimit);
   await initPayments({ app, db, exigirLogin, origin, dataDir });
+  await initOrcamentos({ app, db, exigirLogin, changesLimit });
+  await initAdmin({ app, db, exigirAdmin, changesLimit });
   app.post("/api/sair", async (req, res) => {
     await new Promise((resolve, reject) => req.session.destroy((error) => error ? reject(error) : resolve()));
     res.clearCookie("connect.sid", { httpOnly: true, sameSite: "lax", secure: production, path: "/" });
