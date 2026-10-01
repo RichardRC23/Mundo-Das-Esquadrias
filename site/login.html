@@ -1,81 +1,136 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>
-        Entrar | Mundo das Esquadrias
-    </title>
+    <meta name="description" content="Entre ou crie sua conta no Mundo das Esquadrias para acompanhar orçamentos, propostas e projetos.">
+    <title>Entrar | Mundo das Esquadrias</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="auth-page">
-
     <main class="auth-container">
-        <a class="voltar" href="index.html">
-            Voltar ao site
-        </a>
+        <a class="voltar" href="index.html"><span aria-hidden="true">←</span> Voltar para o site</a>
 
-        <section class="auth-card">
-            <h1>
-                Área do Cliente
-            </h1>
-            <p id="mensagem" class="mensagem" role="status" aria-live="polite"></p>
-                <!-- Mensagem de erro será exibida aqui -->
-            <div class="auth-grid">
-                <form id="form-login">
-                    <h2>
-                        Entrar
-                    </h2>
+        <section class="auth-card" aria-labelledby="auth-title">
+            <aside class="auth-brand">
+                <div class="auth-brand-content">
+                    <a class="auth-logo" href="index.html" aria-label="Mundo das Esquadrias — início">
+                        <img src="../img/Mundo das Esquadrias 2.jpg" alt="" width="62" height="62">
+                        <span><strong>Mundo das Esquadrias</strong><small>Alumínio &amp; vidros</small></span>
+                    </a>
 
-                    <label for="identificador">
-                        Email ou telefone
-                    </label>
-                    <input id="identificador" type="text" required>
+                    <div class="auth-welcome">
+                        <span class="auth-kicker">Área exclusiva do cliente</span>
+                        <h1 id="auth-title">Seus projetos,<br><em>sempre por perto.</em></h1>
+                        <p>Entre para solicitar orçamentos e acompanhar cada etapa do seu projeto com tranquilidade.</p>
+                    </div>
 
-                    <label for="senha-login">
-                        Senha
-                    </label>
-                    <input id="senha-login" type="password" minlength="8" required>
+                    <ul class="auth-benefits" aria-label="Benefícios da sua conta">
+                        <li><span aria-hidden="true">✓</span><div><strong>Orçamentos organizados</strong><small>Acompanhe solicitações e valores em um só lugar.</small></div></li>
+                        <li><span aria-hidden="true">✓</span><div><strong>Propostas e andamento</strong><small>Consulte atualizações sempre que precisar.</small></div></li>
+                        <li><span aria-hidden="true">✓</span><div><strong>Conta protegida</strong><small>Seus dados e projetos ficam vinculados ao seu acesso.</small></div></li>
+                    </ul>
+                </div>
+                <p class="auth-brand-footer">Qualidade em cada detalhe do seu projeto.</p>
+            </aside>
 
-                    <button class="btn" type="submit">
-                        Entrar
-                    </button>
-                </form>
+            <div class="auth-content">
+                <header class="auth-content-header">
+                    <span class="auth-kicker">Bem-vindo</span>
+                    <h2>Acesse sua conta</h2>
+                    <p>Entre com seus dados ou crie uma conta gratuitamente.</p>
+                </header>
 
-                <form id="form-cadastro">
-                    <h2>
-                        Criar Conta
-                    </h2>
-                    
-                    <label for="nome">
-                        Nome completo
-                    </label>
-                    <input type="text" id="nome" name="nome" required>
+                <div class="auth-tabs" role="tablist" aria-label="Entrar ou criar conta">
+                    <button class="auth-tab active" id="tab-login" type="button" role="tab" aria-selected="true" aria-controls="form-login">Entrar</button>
+                    <button class="auth-tab" id="tab-cadastro" type="button" role="tab" aria-selected="false" aria-controls="form-cadastro">Criar conta</button>
+                </div>
 
-                    <label for="email">
-                        Email
-                    </label>
-                    <input type="email" id="email" name="email" required>
+                <p id="mensagem" class="mensagem" role="status" aria-live="polite"></p>
 
-                    <label for="telefone">
-                        Telefone
-                    </label>
-                    <input id="telefone" type="tel" placeholder="(21) 9999-9999">
+                <div class="auth-forms">
+                    <form id="form-login" class="auth-form active" role="tabpanel" aria-labelledby="tab-login">
+                        <div class="auth-form-heading">
+                            <h3>Que bom ter você de volta!</h3>
+                            <p>Informe seu e-mail ou telefone cadastrado.</p>
+                        </div>
 
-                    <label for="senha-cadastro">
-                        Senha
-                    </label>
-                    <input id="senha-cadastro" type="password" minlength="8" required>
+                        <label class="auth-field" for="identificador">
+                            <span>E-mail ou telefone</span>
+                            <span class="auth-input-wrap">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM4 7l8 6 8-6"/></svg>
+                                <input id="identificador" type="text" autocomplete="username" placeholder="seu@email.com ou telefone" required>
+                            </span>
+                        </label>
 
-                    <button class="btn" type="submit">
-                        Cadastrar
-                    </button>
-                </form>
+                        <label class="auth-field" for="senha-login">
+                            <span>Senha</span>
+                            <span class="auth-input-wrap">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>
+                                <input id="senha-login" type="password" minlength="8" autocomplete="current-password" placeholder="Digite sua senha" required>
+                                <button class="toggle-password" type="button" data-password="senha-login" aria-label="Mostrar senha">Ver</button>
+                            </span>
+                        </label>
+
+                        <button class="btn auth-submit" type="submit">Entrar na minha conta <span aria-hidden="true">→</span></button>
+                        <p class="auth-alternative">Ainda não tem cadastro? <button type="button" data-open-tab="cadastro">Crie sua conta</button></p>
+                    </form>
+
+                    <form id="form-cadastro" class="auth-form" role="tabpanel" aria-labelledby="tab-cadastro" hidden>
+                        <div class="auth-form-heading">
+                            <h3>Crie sua conta gratuitamente</h3>
+                            <p>Leva menos de um minuto para começar.</p>
+                        </div>
+
+                        <label class="auth-field" for="nome">
+                            <span>Nome completo</span>
+                            <span class="auth-input-wrap">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg>
+                                <input type="text" id="nome" name="nome" autocomplete="name" placeholder="Como podemos chamar você?" required>
+                            </span>
+                        </label>
+
+                        <div class="auth-field-row">
+                            <label class="auth-field" for="email">
+                                <span>E-mail</span>
+                                <span class="auth-input-wrap">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM4 7l8 6 8-6"/></svg>
+                                    <input type="email" id="email" name="email" autocomplete="email" placeholder="seu@email.com" required>
+                                </span>
+                            </label>
+
+                            <label class="auth-field" for="telefone">
+                                <span>Telefone com DDD</span>
+                                <span class="auth-input-wrap">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h3l2 5-2 2a15 15 0 004 4l2-2 5 2v3c0 2-2 4-4 4A18 18 0 013 7c0-2 2-4 4-4z"/></svg>
+                                    <input id="telefone" type="tel" autocomplete="tel" inputmode="tel" placeholder="(21) 99999-9999" required>
+                                </span>
+                            </label>
+                        </div>
+
+                        <label class="auth-field" for="senha-cadastro">
+                            <span>Crie uma senha <small>Mínimo de 8 caracteres</small></span>
+                            <span class="auth-input-wrap">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>
+                                <input id="senha-cadastro" type="password" minlength="8" autocomplete="new-password" placeholder="Escolha uma senha segura" required>
+                                <button class="toggle-password" type="button" data-password="senha-cadastro" aria-label="Mostrar senha">Ver</button>
+                            </span>
+                        </label>
+
+                        <button class="btn auth-submit" type="submit">Criar minha conta <span aria-hidden="true">→</span></button>
+                        <p class="auth-alternative">Já possui cadastro? <button type="button" data-open-tab="login">Entre na sua conta</button></p>
+                    </form>
+                </div>
+
+                <p class="auth-privacy">Ao continuar, seus dados serão usados somente para sua conta e atendimento dos projetos.</p>
             </div>
         </section>
     </main>
 
-   <script src="api.js"></script>
-   <script src="login.js"></script>
+    <script src="api.js"></script>
+    <script src="login.js"></script>
 </body>
 </html>

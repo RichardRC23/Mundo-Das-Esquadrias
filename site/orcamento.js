@@ -288,6 +288,11 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("quote-success").hidden = false;
       document.querySelector(".quote-shell").scrollIntoView({ behavior: "smooth", block: "start" });
     } catch (error) {
+      if (error.status === 402) {
+        await loadAccess();
+        document.querySelector(".quote-shell").scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
       errorElement.textContent = error.message;
       button.disabled = false;
       button.innerHTML = "Enviar solicitação <span>→</span>";
@@ -303,7 +308,145 @@ document.addEventListener("DOMContentLoaded", () => {
       const link = document.getElementById("quote-account-link");
       link.textContent = "Minha conta";
       link.href = "perfil.html";
-    } catch { /* Anonymous customers fill their contact details manually. */ }
+    } catch { /* Authentication is handled by loadAccess. */ }
+  }
+
+  function showPaywall(access) {
+    document.getElementById("access-loading").hidden = true;
+    document.getElementById("quota-banner").hidden = true;
+    document.querySelector(".progress-wrap").hidden = true;
+    form.hidden = true;
+    const paywall = document.getElementById("quote-paywall");
+    const buttons = [...document.querySelectorAll(".buy-quotes")];
+    const note = document.getElementById("paywall-note");
+    paywall.hidden = false;
+    note.className = "paywall-note";
+
+    paywall.querySelector("h2").textContent = "Continue planejando seus projetos";
+    paywall.querySelector(":scope > p").textContent = "Seu orçamento gratuito já foi utilizado. Escolha quantos novos orçamentos deseja comprar, sem mensalidade.";
+    buttons.forEach((button) => { button.hidden = false; button.disabled = !access.compra_disponivel; });
+    note.textContent = access.compra_disponivel
+      ? "Pagamento único em ambiente seguro. Os créditos não vencem a cada mês."
+      : "A empresa ainda precisa ativar o pagamento online. Seu orçamento gratuito continua salvo na sua conta.";
+  }
+
+  async function loadAccess() {
+    const loading = document.getElementById("access-loading");
+    loading.hidden = false;
+    loading.textContent = "Conferindo seus orçamentos disponíveis…";
+    try {
+      const { acesso } = await ContaAPI.request("/api/orcamentos/acesso");
+      if (!acesso.restantes) {
+        showPaywall(acesso);
+        return;
+      }
+      loading.hidden = true;
+      document.getElementById("quote-paywall").hidden = true;
+      const banner = document.getElementById("quota-banner");
+      banner.hidden = false;
+      if (acesso.plano === "creditos") {
+        document.getElementById("quota-title").textContent = "Você tem orçamentos disponíveis";
+        document.getElementById("quota-description").textContent = `${acesso.restantes} ${acesso.restantes === 1 ? "orçamento disponível" : "orçamentos disponíveis"} para usar quando quiser.`;
+      } else {
+        document.getElementById("quota-title").textContent = "Seu orçamento gratuito está disponível";
+        document.getElementById("quota-description").textContent = "Esta conta tem direito a 1 solicitação gratuita.";
+      }
+      document.querySelector(".progress-wrap").hidden = false;
+      form.hidden = false;
+    } catch (error) {
+      if (error.status === 401) {
+        window.location.replace("login.html?next=orcamento");
+        return;
+      }
+      loading.textContent = error.message || "Não foi possível conferir seu acesso. Atualize a página para tentar novamente.";
+    }
+  }
+
+  document.querySelectorAll(".buy-quotes").forEach((button) => button.addEventListener("click", async () => {
+    const note = document.getElementById("paywall-note");
+    const original = button.textContent;
+    document.querySelectorAll(".buy-quotes").forEach((item) => { item.disabled = true; });
+    button.textContent = "Abrindo pagamento seguro…";
+    note.textContent = "";
+    try {
+      const result = await ContaAPI.request("/api/pagamentos/orcamentos/checkout", { method: "POST", body: { plano: button.dataset.plan } });
+      const url = new URL(result.url);
+      const allowed = result.provedor === "mercadopago"
+        ? ["www.mercadopago.com.br", "sandbox.mercadopago.com.br"].includes(url.hostname) && url.pathname.startsWith("/checkout/")
+        : url.hostname === "checkout.stripe.com";
+      if (url.protocol !== "https:" || url.username || url.password || url.port || !allowed) throw new Error("Endereço de pagamento inválido.");
+      window.location.assign(url.href);
+    } catch (error) {
+      note.textContent = error.message;
+      note.className = "paywall-note error";
+      document.querySelectorAll(".buy-quotes").forEach((item) => { item.disabled = false; });
+      button.textContent = original;
+    }
+  }));
+
+  async function confirmPurchase() {
+    const params = new URLSearchParams(location.search);
+    const reference = params.get("mp_ref");
+    if (reference) {
+      await checkMercadoPago(reference);
+      return;
+    }
+    const sessionId = params.get("session_id");
+    if (params.get("compra") !== "sucesso" || !sessionId) return;
+    const loading = document.getElementById("access-loading");
+    loading.hidden = false;
+    loading.textContent = "Confirmando seu pagamento…";
+    try {
+      await ContaAPI.request("/api/pagamentos/orcamentos/confirmar", { method: "POST", body: { session_id: sessionId } });
+      history.replaceState({}, "", `${location.pathname}${location.hash}`);
+    } catch (error) {
+      paymentMessage(error.message || "Não foi possível confirmar o pagamento agora.");
+    }
+  }
+
+  function paymentMessage(message) {
+    const panel = document.getElementById("payment-status");
+    panel.hidden = false;
+    document.getElementById("payment-message").textContent = message;
+  }
+
+  async function checkMercadoPago(reference) {
+    paymentMessage("Conferindo a confirmação do Mercado Pago…");
+    try {
+      const result = await ContaAPI.request("/api/pagamentos/mercadopago/confirmar", { method: "POST", body: { referencia: reference } });
+      paymentMessage(result.mensagem);
+      if (result.status === "pago") history.replaceState({}, "", `${location.pathname}${location.hash}`);
+    } catch (error) {
+      paymentMessage(error.message);
+    }
+  }
+
+  async function loadPaymentHistory() {
+    const target = document.getElementById("payment-history");
+    try {
+      const { compras } = await ContaAPI.request("/api/pagamentos/mercadopago/compras");
+      target.replaceChildren();
+      const pending = compras.filter((item) => ["aguardando", "pendente"].includes(item.status));
+      document.getElementById("pending-payments").hidden = pending.length === 0;
+      pending.forEach((item) => {
+        const row = document.createElement("li");
+        const label = document.createElement("span");
+        label.textContent = `${item.tipo === "individual" ? "1 orçamento — R$ 5,99" : "Até 10 orçamentos — R$ 9,90"} · aguardando confirmação`;
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "button ghost";
+        button.textContent = "Verificar pagamento";
+        button.addEventListener("click", async () => {
+          button.disabled = true;
+          await checkMercadoPago(item.referencia);
+          await loadAccess();
+          await loadPaymentHistory();
+          button.disabled = false;
+        });
+        row.append(label, button);
+        target.append(row);
+      });
+    } catch { /* A failed history request must not prevent the free quotation form. */ }
   }
 
   async function loadCatalog() {
@@ -315,5 +458,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   prefillAccount();
   loadCatalog();
+  confirmPurchase().then(loadAccess).then(loadPaymentHistory).catch(() => {});
   showStep(1, false);
 });

@@ -49,5 +49,27 @@
     if (["/api/login", "/api/cadastro", "/api/sair"].includes(path)) csrfPromise = null;
     return data;
   }
-  window.ContaAPI = { request, url };
+  async function requestBlob(path, options = {}, retry = true) {
+    const method = (options.method || "GET").toUpperCase();
+    const headers = new Headers(options.headers);
+    if (!["GET", "HEAD"].includes(method)) headers.set("X-CSRF-Token", await csrf());
+    let response;
+    try {
+      response = await fetch(url(path), { ...options, method, headers, credentials: "include", cache: "no-store" });
+    } catch {
+      throw new Error("Não foi possível conectar. Verifique sua conexão e se o servidor está aberto.");
+    }
+    if (!response.ok) {
+      const data = response.headers.get("content-type")?.includes("application/json") ? await response.json() : {};
+      if (data.codigo === "CSRF_INVALIDO" && retry) {
+        csrfPromise = null;
+        return requestBlob(path, options, false);
+      }
+      const error = new Error(data.erro || "Não foi possível preparar a imagem.");
+      error.status = response.status;
+      throw error;
+    }
+    return response.blob();
+  }
+  window.ContaAPI = { request, requestBlob, url };
 })();

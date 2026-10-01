@@ -114,7 +114,15 @@
         finally { save.disabled = false; }
       });
       label.append(select); actions.append(label, save);
+      if (quote.proposta_versao > 0) {
+        label.hidden = true; save.hidden = true;
+        actions.append(element("p", "", "Acompanhe a resposta do cliente na proposta abaixo."));
+      }
       body.append(contact, itemColumn, actions); card.append(head, body); target.append(card);
+      card.append(PropostasUI.render(quote, true, async (notice) => {
+        quotes = (await ContaAPI.request("/api/admin/orcamentos")).orcamentos;
+        renderQuotes(); renderRecent(); await loadSummary(); message(notice, true);
+      }));
     });
   }
   function renderPrices() {

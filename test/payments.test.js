@@ -9,9 +9,13 @@ const bcrypt = require("bcrypt");
 // This file runs in its own node:test process. The Stripe SDK is replaced before
 // app creation: no secret, real customer, payment or network call is used.
 process.env.STRIPE_SECRET_KEY = "sk_test_offline_fixture_not_a_real_key";
+process.env.STRIPE_QUOTE_SINGLE_PRICE_ID = "price_singlefixture";
+process.env.STRIPE_QUOTE_PACK_PRICE_ID = "price_packfixture";
 const customers = new Map();
 const keys = new Map();
 const portals = [];
+const checkouts = [];
+const checkoutSessions = new Map();
 let createCalls = 0;
 const fakeStripe = {
   accounts: { retrieve: async () => ({ id: "acct_fixture" }) },
@@ -37,10 +41,24 @@ const fakeStripe = {
   } },
   subscriptions: { list: async ({ customer }) => {
     assert.ok(customers.has(customer));
-    return { has_more: false, data: [{ id: "sub_fixture", status: "active", created: 1800000000, currency: "brl",
+    const data = [{ id: "sub_fixture", status: "active", created: 1800000000, currency: "brl",
       items: { has_more: false, data: [{ quantity: 1, current_period_end: 1802592000,
-        price: { unit_amount: 15000, currency: "brl", nickname: "Manutenção mensal", recurring: { interval: "month", interval_count: 1, usage_type: "licensed" } } }] } }] };
+        price: { unit_amount: 15000, currency: "brl", nickname: "Manutenção mensal", recurring: { interval: "month", interval_count: 1, usage_type: "licensed" } } }] } }];
+    return { has_more: false, data };
   } },
+  prices: { retrieve: async (id) => {
+    assert.ok(["price_singlefixture", "price_packfixture"].includes(id));
+    return { id, active: true, currency: "brl", unit_amount: id === "price_singlefixture" ? 599 : 990, type: "one_time" };
+  } },
+  checkout: { sessions: { create: async (params) => {
+    checkouts.push(params);
+    const id = `cs_test_fixture${checkouts.length}`;
+    checkoutSessions.set(id, { id, customer: params.customer, livemode: false, mode: params.mode,
+      payment_status: "paid", currency: "brl",
+      amount_total: params.metadata.mundo_produto === "individual" ? 599 : 990,
+      metadata: { ...params.metadata } });
+    return { id, url: `https://checkout.stripe.com/c/pay/${id}` };
+  }, retrieve: async (id) => checkoutSessions.get(id) } },
   invoices: { list: async ({ customer }) => {
     assert.ok(customers.has(customer));
     return { has_more: false, data: [
@@ -126,6 +144,41 @@ test("optional payment portal verifies ownership and reauthentication without ma
   assert.equal(overview.data.compras[0].id, "in_paid");
   assert.equal((await request("/api/pagamentos/portal", { senha_atual: PASSWORD })).status, 200);
   assert.equal(createCalls, 1, "Returning users reuse the stored billing customer");
+
+  const quote = { nome: "Alice", telefone: "21999990001", cidade: "Rio de Janeiro", itens: [{
+    categoria: "janela", material: "aluminio_vidro", modelo: "De correr",
+    largura_cm: 120, altura_cm: 100, quantidade: 1,
+  }] };
+  assert.equal((await request("/api/orcamentos/acesso")).data.acesso.restantes, 1);
+  assert.equal((await request("/api/orcamentos", quote)).status, 201);
+  const freeExhausted = await request("/api/orcamentos/acesso");
+  assert.equal(freeExhausted.data.acesso.restantes, 0);
+  assert.equal(freeExhausted.data.acesso.compra_disponivel, true);
+  const checkout = await request("/api/pagamentos/orcamentos/checkout", { plano: "individual" });
+  assert.equal(checkout.status, 200, JSON.stringify(checkout.data));
+  assert.match(checkout.data.url, /^https:\/\/checkout\.stripe\.com\//);
+  assert.equal(checkouts[0].mode, "payment");
+  assert.deepEqual(checkouts[0].line_items, [{ price: "price_singlefixture", quantity: 1 }]);
+  assert.equal((await request("/api/pagamentos/orcamentos/confirmar", { session_id: "cs_test_fixture1" })).status, 200);
+  assert.equal((await request("/api/pagamentos/orcamentos/confirmar", { session_id: "cs_test_fixture1" })).status, 200);
+  assert.equal((await request("/api/orcamentos/acesso")).data.acesso.restantes, 1);
+  assert.equal((await request("/api/orcamentos", quote)).status, 201);
+  assert.equal((await request("/api/orcamentos", quote)).status, 402);
+
+  const packCheckout = await request("/api/pagamentos/orcamentos/checkout", { plano: "pacote10" });
+  assert.equal(packCheckout.status, 200);
+  assert.deepEqual(checkouts[1].line_items, [{ price: "price_packfixture", quantity: 1 }]);
+  assert.equal((await request("/api/pagamentos/orcamentos/confirmar", { session_id: "cs_test_fixture2" })).status, 200);
+  assert.equal((await request("/api/orcamentos/acesso")).data.acesso.restantes, 10);
+  for (let index = 0; index < 10; index++) {
+    assert.equal((await request("/api/orcamentos", quote)).status, 201);
+  }
+  assert.equal((await request("/api/orcamentos", quote)).status, 402);
+  const purchases = await instance.db.all("SELECT titulo,valor_centavos FROM compras WHERE usuario_id=? ORDER BY id", [alice.lastID]);
+  assert.deepEqual(purchases, [
+    { titulo: "1 orçamento adicional", valor_centavos: 599 },
+    { titulo: "Pacote de até 10 orçamentos", valor_centavos: 990 },
+  ]);
 
   const bobRequest = client();
   await bobRequest("/api/csrf");

@@ -15,6 +15,7 @@ const path = require("node:path");
 const { initPayments } = require("./lib/payments");
 const { initOrcamentos } = require("./lib/orcamentos");
 const { initAdmin } = require("./lib/admin");
+const { initPropostas } = require("./lib/propostas");
 
 const fail = (status, message) => Object.assign(new Error(message), { status });
 const text = (value) => typeof value === "string" ? value.trim() : "";
@@ -77,7 +78,13 @@ async function createApp(options = {}) {
   if (process.env.TRUST_PROXY === "1") app.set("trust proxy", 1);
   app.use(helmet({ contentSecurityPolicy: { directives: {
     "upgrade-insecure-requests": production ? [] : null,
+    "img-src": ["'self'", "data:", "blob:"],
   } } }));
+  // Only this provider endpoint bypasses browser sessions/CSRF; it authenticates its HMAC.
+  const webhookRouter = express.Router();
+  app.use("/api/webhooks/mercadopago", rateLimit({ windowMs: 60000, limit: 180,
+    standardHeaders: true, legacyHeaders: false }), express.json({ limit: "32kb" }), webhookRouter);
+  require("./lib/apple-pay-domain").registerApplePayDomain({ app, origin, dataDir });
   const allowedOrigins = new Set([origin]);
   if (!production) {
     allowedOrigins.add("http://localhost:5500");
@@ -200,16 +207,29 @@ async function createApp(options = {}) {
     if (!user?.foto_blob) return res.status(404).json({ erro: "Você ainda não tem uma foto de perfil." });
     res.set("Cross-Origin-Resource-Policy", "same-site").type("image/webp").send(user.foto_blob);
   });
+  app.post("/api/perfil/foto/preparar", exigirLogin, changesLimit, upload.single("foto"), async (req, res) => {
+    if (!req.file) throw fail(400, "Escolha uma foto JPG, PNG, WebP ou HEIC de até 2 MB.");
+    try {
+      const input = sharp(req.file.buffer, { limitInputPixels: 20000000, failOn: "warning" });
+      const metadata = await input.metadata();
+      if (!["jpeg", "png", "webp", "heif"].includes(metadata.format) || (metadata.pages || 1) > 1) throw new Error("format");
+      const preview = await input.rotate().resize(1600, 1600, { fit: "inside", withoutEnlargement: true })
+        .webp({ quality: 88 }).toBuffer();
+      res.set("Cache-Control", "no-store").set("Cross-Origin-Resource-Policy", "same-site").type("image/webp").send(preview);
+    } catch {
+      throw fail(400, "A imagem não pôde ser convertida. Exporte-a como JPG, PNG ou WebP e tente novamente.");
+    }
+  });
   app.post("/api/perfil/foto", exigirLogin, changesLimit, upload.single("foto"), async (req, res) => {
     if (!req.file) throw fail(400, "Escolha uma foto JPG, PNG ou WebP de até 2 MB.");
     let image;
     try {
       const input = sharp(req.file.buffer, { limitInputPixels: 20000000, failOn: "warning" });
       const metadata = await input.metadata();
-      if (!["jpeg", "png", "webp"].includes(metadata.format) || (metadata.pages || 1) > 1) throw new Error("format");
+      if (!["jpeg", "png", "webp", "heif"].includes(metadata.format) || (metadata.pages || 1) > 1) throw new Error("format");
       image = await input.rotate().resize(512, 512, { fit: "cover", withoutEnlargement: true }).webp({ quality: 82 }).toBuffer();
     } catch {
-      throw fail(400, "A imagem é inválida. Envie JPG, PNG ou WebP sem animação, com até 20 megapixels.");
+      throw fail(400, "A imagem é inválida. Envie JPG, PNG, WebP ou HEIC sem animação, com até 20 megapixels.");
     }
     const version = crypto.randomUUID();
     await db.run("UPDATE usuarios SET foto_blob = ?,foto_versao = ? WHERE id = ?", [image, version, req.session.usuario.id]);
@@ -220,8 +240,12 @@ async function createApp(options = {}) {
     res.json({ mensagem: "Foto removida.", foto_url: null });
   });
   app.use("/api/pagamentos", changesLimit);
-  await initPayments({ app, db, exigirLogin, origin, dataDir });
-  await initOrcamentos({ app, db, exigirLogin, changesLimit });
+  const payments = await initPayments({ app, db, exigirLogin, origin, dataDir, webhookRouter,
+    mercadoPagoTransport: options.mercadoPagoTransport, paymentConfig: options.paymentConfig });
+  await initOrcamentos({ app, db, exigirLogin, changesLimit,
+    comprasOrcamentoConfiguradas: payments.comprasOrcamentoConfiguradas,
+    aceitarCreditosMPTeste: payments.aceitarCreditosMPTeste });
+  await initPropostas({ app, db, exigirLogin, exigirAdmin, changesLimit });
   await initAdmin({ app, db, exigirAdmin, changesLimit });
   app.post("/api/sair", async (req, res) => {
     await new Promise((resolve, reject) => req.session.destroy((error) => error ? reject(error) : resolve()));

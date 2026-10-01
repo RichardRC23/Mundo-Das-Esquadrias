@@ -30,7 +30,39 @@
     </section>
 
     <section class="quote-shell" aria-labelledby="quote-title">
-      <div class="progress-wrap">
+      <div class="payment-notice" id="payment-status" role="status" hidden><p id="payment-message"></p></div>
+      <details class="payment-notice" id="pending-payments" hidden>
+        <summary>Consultar meus pagamentos recentes</summary>
+        <p>Já pagou? Confira a confirmação antes de iniciar outra compra. A liberação acontece após a aprovação do Mercado Pago.</p>
+        <ul id="payment-history" class="payment-history"></ul>
+      </details>
+      <div class="access-loading" id="access-loading" role="status">Conferindo seus orçamentos disponíveis…</div>
+      <div class="quota-banner" id="quota-banner" hidden>
+        <span class="quota-icon" aria-hidden="true">✓</span>
+        <div><strong id="quota-title">Seu orçamento gratuito está disponível</strong><small id="quota-description">Você tem 1 orçamento disponível nesta conta.</small></div>
+      </div>
+
+      <div class="quote-paywall" id="quote-paywall" hidden>
+        <span class="step-kicker">Orçamentos adicionais</span>
+        <h2>Continue planejando seus projetos</h2>
+        <p>Seu orçamento gratuito já foi utilizado. Escolha quantos novos orçamentos deseja comprar, sem mensalidade.</p>
+        <div class="purchase-options">
+          <article class="plan-card">
+            <div><span>Compra avulsa</span><strong>1 orçamento adicional</strong><small>Ideal para uma nova solicitação.</small></div>
+            <div class="plan-price"><strong>R$ 5,99</strong><small>pagamento único</small></div>
+            <button class="button primary buy-quotes" data-plan="individual" type="button">Comprar 1 orçamento</button>
+          </article>
+          <article class="plan-card featured">
+            <div><span>Melhor escolha</span><strong>Para até 10 orçamentos</strong><small>Use quando precisar, sem prazo mensal.</small></div>
+            <div class="plan-price"><strong>R$ 9,90</strong><small>pagamento único</small></div>
+            <button class="button primary buy-quotes" data-plan="pacote10" type="button">Comprar até 10 orçamentos</button>
+          </article>
+        </div>
+        <p class="paywall-note" id="paywall-note"></p>
+        <a class="text-link" href="perfil.html#orcamentos">Voltar para minha conta</a>
+      </div>
+
+      <div class="progress-wrap" hidden>
         <div class="progress-line"><span id="progress-fill"></span></div>
         <ol class="progress" aria-label="Etapas do orçamento">
           <li class="active" data-progress="1"><span>1</span><small>Produto</small></li>
@@ -40,7 +72,7 @@
         </ol>
       </div>
 
-      <form id="quote-form" novalidate>
+      <form id="quote-form" novalidate hidden>
         <div class="step active" data-step="1">
           <div class="step-heading">
             <span class="step-kicker">Etapa 1 de 4</span>

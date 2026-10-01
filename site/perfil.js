@@ -13,6 +13,7 @@
     pagamentos: ["Mais praticidade para você.", "Organize suas preferências e métodos de pagamento."],
   };
   const methods = { pix: "Pix", boleto: "boleto", cartao: "cartão" };
+  const paymentLabels = { reembolsado: "Reembolsado", contestado: "Em contestação", recusado: "Recusado" };
   const labels = { recebido: "Recebido", em_analise: "Em análise", aguardando_cliente: "Aguardando você", aprovado: "Aprovado", pendente: "Pendente", pago: "Pago", paid: "Pago", open: "Em aberto", active: "Ativa", trialing: "Período de teste", canceled: "Cancelada", incomplete: "Incompleta", incomplete_expired: "Expirada", paused: "Pausada", past_due: "Pagamento pendente", unpaid: "Não paga", uncollectible: "Não recebida", void: "Anulada", assinado: "Assinado", aguardando_assinatura: "Aguardando assinatura", concluido: "Concluído", em_andamento: "Em andamento", cancelado: "Cancelado" };
   function node(tag, className, content) {
     const el = document.createElement(tag);
@@ -130,7 +131,7 @@
       right.append(node("strong", "", type === "assinaturas" && item.periodicidade ? `${value} / ${item.periodicidade}` : value));
       const positive = ["paid", "pago", "active", "assinado", "concluido"].includes(item.status);
       const pending = ["pendente", "open", "past_due", "unpaid", "incomplete"].includes(item.status);
-      right.append(node("span", `badge${positive ? " positive" : pending ? " pending" : ""}`, labels[item.status] || item.status || "Registrado"));
+      right.append(node("span", `badge${positive ? " positive" : pending ? " pending" : ""}`, paymentLabels[item.status] || labels[item.status] || item.status || "Registrado"));
       const link = safeLink(item.documento_url);
       if (link) {
         const anchor = node("a", "text-link", type === "contratos" ? "Baixar documento ↓" : "Ver fatura ↗");
@@ -158,12 +159,14 @@
     const billing = conta.pagamentos;
     preferencia(billing.preferencia);
     $("pagamento-pendente").hidden = billing.configurado;
-    $("form-portal").hidden = !billing.configurado;
+    $("form-portal").hidden = !(billing.portal_disponivel ?? billing.configurado);
     $("billing-mode").hidden = !billing.configurado;
     $("billing-mode").textContent = billing.modo === "teste" ? "AMBIENTE DE TESTES" : "PORTAL SEGURO";
     $("limite-metodos").hidden = !conta.tem_mais?.metodos;
     const target = $("lista-metodos"); target.replaceChildren();
-    if (billing.configurado && !billing.metodos.length) empty(target, "card", "Nenhum cartão cadastrado", "Use o portal de pagamentos para cadastrar e gerenciar seus cartões.");
+    if (billing.configurado && !billing.metodos.length) empty(target, "card",
+      billing.provedor === "mercadopago" ? "Pagamento protegido pelo Mercado Pago" : "Nenhum cartão cadastrado",
+      billing.provedor === "mercadopago" ? "Escolha entre os meios disponíveis no checkout a cada compra. Este site não armazena seus dados de cartão." : "Use o portal de pagamentos para cadastrar e gerenciar seus cartões.");
     billing.metodos.forEach((method) => {
       const row = node("article", "record");
       const box = node("span", "icon-box"); box.append(icon("card"));
@@ -184,7 +187,7 @@
     }
     target.replaceChildren();
     orcamentos.forEach((quote) => {
-      const row = node("article", "record");
+      const row = node("article", "record proposal-record");
       const box = node("span", "icon-box"); box.append(icon("quote"));
       const info = node("div", "record-info");
       info.append(node("h3", "", quote.codigo));
@@ -192,11 +195,35 @@
       info.append(node("p", "", `${quote.itens.length} ${quote.itens.length === 1 ? "item" : "itens"}: ${productNames}`));
       info.append(node("p", "date", `Enviado em ${data(quote.criado_em)} · ${quote.instalacao ? "Com instalação" : "Somente fornecimento"}`));
       const right = node("div", "record-meta");
-      right.append(node("strong", "", dinheiro(quote.estimativa_centavos, "BRL")));
+      right.append(node("strong", "", `Estimativa inicial: ${dinheiro(quote.estimativa_centavos, "BRL")}`));
       const positive = ["aprovado", "concluido"].includes(quote.status);
       const pending = ["recebido", "em_analise", "aguardando_cliente"].includes(quote.status);
       right.append(node("span", `badge${positive ? " positive" : pending ? " pending" : ""}`, labels[quote.status] || quote.status));
+      if (!["aprovado", "concluido"].includes(quote.status)) {
+        const remove = node("button", "remove-quote", "Remover orçamento");
+        remove.type = "button";
+        remove.addEventListener("click", async () => {
+          if (!window.confirm(`Deseja remover o orçamento ${quote.codigo}? O uso deste orçamento não será devolvido.`)) return;
+          remove.disabled = true;
+          remove.textContent = "Removendo…";
+          try {
+            const result = await ContaAPI.request(`/api/orcamentos/${encodeURIComponent(quote.codigo)}`, { method: "DELETE" });
+            orcamentos = (await ContaAPI.request("/api/orcamentos")).orcamentos;
+            renderQuotes();
+            mensagem(result.mensagem, true);
+          } catch (error) {
+            erro(error);
+            remove.disabled = false;
+            remove.textContent = "Remover orçamento";
+          }
+        });
+        right.append(remove);
+      }
       row.append(box, info, right);
+      row.append(PropostasUI.render(quote, false, async (notice) => {
+        orcamentos = (await ContaAPI.request("/api/orcamentos")).orcamentos;
+        renderQuotes(); mensagem(notice, true);
+      }));
       target.append(row);
     });
   }
@@ -258,19 +285,194 @@
     } catch (error) { erro(error); }
     finally { $("perfil-fields").disabled = false; $("senha-atual").value = ""; }
   });
+  const cropCanvas = $("crop-canvas");
+  const cropContext = cropCanvas.getContext("2d", { alpha: false });
+  const cropState = { image: null, url: null, zoom: 1, x: 0, y: 0, drag: null, saving: false, returnFocus: null };
+
+  function cropLimits() {
+    if (!cropState.image) return { x: 0, y: 0 };
+    const scale = Math.max(cropCanvas.width / cropState.image.naturalWidth, cropCanvas.height / cropState.image.naturalHeight) * cropState.zoom;
+    return {
+      x: Math.max(0, (cropState.image.naturalWidth * scale - cropCanvas.width) / 2),
+      y: Math.max(0, (cropState.image.naturalHeight * scale - cropCanvas.height) / 2),
+    };
+  }
+
+  function drawCrop() {
+    if (!cropState.image) return;
+    const scale = Math.max(cropCanvas.width / cropState.image.naturalWidth, cropCanvas.height / cropState.image.naturalHeight) * cropState.zoom;
+    const width = cropState.image.naturalWidth * scale;
+    const height = cropState.image.naturalHeight * scale;
+    const limits = cropLimits();
+    cropState.x = Math.max(-limits.x, Math.min(limits.x, cropState.x));
+    cropState.y = Math.max(-limits.y, Math.min(limits.y, cropState.y));
+    cropContext.fillStyle = "#dfe9ee";
+    cropContext.fillRect(0, 0, cropCanvas.width, cropCanvas.height);
+    cropContext.drawImage(cropState.image,
+      (cropCanvas.width - width) / 2 + cropState.x,
+      (cropCanvas.height - height) / 2 + cropState.y, width, height);
+  }
+
+  function resetCrop() {
+    cropState.zoom = 1;
+    cropState.x = 0;
+    cropState.y = 0;
+    $("crop-zoom").value = "100";
+    drawCrop();
+  }
+
+  function closeCrop() {
+    if (cropState.saving) return;
+    $("crop-modal").hidden = true;
+    document.body.classList.remove("crop-open");
+    cropState.drag = null;
+    cropState.image = null;
+    if (cropState.url) URL.revokeObjectURL(cropState.url);
+    cropState.url = null;
+    $("foto").disabled = false;
+    $("foto").value = "";
+    $("crop-status").textContent = "";
+    cropState.returnFocus?.focus();
+  }
+
+  async function loadCropImage(url) {
+    const image = new Image();
+    image.decoding = "async";
+    await new Promise((resolve, reject) => {
+      const timeout = window.setTimeout(() => reject(new Error("A imagem demorou demais para abrir.")), 15000);
+      const loaded = () => {
+        window.clearTimeout(timeout);
+        if (image.naturalWidth && image.naturalHeight) resolve();
+        else reject(new Error("Imagem sem dimensões válidas."));
+      };
+      const failed = () => {
+        window.clearTimeout(timeout);
+        reject(new Error("O navegador não conseguiu ler esta imagem."));
+      };
+      image.addEventListener("load", loaded, { once: true });
+      image.addEventListener("error", failed, { once: true });
+      image.src = url;
+      // `complete` can briefly be true with zero dimensions while a Blob URL is
+      // still being decoded. Only finish early when pixels are already available.
+      if (image.complete && image.naturalWidth && image.naturalHeight) loaded();
+    });
+    return image;
+  }
+
+  async function openCrop(file) {
+    if (cropState.url) URL.revokeObjectURL(cropState.url);
+    cropState.url = URL.createObjectURL(file);
+    let image;
+    try {
+      image = await loadCropImage(cropState.url);
+    } catch {
+      URL.revokeObjectURL(cropState.url);
+      const body = new FormData();
+      body.append("foto", file);
+      const compatible = await ContaAPI.requestBlob("/api/perfil/foto/preparar", { method: "POST", body });
+      cropState.url = URL.createObjectURL(compatible);
+      image = await loadCropImage(cropState.url);
+    }
+    cropState.image = image;
+    cropState.returnFocus = document.activeElement;
+    $("crop-modal").hidden = false;
+    document.body.classList.add("crop-open");
+    resetCrop();
+    $("crop-stage").focus();
+  }
+
   $("foto").addEventListener("change", async () => {
     const file = $("foto").files[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024 || (file.type && !["image/jpeg", "image/png", "image/webp"].includes(file.type))) {
-      mensagem("Escolha uma foto JPG, PNG ou WebP de até 2 MB."); $("foto").value = ""; return;
+    const supportedType = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"].includes(file.type);
+    const supportedName = /\.(?:jpe?g|png|webp|heic|heif)$/i.test(file.name);
+    if (file.size > 2 * 1024 * 1024 || (!supportedType && !supportedName)) {
+      mensagem("Escolha uma foto JPG, PNG, WebP ou HEIC de até 2 MB."); $("foto").value = ""; return;
     }
-    mensagem(""); $("foto").disabled = true; $("remover-foto").disabled = true; $("status-foto").textContent = "Enviando sua foto…";
-    const body = new FormData(); body.append("foto", file);
+    mensagem("");
+    $("foto").disabled = true;
+    try { await openCrop(file); }
+    catch (error) {
+      mensagem(error.message || "Não foi possível abrir essa imagem. Exporte-a como JPG, PNG ou WebP e tente novamente.");
+      if (cropState.url) URL.revokeObjectURL(cropState.url);
+      cropState.url = null;
+      $("foto").disabled = false;
+      $("foto").value = "";
+    }
+  });
+
+  $("crop-zoom").addEventListener("input", (event) => {
+    cropState.zoom = Number(event.target.value) / 100;
+    drawCrop();
+  });
+  $("crop-reset").addEventListener("click", resetCrop);
+  $("crop-cancel").addEventListener("click", closeCrop);
+  $("crop-close").addEventListener("click", closeCrop);
+  document.querySelector("[data-close-crop]").addEventListener("click", closeCrop);
+
+  const cropStage = $("crop-stage");
+  cropStage.addEventListener("pointerdown", (event) => {
+    if (!cropState.image || cropState.saving) return;
+    cropState.drag = { id: event.pointerId, clientX: event.clientX, clientY: event.clientY, x: cropState.x, y: cropState.y };
+    cropStage.setPointerCapture(event.pointerId);
+    cropStage.classList.add("dragging");
+  });
+  cropStage.addEventListener("pointermove", (event) => {
+    if (!cropState.drag || cropState.drag.id !== event.pointerId) return;
+    const factor = cropCanvas.width / cropStage.getBoundingClientRect().width;
+    cropState.x = cropState.drag.x + (event.clientX - cropState.drag.clientX) * factor;
+    cropState.y = cropState.drag.y + (event.clientY - cropState.drag.clientY) * factor;
+    drawCrop();
+  });
+  function endCropDrag(event) {
+    if (cropState.drag?.id !== event.pointerId) return;
+    cropState.drag = null;
+    cropStage.classList.remove("dragging");
+  }
+  cropStage.addEventListener("pointerup", endCropDrag);
+  cropStage.addEventListener("pointercancel", endCropDrag);
+  cropStage.addEventListener("keydown", (event) => {
+    const movement = event.shiftKey ? 20 : 6;
+    const directions = { ArrowLeft: [-movement, 0], ArrowRight: [movement, 0], ArrowUp: [0, -movement], ArrowDown: [0, movement] };
+    if (!directions[event.key]) return;
+    event.preventDefault();
+    cropState.x += directions[event.key][0];
+    cropState.y += directions[event.key][1];
+    drawCrop();
+  });
+
+  $("crop-save").addEventListener("click", async () => {
+    if (!cropState.image || cropState.saving) return;
+    cropState.saving = true;
+    $("crop-save").disabled = true;
+    $("crop-cancel").disabled = true;
+    $("crop-close").disabled = true;
+    $("crop-status").textContent = "Salvando sua foto…";
+    $("remover-foto").disabled = true;
     try {
+      const blob = await new Promise((resolve) => cropCanvas.toBlob(resolve, "image/webp", .9));
+      if (!blob) throw new Error("Não foi possível preparar a imagem.");
+      const body = new FormData();
+      body.append("foto", blob, "foto-perfil.webp");
       const result = await ContaAPI.request("/api/perfil/foto", { method: "POST", body });
-      usuario.foto_url = result.foto_url; avatar(); mensagem(result.mensagem, true);
-    } catch (error) { erro(error); }
-    finally { $("foto").disabled = false; $("remover-foto").disabled = false; $("foto").value = ""; $("status-foto").textContent = ""; }
+      usuario.foto_url = result.foto_url;
+      avatar();
+      cropState.saving = false;
+      closeCrop();
+      mensagem("Foto ajustada e salva com sucesso.", true);
+    } catch (error) {
+      cropState.saving = false;
+      $("crop-status").textContent = error.message || "Não foi possível salvar a foto.";
+    } finally {
+      $("crop-save").disabled = false;
+      $("crop-cancel").disabled = false;
+      $("crop-close").disabled = false;
+      $("remover-foto").disabled = false;
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !$("crop-modal").hidden) closeCrop();
   });
   $("remover-foto").addEventListener("click", async () => {
     $("remover-foto").disabled = true; $("foto").disabled = true;

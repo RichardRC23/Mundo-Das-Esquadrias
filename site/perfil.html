@@ -6,7 +6,9 @@
   <meta name="color-scheme" content="light">
   <title>Minha conta | Mundo das Esquadrias</title>
   <link rel="stylesheet" href="conta.css">
+  <link rel="stylesheet" href="propostas.css">
   <script src="api.js" defer></script>
+  <script src="propostas.js" defer></script>
   <script src="perfil.js" defer></script>
 </head>
 <body>
@@ -76,7 +78,7 @@
         </section>
         <section id="painel-perfil" data-panel="perfil" aria-label="Meu perfil" hidden>
           <div class="profile-grid">
-            <div class="panel photo-panel"><span class="avatar large" data-avatar>ME</span><h2 data-full-name>Sua conta</h2><p>Deixe seu perfil com a sua cara.</p><label class="button secondary file-label" for="foto">Alterar foto</label><input id="foto" type="file" accept="image/jpeg,image/png,image/webp" class="file-input"><button id="remover-foto" class="text-button" type="button" hidden>Remover foto</button><p class="hint">JPG, PNG ou WebP · até 2 MB<br>O recorte é feito no centro da foto.</p><p id="status-foto" class="hint" role="status"></p></div>
+            <div class="panel photo-panel"><span class="avatar large" data-avatar>ME</span><h2 data-full-name>Sua conta</h2><p>Deixe seu perfil com a sua cara.</p><label class="button secondary file-label" for="foto">Alterar foto</label><input id="foto" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" class="file-input sr-only"><button id="remover-foto" class="text-button" type="button" hidden>Remover foto</button><p class="hint">JPG, PNG, WebP ou HEIC · até 2 MB<br>Você poderá ajustar o enquadramento antes de salvar.</p><p id="status-foto" class="hint" role="status"></p></div>
             <form id="form-perfil" class="panel"><h2>Seus dados</h2><p class="panel-description">Mantenha suas informações de contato atualizadas.</p><fieldset id="perfil-fields"><div class="field"><label for="perfil-nome">Nome completo</label><input id="perfil-nome" name="nome" autocomplete="name" maxlength="120" required></div><div class="field"><label for="perfil-email">E-mail</label><input id="perfil-email" name="email" type="email" autocomplete="email" maxlength="254"></div><div class="field"><label for="perfil-telefone">Telefone com DDD</label><input id="perfil-telefone" name="telefone" type="tel" autocomplete="tel" maxlength="20" placeholder="(21) 99999-9999"></div><div class="field"><label for="senha-atual">Senha atual <span class="optional">ao mudar e-mail ou telefone</span></label><input id="senha-atual" name="senha_atual" type="password" autocomplete="current-password" aria-describedby="contact-hint"></div><p class="hint" id="contact-hint">Informe pelo menos e-mail ou telefone. Para alterar seu contato, confirme sua senha.</p><div class="form-footer"><button class="button primary" type="submit">Salvar alterações</button></div></fieldset></form>
           </div>
         </section>
@@ -92,6 +94,24 @@
       </div>
       <p class="account-footer">Mundo das Esquadrias <span>Qualidade em cada detalhe.</span></p>
     </main>
+  </div>
+
+  <div class="crop-modal" id="crop-modal" role="dialog" aria-modal="true" aria-labelledby="crop-title" hidden>
+    <div class="crop-backdrop" data-close-crop></div>
+    <section class="crop-dialog">
+      <div class="crop-heading"><div><p class="eyebrow">FOTO DE PERFIL</p><h2 id="crop-title">Ajuste sua foto</h2><p>Arraste a imagem para centralizar seu rosto e use o controle para aproximar.</p></div><button class="crop-close" id="crop-close" type="button" aria-label="Fechar editor">×</button></div>
+      <div class="crop-stage" id="crop-stage" tabindex="0" aria-label="Arraste para posicionar a foto">
+        <canvas id="crop-canvas" width="512" height="512" role="img" aria-label="Prévia circular da foto de perfil"></canvas>
+        <span class="crop-guide" aria-hidden="true"></span>
+      </div>
+      <div class="crop-controls">
+        <label for="crop-zoom"><span>Menos</span><strong>Zoom</strong><span>Mais</span></label>
+        <input id="crop-zoom" type="range" min="100" max="300" value="100" step="1">
+        <button class="text-button crop-reset" id="crop-reset" type="button">Centralizar novamente</button>
+      </div>
+      <p class="crop-status" id="crop-status" role="status" aria-live="polite"></p>
+      <div class="crop-actions"><button class="button secondary" id="crop-cancel" type="button">Cancelar</button><button class="button primary" id="crop-save" type="button">Salvar foto</button></div>
+    </section>
   </div>
 </body>
 </html>

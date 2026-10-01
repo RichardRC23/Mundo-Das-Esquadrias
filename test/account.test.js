@@ -242,6 +242,12 @@ test("photo uploads validate content and size, persist privately, and can be rem
   assertClientError(oversized);
 
   const png = await sharp({ create: { width: 80, height: 60, channels: 3, background: "#003866" } }).png().toBuffer();
+  const previewForm = new FormData();
+  previewForm.set("foto", new Blob([png], { type: "image/png" }), "foto.png");
+  const prepared = await user.request("/api/perfil/foto/preparar", { method: "POST", form: previewForm });
+  assert.equal(prepared.status, 200, prepared.body);
+  assert.match(prepared.headers.get("content-type"), /^image\/webp/);
+  assert.equal((await user.request("/api/perfil/foto")).status, 404, "Preparing a crop preview must not save the photo");
   const saved = await upload(png, "image/png", "foto.png");
   assert.ok([200, 201].includes(saved.status), saved.body);
   const photo = await user.request("/api/perfil/foto");
@@ -368,31 +374,97 @@ test("quote requests validate measurements, generate protocols, and stay isolate
 
   const visitor = client();
   await visitor.csrf();
-  const invalid = await visitor.request("/api/orcamentos", {
-    method: "POST", json: { ...contact, itens: [{ ...item, largura_cm: 0 }] },
-  });
-  assert.equal(invalid.status, 400, invalid.body);
-  const publicQuote = await visitor.request("/api/orcamentos", { method: "POST", json: contact });
-  assert.equal(publicQuote.status, 201, publicQuote.body);
-  assert.match(publicQuote.data.orcamento.codigo, /^MDE-\d{4}-\d{6}$/);
-  assert.equal((await visitor.request("/api/orcamentos")).status, 401);
+  assert.equal((await visitor.request("/api/orcamentos", { method: "POST", json: contact })).status, 401);
+  assert.equal((await visitor.request("/api/orcamentos/acesso")).status, 401);
 
   const alice = client();
   const bob = client();
   const aliceUser = await alice.register();
   await bob.register({ email: "bob@example.test", telefone: "21999990002" });
+  const initialAccess = await alice.request("/api/orcamentos/acesso");
+  assert.equal(initialAccess.data.acesso.restantes, 1);
+  const invalid = await alice.request("/api/orcamentos", {
+    method: "POST", json: { ...contact, itens: [{ ...item, largura_cm: 0 }] },
+  });
+  assert.equal(invalid.status, 400, invalid.body);
   const ownQuote = await alice.request("/api/orcamentos", {
     method: "POST", json: { ...contact, nome: "Cliente de Teste" },
   });
   assert.equal(ownQuote.status, 201, ownQuote.body);
+  assert.match(ownQuote.data.orcamento.codigo, /^MDE-\d{4}-\d{6}$/);
+  const exhausted = await alice.request("/api/orcamentos/acesso");
+  assert.equal(exhausted.data.acesso.restantes, 0);
+  assert.equal(exhausted.data.acesso.opcoes.individual.preco_centavos, 599);
+  assert.equal(exhausted.data.acesso.opcoes.pacote10.preco_centavos, 990);
+  assert.equal((await alice.request("/api/orcamentos", { method: "POST", json: contact })).status, 402);
   const mine = await alice.request("/api/orcamentos");
   assert.equal(mine.status, 200, mine.body);
   assert.equal(mine.data.orcamentos.length, 1);
   assert.equal(mine.data.orcamentos[0].itens[0].modelo, "De correr");
   assert.deepEqual((await bob.request("/api/orcamentos")).data.orcamentos, []);
+  const quoteRoute = `/api/orcamentos/${ownQuote.data.orcamento.codigo}`;
+  assert.equal((await bob.request(quoteRoute, { method: "DELETE" })).status, 404);
+  const removed = await alice.request(quoteRoute, { method: "DELETE" });
+  assert.equal(removed.status, 200, removed.body);
+  assert.deepEqual((await alice.request("/api/orcamentos")).data.orcamentos, []);
+  assert.equal((await alice.request("/api/orcamentos/acesso")).data.acesso.restantes, 0,
+    "Removing a quote must not restore a used credit");
   const stored = await db.get("SELECT usuario_id, itens_json FROM orcamentos WHERE codigo = ?", [ownQuote.data.orcamento.codigo]);
   assert.equal(stored.usuario_id, aliceUser.id);
   assert.equal(JSON.parse(stored.itens_json)[0].quantidade, 2);
+});
+
+test("proposal revisions and customer decisions are private, atomic and preserve accepted terms", async (t) => {
+  const { db, client } = await fixture(t);
+  const admin = client(), alice = client(), bob = client(), visitor = client();
+  const adminUser = await admin.register({ email: "propostas-admin@example.test", telefone: "21999990010" });
+  await db.run("UPDATE usuarios SET papel='admin' WHERE id=?", [adminUser.id]);
+  await alice.register();
+  await bob.register({ email: "bob@example.test", telefone: "21999990002" });
+  const request = { nome: "Alice", telefone: "21999990001", cidade: "Rio", itens: [{ categoria: "janela", modelo: "De correr", material: "vidro", largura_cm: 120, altura_cm: 100, quantidade: 1 }] };
+  const created = await alice.request("/api/orcamentos", { method: "POST", json: request });
+  const code = created.data.orcamento.codigo;
+  const row = await db.get("SELECT id FROM orcamentos WHERE codigo=?", [code]);
+  const route = `/api/admin/orcamentos/${row.id}/proposta`;
+  const responseRoute = `/api/orcamentos/${code}/resposta`;
+  const proposal = { versao: 0, valor_centavos: 250000, prazo: "15 dias úteis após medição", observacoes: "Vidro e instalação incluídos" };
+  assert.equal((await alice.request(route, { method: "POST", json: proposal })).status, 403);
+  assert.equal((await admin.request(route, { method: "POST", json: proposal, csrf: false })).status, 403);
+  for (const value of [0, -1, 1.5, "250000", null, true]) {
+    assert.equal((await admin.request(route, { method: "POST", json: { ...proposal, valor_centavos: value } })).status, 400);
+  }
+  assert.equal((await admin.request(route, { method: "POST", json: { ...proposal, prazo: "" } })).status, 400);
+  assert.equal((await admin.request(route, { method: "POST", json: proposal })).status, 201);
+  let own = (await alice.request("/api/orcamentos")).data.orcamentos[0];
+  assert.equal(own.propostas[0].valor_centavos, 250000);
+  assert.equal(own.proposta_versao, 1);
+  assert.deepEqual((await bob.request("/api/orcamentos")).data.orcamentos, []);
+  assert.equal((await bob.request(responseRoute, { method: "POST", json: { acao: "aceitar", versao: 1 } })).status, 404);
+  assert.equal((await alice.request(responseRoute, { method: "POST", json: { acao: "aceitar", versao: 1 }, csrf: false })).status, 403);
+  assert.equal((await alice.request(responseRoute, { method: "POST", json: { acao: "ajustes", versao: 1, mensagem: "" } })).status, 400);
+  assert.equal((await alice.request(responseRoute, { method: "POST", json: { acao: "ajustes", versao: 1, mensagem: "Preciso de prazo menor" } })).status, 200);
+  assert.equal((await admin.request(route, { method: "POST", json: { ...proposal, versao: 1 } })).status, 409);
+  assert.equal((await admin.request(route, { method: "POST", json: { ...proposal, versao: 2, prazo: "10 dias úteis após medição" } })).status, 201);
+  assert.equal((await alice.request(responseRoute, { method: "POST", json: { acao: "aceitar", versao: 1 } })).status, 409);
+  // Simultaneous decisions can never both win.
+  const results = await Promise.all(["aceitar", "ajustes"].map((acao) => alice.request(responseRoute, {
+    method: "POST", json: { acao, versao: 3, mensagem: "Outro prazo" },
+  })));
+  assert.deepEqual(results.map((r) => r.status).sort(), [200, 409]);
+  own = (await alice.request("/api/orcamentos")).data.orcamentos[0];
+  if (own.propostas.at(-1).situacao === "ajustes") {
+    await admin.request(route, { method: "POST", json: { ...proposal, versao: 4 } });
+    assert.equal((await alice.request(responseRoute, { method: "POST", json: { acao: "aceitar", versao: 5 } })).status, 200);
+  }
+  own = (await alice.request("/api/orcamentos")).data.orcamentos[0];
+  assert.equal(own.status, "aprovado");
+  assert.equal(own.propostas[0].resposta, "Preciso de prazo menor");
+  assert.equal(own.propostas.at(-1).situacao, "aceita");
+  assert.equal((await admin.request(route, { method: "POST", json: { ...proposal, versao: own.proposta_versao } })).status, 409);
+  assert.equal((await admin.request(`/api/admin/orcamentos/${row.id}/status`, { method: "PUT", json: { status: "em_analise" } })).status, 409);
+  await visitor.csrf();
+  const anonymous = await visitor.request("/api/orcamentos", { method: "POST", json: request });
+  assert.equal(anonymous.status, 401);
 });
 
 test("only administrators manage quotes and real price rules produce customer estimates", async (t) => {

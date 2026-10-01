@@ -14,92 +14,129 @@
 <body>
 
     <!-- Header -->
-    <header>
-        <div class="logo">
-            <img src="../img/Mundo das Esquadrias 2.jpg">
-            <h1>
-                Mundo das Esquadrias
-            </h1>
-        </div>
+    <header class="site-header">
+        <div class="header-inner">
+            <a class="logo" href="index.html" aria-label="Mundo das Esquadrias — início">
+                <img src="../img/Mundo das Esquadrias 2.jpg" alt="" width="52" height="52">
+                <div class="logo-texto">
+                    <h1 class="logo-nome">Mundo das Esquadrias</h1>
+                    <span class="logo-subtitulo">Alumínio e vidros</span>
+                </div>
+            </a>
 
-        <!-- BOTÃO DO MENU (HAMBURGER) -->
-    <div class="menu-btn" id="menu-btn">
-        <span></span>
-        <span></span>
-        <span></span>
-    </div>
-    
-        <!-- MENU-->
-        <nav id="menu">
-            <a href="#servicos">
-                Serviços
-            </a>
-            <a href="#galeria">
-                Galeria
-            </a>
-            <a href="#contato">
-                Contato
-            </a>
-            <a id="link-conta" class="link-conta" href="login.html">Logar/Cadastrar</a>
-        </nav>
+            <button class="menu-btn" id="menu-btn" type="button" aria-label="Abrir menu" aria-controls="menu" aria-expanded="false">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <nav id="menu" class="site-nav" aria-label="Menu principal">
+                <a class="nav-link" href="servicos.html">
+                    <span class="nav-link-copy"><strong>Serviços</strong><small>Conheça nossas soluções</small></span>
+                </a>
+                <a class="nav-link" href="galeria.html">
+                    <span class="nav-link-copy"><strong>Projetos</strong><small>Veja trabalhos realizados</small></span>
+                </a>
+                <a class="nav-link" href="contato.html">
+                    <span class="nav-link-copy"><strong>Contato</strong><small>Fale com nossa equipe</small></span>
+                </a>
+                <a class="nav-orcamento" data-orcamento-link href="login.html?next=orcamento">Pedir orçamento <span aria-hidden="true">↗</span></a>
+                <a id="link-conta" class="link-conta" href="login.html">Logar/Cadastrar</a>
+            </nav>
+        </div>
     </header>
 
-    <!-- BANNER -->
-    <section class="banner">
-        <h2>
-            Excelência em Alumínio, Vidros e Estruturas
-        </h2>
-        <p>
-            Portas • Janelas • Box • Fachadas • Fechamentos • Estruturas modernas
-        </p>
-        <a href="orcamento.html" class="btn">
-            Solicitar Orçamento
-        </a>
+    <!-- CARROSSEL DE TRABALHOS -->
+    <section class="banner carrossel" id="carrossel-trabalhos" aria-label="Trabalhos em destaque" tabindex="0">
+        <div class="carrossel-trilho">
+            <article class="carrossel-slide ativo" aria-hidden="false" data-titulo="Fachadas comerciais">
+                <img src="img/trabalhos/fachada-comercial.webp" alt="Fachada comercial moderna com grandes painéis de vidro e perfis de alumínio grafite">
+                <span class="slide-etiqueta">Imagem ilustrativa · Fachadas comerciais</span>
+            </article>
+            <article class="carrossel-slide" aria-hidden="true" data-titulo="Varandas envidraçadas">
+                <img src="img/trabalhos/varanda-envidracada.webp" alt="Varanda residencial ampla com fechamento em vidro transparente">
+                <span class="slide-etiqueta">Imagem ilustrativa · Varandas envidraçadas</span>
+            </article>
+            <article class="carrossel-slide" aria-hidden="true" data-titulo="Portas e janelas">
+                <img src="img/trabalhos/porta-aluminio.webp" alt="Entrada residencial contemporânea com porta e janelas de alumínio grafite">
+                <span class="slide-etiqueta">Imagem ilustrativa · Portas e janelas</span>
+            </article>
+            <article class="carrossel-slide" aria-hidden="true" data-titulo="Box de vidro">
+                <img src="img/trabalhos/box-vidro.webp" alt="Banheiro moderno com box de vidro temperado transparente">
+                <span class="slide-etiqueta">Imagem ilustrativa · Box de vidro</span>
+            </article>
+        </div>
+
+        <div class="banner-sombra" aria-hidden="true"></div>
+        <div class="banner-conteudo">
+            <span class="banner-destaque">Projetos feitos sob medida</span>
+            <h2>Excelência em Alumínio, Vidros e Estruturas</h2>
+            <p>Portas, janelas, box, fachadas e fechamentos com acabamento profissional.</p>
+            <div class="banner-acoes">
+                <a href="login.html?next=orcamento" class="btn" data-orcamento-link>Solicitar Orçamento Gratuito</a>
+                <a href="servicos.html" class="btn btn-secundario">Conhecer os serviços</a>
+            </div>
+            <ul class="banner-beneficios" aria-label="Diferenciais">
+                <li><span aria-hidden="true">✓</span> Projeto sob medida</li>
+                <li><span aria-hidden="true">✓</span> Atendimento direto</li>
+                <li><span aria-hidden="true">✓</span> Alumínio e vidro</li>
+            </ul>
+        </div>
+
+        <button class="carrossel-seta anterior" type="button" aria-label="Ver trabalho anterior">‹</button>
+        <button class="carrossel-seta proximo" type="button" aria-label="Ver próximo trabalho">›</button>
+        <div class="carrossel-indicadores" aria-label="Escolher trabalho">
+            <button class="ativo" type="button" aria-label="Mostrar fachada comercial" aria-current="true"></button>
+            <button type="button" aria-label="Mostrar varanda envidraçada"></button>
+            <button type="button" aria-label="Mostrar portas e janelas"></button>
+            <button type="button" aria-label="Mostrar box de vidro"></button>
+        </div>
+        <p class="sr-only" id="carrossel-status" aria-live="polite">Fachadas comerciais, imagem 1 de 4</p>
     </section>
 
     <!-- SERVIÇOS -->
     <section id="servicos" class="servicos">
-        <h2>
-            Nossos Serviços
-        </h2>
+        <div class="servicos-cabecalho">
+            <span class="secao-etiqueta">Soluções para cada ambiente</span>
+            <h2>Conforto, segurança e beleza em cada detalhe.</h2>
+            <p>Trabalhamos com alumínio e vidro para aproveitar melhor os espaços, valorizar o imóvel e tornar a rotina mais prática.</p>
+        </div>
 
         <div class="cards">
             <div class="card">
-                <h3>
-                    Portas e Janelas de Alumínio
-                </h3>
-                <p>
-                    Modelos modernos, alta durabilidade e acabamento profissional.
-                </p>
+                <div class="card-topo"><span class="card-icone" aria-hidden="true">▥</span><span class="card-numero">01</span></div>
+                <h3>Portas e Janelas de Alumínio</h3>
+                <p>Indicadas para quartos, salas, cozinhas e áreas externas. O alumínio oferece resistência à chuva e ao sol, exige pouca manutenção e permite diferentes modelos de abertura.</p>
+                <div class="card-beneficios" aria-label="Benefícios"><span>Mais ventilação</span><span>Durabilidade</span><span>Fácil manutenção</span></div>
+                <p class="card-indicado"><strong>Ideal para:</strong> melhorar iluminação, circulação de ar e segurança sem perder espaço.</p>
             </div>
 
             <div class="card">
-                <h3>
-                    Box de Vidro Temperado
-                </h3>
-                <p>
-                    Segurança, elegância e instalação rápida.
-                </p>
+                <div class="card-topo"><span class="card-icone" aria-hidden="true">◇</span><span class="card-numero">02</span></div>
+                <h3>Box de Vidro Temperado</h3>
+                <p>Ajuda a manter o banheiro seco e organizado, evitando que a água alcance outras áreas. O vidro temperado une segurança, praticidade e um visual leve para o ambiente.</p>
+                <div class="card-beneficios" aria-label="Benefícios"><span>Banheiro mais seco</span><span>Fácil limpeza</span><span>Visual moderno</span></div>
+                <p class="card-indicado"><strong>Ideal para:</strong> separar a área do banho e melhorar o aproveitamento de banheiros pequenos ou amplos.</p>
             </div>
 
             <div class="card">
-                <h3>
-                    Fachadas e Fechamentos
-                </h3>
-                <p>
-                    Projetos sob medida para empresas e residências.
-                </p>
+                <div class="card-topo"><span class="card-icone" aria-hidden="true">▦</span><span class="card-numero">03</span></div>
+                <h3>Fachadas e Fechamentos</h3>
+                <p>Combinam vidro e alumínio para proteger áreas residenciais ou comerciais sem bloquear a luz natural. Também ajudam a criar uma aparência mais atual e profissional.</p>
+                <div class="card-beneficios" aria-label="Benefícios"><span>Proteção</span><span>Luz natural</span><span>Valorização do imóvel</span></div>
+                <p class="card-indicado"><strong>Ideal para:</strong> lojas, varandas, áreas de serviço, entradas e ambientes que precisam de proteção e visibilidade.</p>
             </div>
 
             <div class="card">
-                <h3>
-                    Manutenção e Reformas
-                </h3>
-                <p>
-                    Troca de roldanas de box, perfis de alumínio, vidros e ajustes gerais.
-                </p>
+                <div class="card-topo"><span class="card-icone" aria-hidden="true">↻</span><span class="card-numero">04</span></div>
+                <h3>Manutenção e Reformas</h3>
+                <p>Corrigimos dificuldades para abrir e fechar, folgas, peças desgastadas e vidros danificados. Uma manutenção adequada recupera o funcionamento e pode evitar uma troca completa.</p>
+                <div class="card-beneficios" aria-label="Benefícios"><span>Mais segurança</span><span>Economia</span><span>Maior vida útil</span></div>
+                <p class="card-indicado"><strong>Ideal para:</strong> troca de roldanas, perfis, vidros, ferragens, vedações e ajustes gerais.</p>
             </div>
         </div>
+
+        <a class="servicos-link" href="servicos.html">Ver todos os serviços <span aria-hidden="true">→</span></a>
     </section>
 
     <!-- GALERIA -->
@@ -109,36 +146,62 @@
         </h2>
 
         <div class="grid">
-            <img src="img/ex1.jpg" alt="Projeto 1">
-            <img src="img/ex2.jpg" alt="Projeto 2">
-            <img src="img/ex3.jpg" alt="Projeto 3">
-            <img src="img/ex4.jpg" alt="Projeto 4">
+            <article class="galeria-vazia"><span>＋</span><strong>Fachadas</strong><small>Foto real em breve</small></article>
+            <article class="galeria-vazia"><span>＋</span><strong>Portas e janelas</strong><small>Foto real em breve</small></article>
+            <article class="galeria-vazia"><span>＋</span><strong>Box de vidro</strong><small>Foto real em breve</small></article>
+            <article class="galeria-vazia"><span>＋</span><strong>Fechamentos</strong><small>Foto real em breve</small></article>
         </div>
     </section>
 
     <!-- CONTATO -->
     <section id="contato" class="contato">
-        <h2>
-            Entre em Contato
-        </h2>
+        <div class="contato-container">
+            <div class="contato-intro">
+                <span class="secao-etiqueta">Estamos prontos para atender</span>
+                <h2>Vamos conversar sobre o seu projeto?</h2>
+                <p>Conte sua ideia, tire dúvidas ou solicite uma orientação. Nossa equipe ajuda você a encontrar a melhor solução em alumínio e vidro para o seu ambiente.</p>
 
-        <p>
-            📞 (+ 55) 21 96407-0134</p>
-        <p>
-            📧 email: </p>
-        <p>
-            📍 Rio De Janeiro – Rio De Janeiro</p>
+                <div class="contato-acoes">
+                    <a href="https://wa.me/5521964070134" class="btn contato-whatsapp" target="_blank" rel="noopener">
+                        <span class="whatsapp-icone" aria-hidden="true">✓</span>
+                        <span><strong>Falar pelo WhatsApp</strong><small>Atendimento direto com a empresa</small></span>
+                    </a>
+                    <a href="contato.html" class="contato-link">Ver todos os canais <span aria-hidden="true">→</span></a>
+                </div>
+            </div>
 
-        <a href="https://wa.me/5521964070134" class="btn" target="_blank" rel="noopener">
-            Fale no WhatsApp
-        </a>
+            <div class="contato-informacoes" aria-label="Informações de contato">
+                <article class="contato-item">
+                    <span class="contato-icone" aria-hidden="true">☎</span>
+                    <div><small>Telefone e WhatsApp</small><a href="tel:+5521964070134">(21) 96407-0134</a></div>
+                </article>
+                <article class="contato-item">
+                    <span class="contato-icone" aria-hidden="true">⌖</span>
+                    <div><small>Região de atendimento</small><strong>Rio de Janeiro — RJ</strong></div>
+                </article>
+                <article class="contato-item">
+                    <span class="contato-icone" aria-hidden="true">▤</span>
+                    <div><small>Orçamento pelo site</small><strong>Informe produtos e medidas</strong></div>
+                </article>
+                <div class="contato-observacao">
+                    <span aria-hidden="true">i</span>
+                    <p>As medidas podem ser aproximadas. Os detalhes são confirmados antes da execução do serviço.</p>
+                </div>
+            </div>
+        </div>
     </section>
 
     <!-- RODAPÉ -->
-    <footer>
-        <p>
-            © 2025 Mundo das Esquadrias — Todos os direitos reservados.
-        </p>
+    <footer class="site-footer">
+        <div class="footer-conteudo">
+            <div class="footer-marca">
+                <a href="index.html" class="footer-logo" aria-label="Voltar ao início"><img src="../img/Mundo das Esquadrias 2.jpg" alt="" width="46" height="46"><span><strong>Mundo das Esquadrias</strong><small>Alumínio e vidros</small></span></a>
+                <p>Soluções sob medida para tornar cada ambiente mais seguro, funcional e valorizado.</p>
+            </div>
+            <nav class="footer-navegacao" aria-label="Navegação do rodapé"><strong>Explore</strong><a href="servicos.html">Serviços</a><a href="galeria.html">Projetos</a><a href="contato.html">Contato</a></nav>
+            <div class="footer-atendimento"><strong>Atendimento</strong><a href="tel:+5521964070134">(21) 96407-0134</a><span>Rio de Janeiro — RJ</span><a href="https://wa.me/5521964070134" target="_blank" rel="noopener">Conversar no WhatsApp →</a></div>
+        </div>
+        <div class="footer-base"><p>© 2026 Mundo das Esquadrias. Todos os direitos reservados.</p><span>Feito com cuidado para nossos clientes.</span></div>
     </footer>
 <script src="api.js"></script>
 <script src="script.js"></script>

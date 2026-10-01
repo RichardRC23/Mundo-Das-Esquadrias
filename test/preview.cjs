@@ -13,9 +13,11 @@ const { createApp } = require("../server");
   await instance.db.run("INSERT INTO compras(usuario_id,titulo,descricao,status,valor_centavos) VALUES(?,?,?,?,?)", [user.lastID, "Janelas de alumínio", "Pedido de demonstração para conferir o layout", "em_andamento", 240000]);
   await instance.db.run("INSERT INTO contratos(usuario_id,titulo,status,valor_centavos) VALUES(?,?,?,?)", [user.lastID, "Instalação de esquadrias", "assinado", 240000]);
   await instance.db.run("INSERT INTO precos_orcamento(categoria,modelo,descricao,preco_m2_centavos,preco_minimo_centavos,instalacao_centavos) VALUES(?,?,?,?,?,?)", ["janela", "De correr", "Linha padrão de demonstração", 95000, 80000, 18000]);
-  await instance.db.run(`INSERT INTO orcamentos(codigo,usuario_id,nome,email,telefone,cidade,bairro,itens_json,instalacao,estimativa_centavos,status)
+  const demoQuote = await instance.db.run(`INSERT INTO orcamentos(codigo,usuario_id,nome,email,telefone,cidade,bairro,itens_json,instalacao,estimativa_centavos,status)
     VALUES(?,?,?,?,?,?,?,?,?,?,?)`, ["MDE-2026-000001", user.lastID, "Ana Ribeiro", "ana@example.test", "21999990001", "Rio de Janeiro", "Centro",
     JSON.stringify([{ categoria: "janela", material: "aluminio_vidro", modelo: "De correr", largura_cm: 120, altura_cm: 100, quantidade: 2, ambiente: "Sala" }]), 1, 264000, "recebido"]);
+  await instance.db.run("INSERT INTO usos_orcamento(usuario_id,periodo_chave,slot,orcamento_id) VALUES(?,?,?,?)",
+    [user.lastID, "gratuito", 1, demoQuote.lastID]);
   instance.app.get("/__preview", (req, res, next) => {
     req.session.usuario = { id: user.lastID, nome: "Ana Ribeiro" };
     req.session.save((error) => error ? next(error) : res.redirect("/perfil.html"));

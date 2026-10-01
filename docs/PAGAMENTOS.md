@@ -1,5 +1,9 @@
 # Pagamentos, assinaturas e contratos
 
+## Mercado Pago e Apple Pay — atualização de 30/09/2026
+
+As novas compras podem usar Mercado Pago Checkout Pro, com confirmação automática por webhooks assinados. Veja o [guia de configuração e pendências](MERCADO_PAGO.md). O Apple Pay **não está integrado para cobrança**: há somente preparação da verificação de domínio. Conta, autorização comercial, certificados e implementação/homologação do fluxo Apple Pay ainda são necessários. O restante deste documento descreve a integração Stripe preservada e os dados da conta.
+
 A área do cliente distingue três informações: compras/serviços e contratos cadastrados pela empresa, assinaturas recorrentes existentes na Stripe e uma preferência de pagamento informada pelo cliente. As listas começam vazias. Não há compras, cartões, assinaturas nem contratos de demonstração misturados com contas reais.
 
 ## O que funciona sem uma conta Stripe
@@ -26,14 +30,19 @@ APP_ORIGIN=http://localhost:3000
 # Copie a chave secreta sk_test_... diretamente do painel Stripe para seu .env.
 STRIPE_SECRET_KEY=
 
+# IDs de preços únicos: 1 orçamento por R$ 5,99 e pacote de 10 por R$ 9,90.
+STRIPE_QUOTE_SINGLE_PRICE_ID=price_...
+STRIPE_QUOTE_PACK_PRICE_ID=price_...
+
 # Opcional: ID bpc_... de uma configuração específica do portal.
 # Deixe vazio para usar a configuração padrão salva no painel.
 STRIPE_PORTAL_CONFIGURATION=
 ```
 
-4. Reinicie `node server.js`. Acesse o perfil, escolha gerenciar pagamentos e confirme a senha. Esse POST cria um cliente Stripe para a conta autenticada se ainda não existir vínculo; abrir o perfil nunca cria clientes nem cobranças.
-5. Faça a validação no ambiente de teste antes de inserir uma chave de produção. Configurações do portal de teste e de produção são independentes. Use a [documentação de testes da Stripe](https://docs.stripe.com/testing) para os dados de teste.
-6. Para produção, use HTTPS, `NODE_ENV=production`, `APP_ORIGIN` com o domínio real e a configuração de portal correspondente. A chave permanece apenas no servidor.
+4. Crie na Stripe dois preços de pagamento único: **R$ 5,99** para 1 orçamento e **R$ 9,90** para o pacote de até 10. Copie os identificadores `price_...` para as variáveis correspondentes. O servidor rejeita preços diferentes, outra moeda ou preços recorrentes.
+5. Reinicie `node server.js`. Acesse o perfil, escolha gerenciar pagamentos e confirme a senha. Esse POST cria um cliente Stripe para a conta autenticada se ainda não existir vínculo; abrir o perfil nunca cria clientes nem cobranças.
+6. Faça a validação no ambiente de teste antes de inserir uma chave de produção. Configurações do portal de teste e de produção são independentes. Use a [documentação de testes da Stripe](https://docs.stripe.com/testing) para os dados de teste.
+7. Para produção, use HTTPS, `NODE_ENV=production`, `APP_ORIGIN` com o domínio real e a configuração de portal correspondente. A chave permanece apenas no servidor.
 
 O servidor pode usar uma chave restrita `rk_...` se ela tiver as permissões necessárias para consultar a própria conta, clientes, métodos de pagamento, faturas, assinaturas e produtos, além de criar clientes e sessões de portal. Uma chave inválida ou falta de permissão gera erro explícito; não mostra dados vazios como se a consulta tivesse funcionado.
 
@@ -43,7 +52,7 @@ Cada conta local é vinculada a um ID de cliente Stripe em `payment_customers`. 
 
 Ao criar uma assinatura ou fatura no painel da Stripe, a empresa deve utilizar o cliente que o sistema já criou para aquele usuário. É possível encontrá-lo no painel pelos metadados `mundo_usuario_id` e `mundo_instalacao`, ou pelo vínculo no banco local. Não cadastre outra pessoa nem conecte manualmente IDs recebidos pelo navegador. Clientes Stripe antigos exigem uma migração administrativa com verificação da titularidade.
 
-O portal permite gerenciar assinaturas **já existentes**, de acordo com sua configuração. Este projeto não contém catálogo de planos, contratação inicial, carrinho, checkout, emissão de Pix/boleto ou fluxo de assinatura eletrônica de contrato. Esses fluxos exigem definição comercial dos produtos, preços e processo de contratação. Não há disparo de cobranças pelo backend implementado aqui.
+O site oferece **1 orçamento adicional por R$ 5,99** ou um **pacote para até 10 orçamentos por R$ 9,90**, ambos em pagamento único. Quando os créditos terminarem, o cliente pode comprar novamente. A compra abre o Stripe Checkout e os dados do cartão não passam pelo servidor da empresa. O crédito só é liberado quando o servidor consulta a sessão e confirma pagamento, titularidade, valor, moeda e produto; o simples retorno à página de sucesso não libera a cota. O projeto não contém carrinho, emissão própria de Pix/boleto nem assinatura eletrônica de contrato.
 
 ## Dados locais de compras e contratos
 
@@ -66,11 +75,15 @@ As tabelas são criadas automaticamente. O painel é somente de consulta para o 
 - `GET /api/conta`: listas e preferências da sessão atual; nunca aceita ID de usuário/cliente fornecido pelo navegador. Retorna `compras`, `contratos`, `assinaturas`, `pagamentos`, `limites` e `tem_mais`.
 - `PUT /api/pagamentos/preferencia`: JSON `{ "metodo": "pix" }`, `"boleto"`, `"cartao"` ou `null` para limpar. Salva somente a preferência do usuário autenticado.
 - `POST /api/pagamentos/portal`: JSON `{ "senha_atual": "..." }`; exige senha correta, proteção de origem/CSRF do servidor e limite de tentativas. Retorna URL temporária do portal. Sem Stripe configurada, retorna 503.
+- `POST /api/pagamentos/orcamentos/checkout`: cria uma sessão autenticada de pagamento único para `individual` ou `pacote10`.
+- `POST /api/pagamentos/orcamentos/confirmar`: consulta a sessão paga no Stripe e concede os créditos de forma idempotente.
+- `GET /api/orcamentos/acesso`: informa a cota da conta atual. A primeira solicitação é gratuita; depois são consumidos os créditos comprados.
+- `DELETE /api/orcamentos/:codigo`: remove o orçamento da visão do titular, sem devolver o uso e sem apagar o histórico administrativo.
 - `GET /api/contratos/:id/documento`: arquivo apenas para o titular autenticado.
 
 O resumo exibe no máximo os 100 registros mais recentes de cada lista e informa `tem_mais` quando houver outros. Consultas financeiras vêm da Stripe a cada carregamento; detalhes adicionais de faturas/assinaturas ficam no portal. Assinaturas com múltiplos itens, preço variável ou cobrança por uso não recebem um valor de renovação estimado incorretamente no painel. O próximo período é informativo e pode diferir da data de uma cobrança efetiva.
 
-Não há webhooks neste estágio: a página consulta os dados atuais, sem automatizar liberação de serviços, entrega ou conciliação. Antes de automatizar consequências de um pagamento/cancelamento, implemente [webhooks assinados da Stripe](https://docs.stripe.com/webhooks), persistência de eventos e processamento idempotente. Nunca conceda acesso a serviço pago apenas por um redirecionamento de sucesso.
+No fluxo legado **Stripe**, ainda não há webhooks: a cota é liberada somente após a confirmação autenticada consultar a sessão paga na Stripe, nunca apenas pelo redirecionamento de sucesso. Para conciliação automática nesse provedor, falta implementar [webhooks assinados da Stripe](https://docs.stripe.com/webhooks). O fluxo Mercado Pago já possui webhook próprio e persistência idempotente; não utiliza o endpoint da Stripe.
 
 ## Preservação do vínculo financeiro
 
