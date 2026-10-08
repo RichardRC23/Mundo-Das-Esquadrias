@@ -4,4 +4,5 @@ node_modules/
 !.env.example
 data/
 test-results/
+tmp/
 *.log

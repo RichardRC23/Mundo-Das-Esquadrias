@@ -1,6 +1,14 @@
 (() => {
   const $ = (id) => document.getElementById(id);
   const categories = { porta: "Porta", janela: "Janela", box: "Box", fachada: "Fachada", guarda_corpo: "Guarda-corpo", fechamento: "Fechamento", espelho: "Espelho ou vidro", cobertura: "Cobertura", manutencao: "Manutenção", outro: "Outro" };
+  const doorSpecs = (item) => item.categoria === "porta" ? [
+    item.numero_folhas && item.numero_folhas !== "A definir" ? `${item.numero_folhas} folha${item.numero_folhas === "1" ? "" : "s"}` : "",
+    item.configuracao_folhas, item.sentido_abertura && `Abertura: ${item.sentido_abertura}`,
+    item.trilhos, item.fechadura && `Fechadura: ${item.fechadura}`, item.puxador && `Puxador: ${item.puxador}`,
+    item.soleira && `Soleira: ${item.soleira}`, item.tipo_instalacao && `Instalação: ${item.tipo_instalacao}`,
+    item.retirada_existente && `Retirada existente: ${item.retirada_existente}`,
+    item.tela_mosquiteira && `Tela: ${item.tela_mosquiteira}`, item.automatizacao && `Automatização: ${item.automatizacao}`,
+  ].filter((value) => value && !value.endsWith("A definir") && value !== "A definir").join(" · ") : "";
   const statusLabels = { recebido: "Recebido", em_analise: "Em análise", aguardando_cliente: "Aguardando cliente", aprovado: "Aprovado", concluido: "Concluído", cancelado: "Cancelado" };
   const productModels = {
     porta: ["De correr", "De giro", "Pivotante", "Camarão / articulada", "Porta-balcão", "Outro modelo"],
@@ -90,10 +98,16 @@
       if (quote.observacoes) contact.append(element("p", "", `Observações: ${quote.observacoes}`));
       const itemColumn = element("div"); itemColumn.append(element("h3", "", "Itens solicitados"));
       const itemList = element("div", "quote-items");
-      quote.itens.forEach((item) => {
+      quote.itens.forEach((item, index) => {
         const box = element("div", "quote-item");
         box.append(element("strong", "", `${categories[item.categoria] || item.categoria} · ${item.modelo}`));
         box.append(element("small", "", `${item.largura_cm} × ${item.altura_cm} cm · ${item.quantidade} un. · ${item.material.replaceAll("_", " ")}${item.ambiente ? ` · ${item.ambiente}` : ""}`));
+        const technical = [item.linha_aluminio, item.cor, item.tipo_vidro, item.composicao_vidro, item.espessura_vidro]
+          .filter((value) => value && value !== "A definir").join(" · ");
+        if (technical) box.append(element("small", "item-specifications", technical));
+        if (doorSpecs(item)) box.append(element("small", "item-specifications", doorSpecs(item)));
+        const detail = quote.estimativa_detalhes?.[index];
+        if (detail) box.append(element("small", "item-estimate", `Estimativa do item: ${money(detail.subtotal_centavos)}`));
         itemList.append(box);
       });
       itemColumn.append(itemList);

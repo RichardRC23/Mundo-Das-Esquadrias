@@ -81,34 +81,34 @@
           </div>
           <div class="product-grid" id="product-grid">
             <button type="button" class="product-card" data-category="porta" data-material="aluminio_vidro">
-              <span class="product-icon">▯</span><strong>Portas</strong><small>De correr, giro, pivotante e outras</small>
+              <span class="material-visual visual-porta" aria-hidden="true"></span><strong>Portas</strong><small>De correr, giro, pivotante e outras</small>
             </button>
             <button type="button" class="product-card" data-category="janela" data-material="aluminio_vidro">
-              <span class="product-icon">▦</span><strong>Janelas</strong><small>Correr, maxim-ar, basculante e outras</small>
+              <span class="material-visual visual-janela" aria-hidden="true"></span><strong>Janelas</strong><small>Correr, maxim-ar, basculante e outras</small>
             </button>
             <button type="button" class="product-card" data-category="box" data-material="vidro">
-              <span class="product-icon">◇</span><strong>Box de banheiro</strong><small>Frontal, canto, até o teto e especiais</small>
+              <span class="material-visual visual-box" aria-hidden="true"></span><strong>Box de banheiro</strong><small>Frontal, canto, até o teto e especiais</small>
             </button>
             <button type="button" class="product-card" data-category="fachada" data-material="aluminio_vidro">
-              <span class="product-icon">▤</span><strong>Fachadas</strong><small>Comerciais e residenciais</small>
+              <span class="material-visual visual-fachada" aria-hidden="true"></span><strong>Fachadas</strong><small>Comerciais e residenciais</small>
             </button>
             <button type="button" class="product-card" data-category="guarda_corpo" data-material="aluminio_vidro">
-              <span class="product-icon">▱</span><strong>Guarda-corpo</strong><small>Varandas, escadas e mezaninos</small>
+              <span class="material-visual visual-guarda_corpo" aria-hidden="true"></span><strong>Guarda-corpo</strong><small>Varandas, escadas e mezaninos</small>
             </button>
             <button type="button" class="product-card" data-category="fechamento" data-material="aluminio_vidro">
-              <span class="product-icon">▥</span><strong>Fechamentos</strong><small>Varanda, área gourmet e divisórias</small>
+              <span class="material-visual visual-fechamento" aria-hidden="true"></span><strong>Fechamentos</strong><small>Varanda, área gourmet e divisórias</small>
             </button>
             <button type="button" class="product-card" data-category="espelho" data-material="vidro">
-              <span class="product-icon">◫</span><strong>Espelhos e vidros</strong><small>Espelhos, tampos, prateleiras e painéis</small>
+              <span class="material-visual visual-espelho" aria-hidden="true"></span><strong>Espelhos e vidros</strong><small>Espelhos, tampos, prateleiras e painéis</small>
             </button>
             <button type="button" class="product-card" data-category="cobertura" data-material="aluminio_vidro">
-              <span class="product-icon">⌂</span><strong>Coberturas</strong><small>Claraboias, toldos e estruturas</small>
+              <span class="material-visual visual-cobertura" aria-hidden="true"></span><strong>Coberturas</strong><small>Claraboias, toldos e estruturas</small>
             </button>
             <button type="button" class="product-card" data-category="manutencao" data-material="manutencao">
-              <span class="product-icon">⌁</span><strong>Manutenção</strong><small>Roldanas, ajustes, vidros e reparos</small>
+              <span class="material-visual visual-manutencao" aria-hidden="true"></span><strong>Manutenção</strong><small>Roldanas, ajustes, vidros e reparos</small>
             </button>
             <button type="button" class="product-card" data-category="outro" data-material="outro">
-              <span class="product-icon">＋</span><strong>Outro projeto</strong><small>Descreva uma necessidade diferente</small>
+              <span class="material-visual visual-outro" aria-hidden="true"></span><strong>Outro projeto</strong><small>Descreva uma necessidade diferente</small>
             </button>
           </div>
           <p class="field-error" id="product-error" role="alert"></p>
@@ -160,6 +160,60 @@
                 <option value="Outro perfil">Outro perfil</option>
               </select>
             </label>
+            <fieldset class="field full specification-group" id="door-specs" hidden>
+              <legend>Especificações da porta</legend>
+              <p>Informe como deseja a fabricação. Se ainda não souber, a equipe confirma na visita técnica.</p>
+              <div class="specification-grid">
+                <label class="field"><span>Número de folhas</span><select id="item-numero-folhas">
+                  <option value="A definir">A definir</option><option value="1">1 folha</option><option value="2">2 folhas</option>
+                  <option value="3">3 folhas</option><option value="4">4 folhas</option><option value="5">5 folhas</option>
+                  <option value="6">6 folhas</option><option value="8">8 folhas</option>
+                </select></label>
+                <label class="field"><span>Configuração das folhas</span><select id="item-configuracao-folhas">
+                  <option value="A definir">A definir</option><option value="Todas móveis">Todas móveis</option>
+                  <option value="1 móvel e demais fixas">1 móvel e demais fixas</option><option value="2 móveis e demais fixas">2 móveis e demais fixas</option>
+                  <option value="Laterais fixas e centrais móveis">Laterais fixas e centrais móveis</option>
+                  <option value="Todas de giro">Todas de giro</option><option value="Articuladas">Articuladas / camarão</option>
+                </select></label>
+                <label class="field"><span>Sentido de abertura</span><select id="item-sentido-abertura">
+                  <option value="A definir">A definir no local</option><option value="Direita">Para a direita</option>
+                  <option value="Esquerda">Para a esquerda</option><option value="Ambos os lados">Para ambos os lados</option>
+                  <option value="Para dentro">Para dentro</option><option value="Para fora">Para fora</option>
+                </select></label>
+                <label class="field"><span>Trilhos</span><select id="item-trilhos">
+                  <option value="A definir">A definir</option><option value="Sem trilho">Sem trilho</option>
+                  <option value="1 trilho">1 trilho</option><option value="2 trilhos">2 trilhos</option>
+                  <option value="3 trilhos">3 trilhos</option><option value="4 trilhos">4 trilhos</option>
+                </select></label>
+                <label class="field"><span>Fechadura</span><select id="item-fechadura">
+                  <option value="A definir">A definir</option><option value="Padrão com chave">Padrão com chave</option>
+                  <option value="Bico de papagaio">Bico de papagaio</option><option value="Multiponto">Multiponto</option>
+                  <option value="Digital">Digital</option><option value="Sem fechadura">Sem fechadura</option>
+                </select></label>
+                <label class="field"><span>Puxador</span><select id="item-puxador">
+                  <option value="A definir">A definir</option><option value="Concha">Concha</option><option value="Alça">Alça</option>
+                  <option value="Tubular">Tubular</option><option value="Embutido">Embutido</option><option value="Sem puxador">Sem puxador</option>
+                </select></label>
+                <label class="field"><span>Soleira ou guia inferior</span><select id="item-soleira">
+                  <option value="A definir">A definir</option><option value="Convencional">Convencional</option>
+                  <option value="Embutida">Embutida</option><option value="Baixa acessível">Baixa / acessível</option>
+                  <option value="Sem soleira">Sem soleira</option>
+                </select></label>
+                <label class="field"><span>Tipo de instalação</span><select id="item-tipo-instalacao">
+                  <option value="A definir">A definir</option><option value="Vão novo">Vão novo</option>
+                  <option value="Substituição">Substituir porta existente</option><option value="Adequação do vão">Adequar o vão existente</option>
+                </select></label>
+                <label class="field"><span>Retirar porta existente?</span><select id="item-retirada-existente">
+                  <option value="A definir">A definir após visita</option><option value="Sim">Sim</option><option value="Não">Não</option>
+                </select></label>
+                <label class="field"><span>Tela mosquiteira?</span><select id="item-tela-mosquiteira">
+                  <option value="A definir">A definir</option><option value="Sim">Sim</option><option value="Não">Não</option>
+                </select></label>
+                <label class="field"><span>Automatização?</span><select id="item-automatizacao">
+                  <option value="A definir">A definir</option><option value="Sim">Sim, com motor</option><option value="Não">Não</option>
+                </select></label>
+              </div>
+            </fieldset>
             <label class="field glass-field">
               <span>Cor ou acabamento do vidro</span>
               <select id="item-vidro">
@@ -240,7 +294,7 @@
           <div class="step-heading compact">
             <span class="step-kicker">Etapa 4 de 4</span>
             <h2>Confira sua solicitação</h2>
-            <p>O preço será calculado pela equipe após validar materiais, medidas e condições de instalação.</p>
+            <p>Veja a estimativa de cada item e o total antes de enviar. A equipe confirmará tudo após a medição técnica.</p>
           </div>
           <div id="review-content" class="review-content"></div>
           <div class="price-notice" id="price-notice"><span>i</span><p><strong>Por que o valor não aparece agora?</strong> Cada projeto é feito sob medida. A equipe confirmará perfil, tipo de vidro, ferragens, acesso e instalação antes de informar o preço final.</p></div>
@@ -256,6 +310,7 @@
         <h2>Orçamento enviado com sucesso!</h2>
         <p>Seu protocolo é <strong id="success-code"></strong>. Guarde esse número para acompanhar o atendimento.</p>
         <p class="success-estimate" id="success-estimate" hidden></p>
+        <div class="success-visuals" id="success-visuals" aria-label="Visualização dos itens do orçamento"></div>
         <div class="success-actions">
           <a class="button whatsapp" id="whatsapp-link" href="#" target="_blank" rel="noopener">Continuar pelo WhatsApp</a>
           <a class="button ghost" href="index.html">Voltar ao início</a>

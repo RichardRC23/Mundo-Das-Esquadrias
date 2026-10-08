@@ -26,7 +26,9 @@ O painel está em `/admin.html` e exige uma conta marcada como administradora no
 
 O comando não cria usuário nem altera senha; apenas concede a função administrativa à conta encontrada. Não coloque o e-mail do administrador no código público.
 
-No painel é possível consultar solicitações, alterar a situação do atendimento e cadastrar preços por categoria e modelo. Cada regra usa preço por metro quadrado, valor mínimo do item e instalação por unidade. O formulário só apresenta estimativa quando todos os modelos do pedido possuem uma regra ativa. Os valores devem ser cadastrados pela empresa com sua tabela comercial real.
+No painel é possível consultar solicitações, alterar a situação do atendimento e cadastrar preços por categoria e modelo. Cada regra usa preço por metro quadrado, valor mínimo do item e instalação por unidade. Uma tabela inicial de referência do Rio de Janeiro, com data-base de outubro de 2026, cobre todos os modelos do formulário. Linha de alumínio, cor, tipo, composição e espessura do vidro ajustam o valor do produto. O formulário apresenta produto, instalação e subtotal de cada item, além do total estimado; a conta do cliente preserva o detalhamento calculado no momento do envio.
+
+Os preços iniciais são estimativas de mercado e não substituem a tabela comercial da empresa. Ao salvar um preço pelo painel, a referência daquele modelo é substituída sem ser recriada nas próximas inicializações. Medição técnica, ferragens especiais, acesso, acabamento e condições do local continuam sujeitos à proposta final.
 
 Para testar com Live Server, deixe o Node rodando e abra `http://localhost:5500/site/index.html` (ou `/index.html` se o Live Server usa `site` como raiz). O arquivo `api.js` reconhece a porta 5500 e usa o Node na porta 3000, mantendo o mesmo hostname para os cookies. Em produção, o site e a API devem usar o mesmo domínio HTTPS.
 

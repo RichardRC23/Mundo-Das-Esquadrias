@@ -362,9 +362,12 @@ test("contract downloads enforce ownership and reject unsafe stored paths", asyn
 test("quote requests validate measurements, generate protocols, and stay isolated by account", async (t) => {
   const { db, client } = await fixture(t);
   const item = {
-    categoria: "janela", material: "aluminio_vidro", modelo: "De correr",
+    categoria: "porta", material: "aluminio_vidro", modelo: "De correr",
     linha_aluminio: "Suprema", cor: "Preto", tipo_vidro: "Incolor",
     composicao_vidro: "Temperado", espessura_vidro: "8 mm",
+    numero_folhas: "4", configuracao_folhas: "2 móveis e demais fixas", sentido_abertura: "Ambos os lados",
+    trilhos: "2 trilhos", fechadura: "Multiponto", puxador: "Tubular", soleira: "Embutida",
+    tipo_instalacao: "Substituição", retirada_existente: "Sim", tela_mosquiteira: "Não", automatizacao: "Não",
     largura_cm: 120, altura_cm: 100, quantidade: 2, ambiente: "Sala", detalhes: "",
   };
   const contact = {
@@ -387,6 +390,10 @@ test("quote requests validate measurements, generate protocols, and stay isolate
     method: "POST", json: { ...contact, itens: [{ ...item, largura_cm: 0 }] },
   });
   assert.equal(invalid.status, 400, invalid.body);
+  const invalidSpecification = await alice.request("/api/orcamentos", {
+    method: "POST", json: { ...contact, itens: [{ ...item, numero_folhas: "7" }] },
+  });
+  assert.equal(invalidSpecification.status, 400, invalidSpecification.body);
   const ownQuote = await alice.request("/api/orcamentos", {
     method: "POST", json: { ...contact, nome: "Cliente de Teste" },
   });
@@ -402,6 +409,15 @@ test("quote requests validate measurements, generate protocols, and stay isolate
   assert.equal(mine.data.orcamentos.length, 1);
   assert.equal(mine.data.orcamentos[0].itens[0].modelo, "De correr");
   assert.deepEqual((await bob.request("/api/orcamentos")).data.orcamentos, []);
+  const pdfRoute = `/api/orcamentos/${ownQuote.data.orcamento.codigo}/pdf`;
+  const pdf = await alice.request(pdfRoute);
+  assert.equal(pdf.status, 200, pdf.body);
+  assert.match(pdf.headers.get("content-type"), /^application\/pdf/);
+  assert.match(pdf.headers.get("content-disposition"), new RegExp(`orcamento-${ownQuote.data.orcamento.codigo}\\.pdf`));
+  assert.equal(pdf.buffer.subarray(0, 5).toString(), "%PDF-");
+  assert.ok(pdf.buffer.length > 5000);
+  assert.equal((await bob.request(pdfRoute)).status, 404);
+  assert.equal((await visitor.request(pdfRoute)).status, 401);
   const quoteRoute = `/api/orcamentos/${ownQuote.data.orcamento.codigo}`;
   assert.equal((await bob.request(quoteRoute, { method: "DELETE" })).status, 404);
   const removed = await alice.request(quoteRoute, { method: "DELETE" });
@@ -412,6 +428,8 @@ test("quote requests validate measurements, generate protocols, and stay isolate
   const stored = await db.get("SELECT usuario_id, itens_json FROM orcamentos WHERE codigo = ?", [ownQuote.data.orcamento.codigo]);
   assert.equal(stored.usuario_id, aliceUser.id);
   assert.equal(JSON.parse(stored.itens_json)[0].quantidade, 2);
+  assert.equal(JSON.parse(stored.itens_json)[0].numero_folhas, "4");
+  assert.equal(JSON.parse(stored.itens_json)[0].fechadura, "Multiponto");
 });
 
 test("proposal revisions and customer decisions are private, atomic and preserve accepted terms", async (t) => {
@@ -492,7 +510,9 @@ test("only administrators manage quotes and real price rules produce customer es
   })).status, 409);
   const publicCatalog = await client().request("/api/catalogo/precos");
   assert.equal(publicCatalog.status, 200, publicCatalog.body);
-  assert.equal(publicCatalog.data.precos.length, 1);
+  assert.ok(publicCatalog.data.precos.length >= 50);
+  assert.equal(publicCatalog.data.referencia.data, "2026-10-08");
+  assert.equal(publicCatalog.data.ajustes.espessura_vidro["10 mm"], 12000);
 
   await customer.register({ email: "orcamento@example.test", telefone: "21999990006" });
   const created = await customer.request("/api/orcamentos", {
@@ -501,18 +521,22 @@ test("only administrators manage quotes and real price rules produce customer es
       nome: "Cliente Orçamento", telefone: "21999990006", cidade: "Rio de Janeiro", instalacao: true,
       itens: [{
         categoria: "janela", material: "aluminio_vidro", modelo: "De correr",
-        largura_cm: 120, altura_cm: 100, quantidade: 2,
+        largura_cm: 120, altura_cm: 100, quantidade: 2, espessura_vidro: "10 mm",
       }],
     },
   });
   assert.equal(created.status, 201, created.body);
-  assert.equal(created.data.orcamento.estimativa_centavos, 280000);
+  assert.equal(created.data.orcamento.estimativa_centavos, 328000);
   const own = await customer.request("/api/orcamentos");
-  assert.equal(own.data.orcamentos[0].estimativa_centavos, 280000);
+  assert.equal(own.data.orcamentos[0].estimativa_centavos, 328000);
+  assert.equal(own.data.orcamentos[0].estimativa_detalhes[0].produto_unitario_centavos, 144000);
+  assert.equal(own.data.orcamentos[0].estimativa_detalhes[0].instalacao_unitaria_centavos, 20000);
+  assert.equal(own.data.orcamentos[0].estimativa_detalhes[0].subtotal_centavos, 328000);
 
   const adminQuotes = await admin.request("/api/admin/orcamentos");
   assert.equal(adminQuotes.status, 200, adminQuotes.body);
   assert.equal(adminQuotes.data.orcamentos[0].telefone, "21999990006");
+  assert.equal(adminQuotes.data.orcamentos[0].estimativa_detalhes[0].subtotal_centavos, 328000);
   const quoteId = adminQuotes.data.orcamentos[0].id;
   const updated = await admin.request(`/api/admin/orcamentos/${quoteId}/status`, {
     method: "PUT", json: { status: "aprovado" },

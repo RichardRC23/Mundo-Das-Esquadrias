@@ -54,6 +54,17 @@
     try { return new Intl.NumberFormat("pt-BR", { style: "currency", currency: currency || "BRL" }).format(amount / 100); }
     catch { return "Valor a consultar"; }
   }
+  function doorSpecs(item) {
+    if (item.categoria !== "porta") return "";
+    return [
+      item.numero_folhas && item.numero_folhas !== "A definir" ? `${item.numero_folhas} folha${item.numero_folhas === "1" ? "" : "s"}` : "",
+      item.configuracao_folhas, item.sentido_abertura && `Abertura: ${item.sentido_abertura}`,
+      item.trilhos, item.fechadura && `Fechadura: ${item.fechadura}`, item.puxador && `Puxador: ${item.puxador}`,
+      item.soleira && `Soleira: ${item.soleira}`, item.tipo_instalacao && `Instalação: ${item.tipo_instalacao}`,
+      item.retirada_existente && `Retirada existente: ${item.retirada_existente}`,
+      item.tela_mosquiteira && `Tela: ${item.tela_mosquiteira}`, item.automatizacao && `Automatização: ${item.automatizacao}`,
+    ].filter((value) => value && !value.endsWith("A definir") && value !== "A definir").join(" · ");
+  }
   function avatar() {
     const initials = (usuario.nome || "Minha conta").trim().split(/\s+/).slice(0, 2).map((s) => s[0] || "").join("").toUpperCase();
     document.querySelectorAll("[data-avatar]").forEach((el) => {
@@ -193,12 +204,29 @@
       info.append(node("h3", "", quote.codigo));
       const productNames = quote.itens.map((item) => item.modelo || "Item").join(", ");
       info.append(node("p", "", `${quote.itens.length} ${quote.itens.length === 1 ? "item" : "itens"}: ${productNames}`));
+      if (quote.estimativa_detalhes?.length === quote.itens.length) {
+        const breakdown = node("div", "quote-price-breakdown");
+        quote.itens.forEach((item, index) => {
+          const detail = quote.estimativa_detalhes[index];
+          breakdown.append(node("p", "", `${item.quantidade}× ${item.modelo}: ${dinheiro(detail.subtotal_centavos, "BRL")}`));
+          const technical = [item.linha_aluminio, item.cor, item.tipo_vidro, item.composicao_vidro, item.espessura_vidro]
+            .filter((value) => value && value !== "A definir").join(" · ");
+          if (technical) breakdown.append(node("p", "quote-specifications", technical));
+          if (doorSpecs(item)) breakdown.append(node("p", "quote-specifications", doorSpecs(item)));
+        });
+        info.append(breakdown);
+      }
       info.append(node("p", "date", `Enviado em ${data(quote.criado_em)} · ${quote.instalacao ? "Com instalação" : "Somente fornecimento"}`));
       const right = node("div", "record-meta");
       right.append(node("strong", "", `Estimativa inicial: ${dinheiro(quote.estimativa_centavos, "BRL")}`));
       const positive = ["aprovado", "concluido"].includes(quote.status);
       const pending = ["recebido", "em_analise", "aguardando_cliente"].includes(quote.status);
       right.append(node("span", `badge${positive ? " positive" : pending ? " pending" : ""}`, labels[quote.status] || quote.status));
+      const pdf = node("a", "download-quote", "Baixar orçamento em PDF");
+      pdf.href = ContaAPI.url(`/api/orcamentos/${encodeURIComponent(quote.codigo)}/pdf`);
+      pdf.target = "_blank";
+      pdf.rel = "noopener noreferrer";
+      right.append(pdf);
       if (!["aprovado", "concluido"].includes(quote.status)) {
         const remove = node("button", "remove-quote", "Remover orçamento");
         remove.type = "button";
