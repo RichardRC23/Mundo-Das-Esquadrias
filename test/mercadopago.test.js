@@ -169,8 +169,8 @@ test("Mercado Pago: checkout, signed webhooks and reconciliation use isolated da
     assert.equal(result.data.status, "pendente");
     assert.equal(await count("creditos_orcamento"), 0);
   });
-  await t.test("wrong amount, receiver, currency and environment cannot grant credits", async () => {
-    for (const overrides of [{ transaction_amount: 0.01 }, { collector_id: 987 }, { currency_id: "USD" }, { live_mode: true }]) {
+  await t.test("wrong amount, receiver, currency and malformed environment cannot grant credits", async () => {
+    for (const overrides of [{ transaction_amount: 0.01 }, { collector_id: 987 }, { currency_id: "USD" }, { live_mode: "true" }]) {
       payments.set("101", makePayment("101", overrides));
       assert.equal((await webhook("101")).status, 409);
     }
@@ -178,7 +178,9 @@ test("Mercado Pago: checkout, signed webhooks and reconciliation use isolated da
     assert.equal(await count("creditos_orcamento"), 0);
   });
   await t.test("parallel signed retries and return reconciliation credit a purchase exactly once", async () => {
-    payments.set("100", makePayment("100", { date_last_updated: "2026-09-30T12:01:00Z" }));
+    // Mercado Pago currently reports live_mode=true for payments made between
+    // its test users, even though the checkout ran in Sandbox.
+    payments.set("100", makePayment("100", { live_mode: true, date_last_updated: "2026-09-30T12:01:00Z" }));
     const responses = await Promise.all(Array.from({ length: 8 }, () => webhook("100")));
     assert.ok(responses.every((r) => r.status === 200));
     assert.equal((await request("/api/pagamentos/mercadopago/confirmar", { referencia: reference })).data.status, "pago");
