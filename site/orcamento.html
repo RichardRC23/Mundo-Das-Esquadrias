@@ -320,7 +320,24 @@
   </main>
 
   <footer class="quote-footer"><p>© 2026 Mundo das Esquadrias · Rio de Janeiro</p><a href="index.html#contato">Precisa de ajuda?</a></footer>
+  <dialog id="visual-viewer" class="visual-viewer" aria-labelledby="viewer-title" aria-describedby="viewer-help">
+    <header class="viewer-header"><h2 id="viewer-title">Visualização ampliada</h2><button type="button" id="viewer-close" class="button ghost" autofocus>Fechar ×</button></header>
+    <p id="viewer-description"></p>
+    <div id="viewer-viewport" class="viewer-viewport" tabindex="0" aria-label="Modelo ampliado. Use mais e menos para zoom e as setas para mover.">
+      <div id="viewer-scene" class="viewer-scene"></div>
+    </div>
+    <div class="viewer-controls" aria-label="Controles da imagem">
+      <button type="button" id="viewer-minus" class="button ghost" aria-label="Diminuir zoom">−</button>
+      <label class="viewer-zoom">Zoom <input id="viewer-zoom" type="range" min="100" max="300" step="10" value="100"><output id="viewer-zoom-value" for="viewer-zoom">100%</output></label>
+      <button type="button" id="viewer-plus" class="button ghost" aria-label="Aumentar zoom">+</button>
+      <button type="button" id="viewer-motion" class="button ghost">Pausar rotação</button>
+      <button type="button" id="viewer-front" class="button ghost">Ver de frente</button>
+      <button type="button" id="viewer-reset" class="button ghost">Reiniciar visão</button>
+    </div>
+    <p id="viewer-help">Imagem ilustrativa com giro em perspectiva. Pause para observar os detalhes. Amplie com + e −, a roda do mouse ou dois dedos e arraste para mover.</p>
+  </dialog>
   <script src="api.js"></script>
   <script src="orcamento.js"></script>
+  <script src="visualizador.js"></script>
 </body>
 </html>

@@ -56,3 +56,9 @@ O `.env`, os bancos em `data` e `node_modules` foram retirados do índice do Git
 `npm.cmd test` executa testes com bancos temporários separados, sem Stripe real. Cobrem login, sessão, CSRF, acesso entre contas, perfil, foto, contratos, orçamento gratuito, créditos avulsos, checkout simulado, administração, preços e preferência de pagamento. A prévia visual de desenvolvimento `node test/preview.cjs` roda em 3100 com dados fictícios isolados; não use esse script para publicar o site.
 
 O armazenamento de sessões usa a mesma versão atual do `sqlite3` declarada pelo projeto, sem uma segunda cópia antiga. Execute `npm.cmd audit` e os testes antes de cada publicação.
+
+## Publicação no Render
+
+O arquivo `render.yaml` prepara um Web Service Node com domínio HTTPS, plano compatível com disco persistente, banco em `/opt/render/project/src/data` e segredo de sessão gerado pelo Render. As credenciais do Mercado Pago não ficam no repositório.
+
+Consulte o [passo a passo de publicação e ativação do Mercado Pago](docs/RENDER.md). A implantação usa um serviço pago porque o banco SQLite e as sessões precisam sobreviver a reinicializações e novos deploys.

@@ -11,6 +11,7 @@ const bcrypt = require("bcrypt");
 process.env.STRIPE_SECRET_KEY = "sk_test_offline_fixture_not_a_real_key";
 process.env.STRIPE_QUOTE_SINGLE_PRICE_ID = "price_singlefixture";
 process.env.STRIPE_QUOTE_PACK_PRICE_ID = "price_packfixture";
+process.env.PAYMENT_PROVIDER = "stripe";
 const customers = new Map();
 const keys = new Map();
 const portals = [];

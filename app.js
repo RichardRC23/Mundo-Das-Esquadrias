@@ -50,7 +50,9 @@ async function createApp(options = {}) {
   const sessionSecret = options.sessionSecret || process.env.SESSION_SECRET;
   if (!sessionSecret) throw new Error("Crie o arquivo .env com SESSION_SECRET. Consulte .env.example.");
   const production = process.env.NODE_ENV === "production";
-  const origin = new URL(options.origin || process.env.APP_ORIGIN || `http://localhost:${process.env.PORT || 3000}`).origin;
+  const renderOrigin = process.env.RENDER_EXTERNAL_HOSTNAME
+    ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME}` : null;
+  const origin = new URL(options.origin || process.env.APP_ORIGIN || renderOrigin || `http://localhost:${process.env.PORT || 3000}`).origin;
   if (production && !origin.startsWith("https://")) throw new Error("APP_ORIGIN deve usar HTTPS em produção.");
   fs.mkdirSync(dataDir, { recursive: true });
   const raw = await new Promise((resolve, reject) => {
@@ -111,6 +113,14 @@ async function createApp(options = {}) {
     next();
   });
   app.use(express.json({ limit: "32kb" }));
+  app.get("/api/health", async (_req, res) => {
+    try {
+      await db.get("SELECT 1 AS ok");
+      res.json({ status: "ok" });
+    } catch {
+      res.status(503).json({ status: "indisponivel" });
+    }
+  });
   const store = new SQLiteStore({ db: "sessoes.db", dir: dataDir, concurrentDB: false });
   app.use(session({
     store, secret: sessionSecret, resave: false, saveUninitialized: false,

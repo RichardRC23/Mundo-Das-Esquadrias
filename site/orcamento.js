@@ -20,10 +20,23 @@ document.addEventListener("DOMContentLoaded", () => {
     aluminio_vidro: "Alumínio com vidro", aluminio: "Somente alumínio", vidro: "Somente vidro",
     manutencao: "Manutenção / reparo", outro: "A definir",
   };
-  const visualClasses = {
-    porta: "visual-porta", janela: "visual-janela", box: "visual-box", fachada: "visual-fachada",
-    guarda_corpo: "visual-guarda_corpo", fechamento: "visual-fechamento", espelho: "visual-espelho",
-    cobertura: "visual-cobertura", manutencao: "visual-manutencao", outro: "visual-outro",
+  const frameFinishes = {
+    Branco: ["#f7f7f2", "#c9ced0"], Preto: ["#1d2328", "#080b0d"], Bronze: ["#76543e", "#3f2b20"],
+    "Natural fosco": ["#c2c9cc", "#7f898e"], Amadeirado: ["#9a6034", "#4d2c18"], "A definir": ["#aeb8bd", "#68757c"],
+  };
+  const glassFinishes = {
+    Incolor: ["rgba(198,235,247,.48)", "rgba(102,176,207,.22)"], Fumê: ["rgba(75,91,101,.64)", "rgba(25,37,45,.42)"],
+    Verde: ["rgba(113,184,166,.54)", "rgba(45,111,102,.3)"], Bronze: ["rgba(177,133,91,.56)", "rgba(92,60,38,.3)"],
+    "Extra clear": ["rgba(224,249,251,.38)", "rgba(142,221,228,.18)"], Refletivo: ["rgba(124,174,198,.72)", "rgba(62,107,133,.5)"],
+    "Jateado ou fantasia": ["rgba(225,235,237,.86)", "rgba(170,188,193,.66)"], Espelho: ["rgba(195,207,214,.94)", "rgba(86,105,117,.75)"],
+    "A definir": ["rgba(198,235,247,.48)", "rgba(102,176,207,.22)"],
+  };
+  const realisticImages = {
+    porta: "img/orcamento-realista/porta.webp", janela: "img/orcamento-realista/janela.webp",
+    box: "img/orcamento-realista/box.webp", fachada: "img/orcamento-realista/fachada.webp",
+    guarda_corpo: "img/orcamento-realista/guarda-corpo.webp", fechamento: "img/orcamento-realista/fechamento.webp",
+    espelho: "img/orcamento-realista/espelho.webp", cobertura: "img/orcamento-realista/cobertura.webp",
+    manutencao: "img/orcamento-realista/manutencao.webp", outro: "img/orcamento-realista/outro.webp",
   };
   const doorSpecificationLabels = {
     numero_folhas: "Folhas", configuracao_folhas: "Configuração", sentido_abertura: "Abertura",
@@ -52,11 +65,113 @@ document.addEventListener("DOMContentLoaded", () => {
     "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;",
   })[character]);
 
+  function doorModelClass(model) {
+    if (/camarão|articulada/i.test(model)) return "door-folding";
+    if (/pivotante/i.test(model)) return "door-pivot";
+    if (/giro/i.test(model)) return "door-swing";
+    if (/balcão/i.test(model)) return "door-balcony";
+    return "door-sliding";
+  }
+
+  function configuredDoorVisual(item) {
+    const inferredLeaves = /correr|balcão/i.test(item.modelo) ? 2 : 1;
+    const leaves = Math.min(8, Math.max(1, Number.parseInt(item.numero_folhas, 10) || inferredLeaves));
+    const [frame, frameShadow] = frameFinishes[item.cor] || frameFinishes["A definir"];
+    const [glass, glassShadow] = glassFinishes[item.tipo_vidro] || glassFinishes["A definir"];
+    const thickness = Math.min(12, Math.max(4, Number.parseInt(item.espessura_vidro, 10) || 6));
+    const ratio = Math.min(1.9, Math.max(.56, Number(item.largura_cm) / Number(item.altura_cm) || .86));
+    const line = /suprema/i.test(item.linha_aluminio) ? "line-suprema" : /gold/i.test(item.linha_aluminio) ? "line-gold" : /fachada/i.test(item.linha_aluminio) ? "line-facade" : "line-standard";
+    const handle = item.puxador && !/sem|definir/i.test(item.puxador) ? item.puxador : "";
+    const lock = item.fechadura && !/sem|definir/i.test(item.fechadura) ? item.fechadura : "";
+    const direction = /direita/i.test(item.sentido_abertura) ? "open-right" : /esquerda/i.test(item.sentido_abertura) ? "open-left" : "open-center";
+    const threshold = /sem soleira/i.test(item.soleira) ? "threshold-none" : /embutida/i.test(item.soleira) ? "threshold-embedded" : /baixa/i.test(item.soleira) ? "threshold-low" : "threshold-standard";
+    const materialClass = item.material === "aluminio" ? "solid-panels" : item.material === "vidro" ? "frameless-panels" : "";
+    const activeLeaf = Math.max(0, Math.floor((leaves - 1) / 2));
+    const panels = Array.from({ length: leaves }, (_, index) => `<span class="configured-door-leaf${index === activeLeaf ? " active-leaf" : ""}" style="--leaf:${index}">
+      <span class="configured-glass"><i></i></span>
+      ${index === activeLeaf ? `${handle ? `<span class="configured-handle ${/tubular|alça/i.test(handle) ? "long-handle" : ""}" title="Puxador ${escapeHtml(handle)}"></span>` : ""}${lock ? `<span class="configured-lock${/digital/i.test(lock) ? " digital-lock" : ""}" title="Fechadura ${escapeHtml(lock)}"></span>` : ""}` : ""}
+    </span>`).join("");
+    const railCount = Math.min(4, Math.max(0, Number.parseInt(item.trilhos, 10) || (/correr/i.test(item.modelo) ? 2 : 0)));
+    const rails = Array.from({ length: railCount }, (_, index) => `<i style="--rail:${index}"></i>`).join("");
+    return `<div class="configured-door-wrap" aria-hidden="true" style="--frame:${frame};--frame-shadow:${frameShadow};--glass:${glass};--glass-shadow:${glassShadow};--glass-edge:${thickness}px;--door-ratio:${ratio};--leaves:${leaves}">
+      <div class="configured-door ${doorModelClass(item.modelo)} ${line} ${direction} ${threshold} ${materialClass}">
+        ${item.automatizacao === "Sim" ? "<span class=\"configured-motor\"></span>" : ""}
+        <div class="configured-door-leaves">${panels}</div>
+        ${rails ? `<span class="configured-rails">${rails}</span>` : ""}
+        ${item.tela_mosquiteira === "Sim" ? "<span class=\"configured-screen\"></span>" : ""}
+      </div>
+      <span class="configured-door-shadow"></span>
+    </div>`;
+  }
+
+  function modelVariant(model) {
+    if (/maxim/i.test(model)) return "variant-maxim";
+    if (/basculante/i.test(model)) return "variant-basculante";
+    if (/guilhotina/i.test(model)) return "variant-guilhotina";
+    if (/fixa|fixo/i.test(model)) return "variant-fixed";
+    if (/canto/i.test(model)) return "variant-corner";
+    if (/abrir|giro/i.test(model)) return "variant-open";
+    if (/teto/i.test(model)) return "variant-tall";
+    if (/pele|structural/i.test(model)) return "variant-structural";
+    if (/cortina|articulad/i.test(model)) return "variant-folding";
+    if (/autoportante/i.test(model)) return "variant-frameless";
+    if (/corrimão/i.test(model)) return "variant-railing";
+    if (/tampo|prateleira/i.test(model)) return "variant-horizontal";
+    if (/claraboia/i.test(model)) return "variant-skylight";
+    if (/toldo/i.test(model)) return "variant-awning";
+    if (/policarbonato/i.test(model)) return "variant-polycarbonate";
+    if (/roldana/i.test(model)) return "variant-rollers";
+    if (/vedação/i.test(model)) return "variant-seal";
+    if (/fechadura|puxador/i.test(model)) return "variant-hardware";
+    return "variant-standard";
+  }
+
+  function configuredArchitecturalVisual(item) {
+    const [frame, frameShadow] = frameFinishes[item.cor] || frameFinishes["A definir"];
+    const [glass, glassShadow] = glassFinishes[item.tipo_vidro] || glassFinishes["A definir"];
+    const thickness = Math.min(12, Math.max(4, Number.parseInt(item.espessura_vidro, 10) || 6));
+    const ratio = Math.min(2.1, Math.max(.58, Number(item.largura_cm) / Number(item.altura_cm) || 1.15));
+    const counts = { janela: /fixa|maxim/i.test(item.modelo) ? 1 : /basculante/i.test(item.modelo) ? 3 : /guilhotina/i.test(item.modelo) ? 2 : 4,
+      box: /abrir/i.test(item.modelo) ? 1 : /banheira/i.test(item.modelo) ? 3 : 2, fachada: 8, guarda_corpo: 3,
+      fechamento: /divisória/i.test(item.modelo) ? 3 : 5, espelho: 1, cobertura: 3, manutencao: 1, outro: 4 };
+    const count = counts[item.categoria] || 2;
+    const panes = Array.from({ length: count }, (_, index) => `<span class="model-panel" style="--panel:${index}"><i></i></span>`).join("");
+    const style = `--frame:${frame};--frame-shadow:${frameShadow};--glass:${glass};--glass-shadow:${glassShadow};--glass-edge:${thickness}px;--model-ratio:${ratio};--panels:${count}`;
+    const variant = modelVariant(item.modelo);
+    let model;
+    if (item.categoria === "janela") model = `<div class="architectural-model window-model ${variant}"><div class="model-panels">${panes}</div><span class="window-sill"></span></div>`;
+    else if (item.categoria === "box") model = `<div class="architectural-model shower-model ${variant}"><div class="model-panels">${panes}</div><span class="shower-handle"></span><span class="shower-base"></span></div>`;
+    else if (item.categoria === "fachada") model = `<div class="architectural-model facade-model ${variant}"><div class="model-panels">${panes}</div><span class="facade-door"></span><span class="facade-roof"></span></div>`;
+    else if (item.categoria === "guarda_corpo") model = `<div class="architectural-model guard-model ${variant}"><div class="model-panels">${panes}</div><span class="guard-rail"></span><span class="guard-posts"></span></div>`;
+    else if (item.categoria === "fechamento") model = `<div class="architectural-model enclosure-model ${variant}"><div class="model-panels">${panes}</div><span class="enclosure-track"></span></div>`;
+    else if (item.categoria === "espelho") model = `<div class="architectural-model mirror-model ${variant}"><div class="model-panels">${panes}</div></div>`;
+    else if (item.categoria === "cobertura") model = `<div class="architectural-model canopy-model ${variant}"><div class="model-panels">${panes}</div><span class="canopy-supports"></span></div>`;
+    else if (item.categoria === "manutencao") model = `<div class="architectural-model repair-model ${variant}"><span class="repair-window"></span><span class="repair-tool"></span><span class="repair-detail"></span></div>`;
+    else model = `<div class="architectural-model custom-model ${variant}"><div class="model-panels">${panes}</div><span class="custom-roof"></span><span class="custom-floor"></span></div>`;
+    return `<div class="configured-product-wrap configured-${item.categoria}" aria-hidden="true" style="${style}">${model}<span class="configured-product-shadow"></span></div>`;
+  }
+
+  function visualDescription(item) {
+    const details = [
+      item.modelo, item.linha_aluminio, item.cor,
+      item.categoria === "porta" && item.numero_folhas && item.numero_folhas !== "A definir" ? `${item.numero_folhas} folhas` : "",
+      item.composicao_vidro, item.tipo_vidro, item.espessura_vidro,
+      item.categoria === "porta" && item.trilhos && item.trilhos !== "A definir" ? item.trilhos : "",
+      item.categoria === "porta" && item.puxador && !/sem|definir/i.test(item.puxador) ? `Puxador ${item.puxador}` : "",
+      item.categoria === "porta" && item.fechadura && !/sem|definir/i.test(item.fechadura) ? `Fechadura ${item.fechadura}` : "",
+      item.categoria === "porta" && item.tela_mosquiteira === "Sim" ? "Tela mosquiteira" : "",
+      item.categoria === "porta" && item.automatizacao === "Sim" ? "Automatizada" : "",
+    ].filter((detail) => detail && detail !== "A definir");
+    return details.join(" · ");
+  }
+
   function animatedVisual(item, compact = false) {
-    const visualClass = visualClasses[item.categoria] || visualClasses.outro;
     return `<figure class="quote-visual${compact ? " compact" : ""}">
-      <div class="quote-visual-stage"><span class="material-visual ${visualClass}" aria-hidden="true"></span></div>
-      <figcaption><strong>${escapeHtml(categoryNames[item.categoria])}</strong><span>${escapeHtml(item.modelo)}</span></figcaption>
+      <div class="quote-visual-stage configured-stage">
+        <img class="realistic-visual" src="${realisticImages[item.categoria]}" alt="" loading="lazy" decoding="async">
+        <button type="button" class="visual-open" aria-label="Ampliar ${escapeHtml(categoryNames[item.categoria])} · ${escapeHtml(item.modelo)}" aria-haspopup="dialog">⤢ Ampliar</button>
+      </div>
+      <figcaption><strong>${escapeHtml(categoryNames[item.categoria])} · Visualização animada</strong><span>${escapeHtml(visualDescription(item))}</span><small>Imagem ilustrativa de referência do produto</small></figcaption>
     </figure>`;
   }
 
@@ -237,7 +352,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return `
         <div class="review-item">${animatedVisual(item, true)}<span class="review-number">${index + 1}</span><div>
           <strong>${escapeHtml(categoryNames[item.categoria])} · ${escapeHtml(item.modelo)}</strong>
-          <p>${item.largura_cm} × ${item.altura_cm} cm · ${escapeHtml(materialNames[item.material])}${item.linha_aluminio ? ` · ${escapeHtml(item.linha_aluminio)}` : ""}${item.cor ? ` · ${escapeHtml(item.cor)}` : ""}${item.tipo_vidro ? ` · Vidro ${escapeHtml(item.tipo_vidro)}` : ""}${item.composicao_vidro ? ` ${escapeHtml(item.composicao_vidro)}` : ""}</p>
+          <p>${item.largura_cm} × ${item.altura_cm} cm · ${escapeHtml(materialNames[item.material])}${item.linha_aluminio ? ` · ${escapeHtml(item.linha_aluminio)}` : ""}${item.cor ? ` · ${escapeHtml(item.cor)}` : ""}${item.tipo_vidro ? ` · Vidro ${escapeHtml(item.tipo_vidro)}` : ""}${item.composicao_vidro ? ` ${escapeHtml(item.composicao_vidro)}` : ""}${item.espessura_vidro && item.espessura_vidro !== "A definir" ? ` · ${escapeHtml(item.espessura_vidro)}` : ""}</p>
           ${doorSpecifications(item).length ? `<p class="review-specifications">${escapeHtml(doorSpecifications(item).join(" · "))}</p>` : ""}
           ${item.ambiente ? `<p>Ambiente: ${escapeHtml(item.ambiente)}</p>` : ""}
           ${price ? `<p class="review-price-detail">Produto: ${money(price.produto_unitario_centavos)} por unidade${data.instalacao ? ` · instalação: ${money(price.instalacao_unitaria_centavos)} por unidade` : ""}</p>` : ""}
