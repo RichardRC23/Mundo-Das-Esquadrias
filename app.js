@@ -20,6 +20,19 @@ const { initOrcamentoPdf } = require("./lib/orcamento-pdf");
 
 const fail = (status, message) => Object.assign(new Error(message), { status });
 const text = (value) => typeof value === "string" ? value.trim() : "";
+const seoPages = new Map([
+  ["/", { file: "index.html", path: "/", title: "Mundo das Esquadrias | Alumínio e vidros no Rio de Janeiro",
+    description: "Portas, janelas, box, fachadas e fechamentos em alumínio e vidro sob medida no Rio de Janeiro." }],
+  ["/index.html", { file: "index.html", path: "/", title: "Mundo das Esquadrias | Alumínio e vidros no Rio de Janeiro",
+    description: "Portas, janelas, box, fachadas e fechamentos em alumínio e vidro sob medida no Rio de Janeiro." }],
+  ["/servicos.html", { file: "servicos.html", path: "/servicos.html", title: "Serviços em alumínio e vidro | Mundo das Esquadrias",
+    description: "Conheça nossos serviços de portas, janelas, box, fachadas, guarda-corpos, fechamentos e manutenção no Rio de Janeiro." }],
+  ["/galeria.html", { file: "galeria.html", path: "/galeria.html", title: "Projetos em alumínio e vidro | Mundo das Esquadrias",
+    description: "Veja soluções para fachadas, varandas, portas, janelas e box de vidro feitas sob medida para cada ambiente." }],
+  ["/contato.html", { file: "contato.html", path: "/contato.html", title: "Contato | Mundo das Esquadrias",
+    description: "Fale com a Mundo das Esquadrias para solicitar atendimento e orçamento de serviços em alumínio e vidro no Rio de Janeiro." }],
+]);
+const htmlAttribute = (value) => String(value).replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;");
 
 function dadosPerfil(body = {}) {
   if (!body || typeof body !== "object" || Array.isArray(body) ||
@@ -83,6 +96,46 @@ async function createApp(options = {}) {
     "upgrade-insecure-requests": production ? [] : null,
     "img-src": ["'self'", "data:", "blob:"],
   } } }));
+  const siteDir = path.join(__dirname, "site");
+  const logoUrl = new URL("/img/Mundo%20das%20Esquadrias%202.jpg", `${origin}/`).href;
+  for (const [route, seo] of seoPages) {
+    app.get(route, (_req, res, next) => {
+      fs.readFile(path.join(siteDir, seo.file), "utf8", (error, html) => {
+        if (error) return next(error);
+        const canonicalUrl = new URL(seo.path, `${origin}/`).href;
+        const structuredData = seo.path === "/" ? `<script type="application/ld+json">${JSON.stringify({
+          "@context": "https://schema.org", "@type": "LocalBusiness", name: "Mundo das Esquadrias",
+          url: canonicalUrl, image: logoUrl, telephone: "+55 21 96407-0134",
+          description: seo.description, areaServed: { "@type": "City", name: "Rio de Janeiro" },
+        }).replaceAll("<", "\\u003c")}</script>` : "";
+        const metadata = [
+          `<link rel="canonical" href="${htmlAttribute(canonicalUrl)}">`,
+          `<meta property="og:type" content="website">`,
+          `<meta property="og:locale" content="pt_BR">`,
+          `<meta property="og:site_name" content="Mundo das Esquadrias">`,
+          `<meta property="og:title" content="${htmlAttribute(seo.title)}">`,
+          `<meta property="og:description" content="${htmlAttribute(seo.description)}">`,
+          `<meta property="og:url" content="${htmlAttribute(canonicalUrl)}">`,
+          `<meta property="og:image" content="${htmlAttribute(logoUrl)}">`,
+          `<meta name="twitter:card" content="summary">`, structuredData,
+        ].filter(Boolean).join("\n    ");
+        res.set("Cache-Control", "public, max-age=300").type("html").send(html.replace("</head>", `    ${metadata}\n</head>`));
+      });
+    });
+  }
+  app.get("/robots.txt", (_req, res) => res.type("text/plain").send([
+    "User-agent: *", "Allow: /", "Disallow: /api/", "Disallow: /admin.html",
+    "Disallow: /perfil.html", `Sitemap: ${new URL("/sitemap.xml", `${origin}/`).href}`, "",
+  ].join("\n")));
+  app.get("/sitemap.xml", (_req, res) => {
+    const urls = [...new Map([...seoPages.values()].map((page) => [page.path, page])).values()]
+      .map((page) => `  <url><loc>${htmlAttribute(new URL(page.path, `${origin}/`).href)}</loc></url>`).join("\n");
+    res.type("application/xml").send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`);
+  });
+  app.use(["/login.html", "/orcamento.html", "/perfil.html", "/admin.html"], (_req, res, next) => {
+    res.set("X-Robots-Tag", "noindex, nofollow");
+    next();
+  });
   // Only this provider endpoint bypasses browser sessions/CSRF; it authenticates its HMAC.
   const webhookRouter = express.Router();
   app.use("/api/webhooks/mercadopago", rateLimit({ windowMs: 60000, limit: 180,
@@ -265,7 +318,7 @@ async function createApp(options = {}) {
     res.json({ mensagem: "Sessão encerrada." });
   });
   app.use("/api", (_req, res) => res.status(404).json({ erro: "Recurso não encontrado." }));
-  app.use(express.static(path.join(__dirname, "site"), { dotfiles: "deny" }));
+  app.use(express.static(siteDir, { dotfiles: "deny" }));
   app.use("/img", express.static(path.join(__dirname, "img"), { dotfiles: "deny", index: false }));
   app.use((error, _req, res, _next) => {
     if (error instanceof multer.MulterError) return res.status(400).json({ erro: "Envie apenas uma foto de até 2 MB." });
