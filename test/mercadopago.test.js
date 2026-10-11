@@ -135,7 +135,7 @@ test("Mercado Pago: checkout, signed webhooks and reconciliation use isolated da
   }
   const count = async (table) => (await instance.db.get(`SELECT COUNT(*) n FROM ${table}`)).n;
 
-  await t.test("checkout fixes prices, requires login/CSRF and reuses the recent preference", async () => {
+  await t.test("checkout fixes prices, requires login/CSRF and creates clean sandbox preferences", async () => {
     assert.equal((await client()("/api/pagamentos/orcamentos/checkout", { plano: "pacote10" })).status, 403);
     const anonymous = client(); await anonymous("/api/csrf");
     assert.equal((await anonymous("/api/pagamentos/orcamentos/checkout", { plano: "pacote10" })).status, 401);
@@ -144,10 +144,11 @@ test("Mercado Pago: checkout, signed webhooks and reconciliation use isolated da
     reference = created.data.referencia;
     assert.equal(preferences[0].items[0].unit_price, 9.9);
     assert.equal(preferences[0].items[0].quantity, 1);
+    assert.equal(preferences[0].payer, undefined);
     assert.match(preferences[0].notification_url, /\/api\/webhooks\/mercadopago\?/);
     const repeat = await request("/api/pagamentos/orcamentos/checkout", { plano: "pacote10" });
-    assert.equal(repeat.data.referencia, reference);
-    assert.equal(preferences.length, 1);
+    assert.notEqual(repeat.data.referencia, reference);
+    assert.equal(preferences.length, 2);
     assert.equal((await request("/api/pagamentos/orcamentos/checkout", { plano: "__proto__" })).status, 400);
   });
   await t.test("invalid signatures, duplicate query IDs and body tampering cause no provider reads", async () => {
