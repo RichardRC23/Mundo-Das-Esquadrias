@@ -4,7 +4,7 @@ services:
     runtime: node
     region: virginia
     plan: 0.5c-512mb
-    buildCommand: npm ci
+    buildCommand: npm ci --build-from-source=sqlite3
     startCommand: npm start
     healthCheckPath: /api/health
     disk:
