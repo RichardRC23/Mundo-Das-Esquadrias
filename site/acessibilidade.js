@@ -1,11 +1,11 @@
 (() => {
   "use strict";
 
-  const storageKey = "mde-acessibilidade-v2";
+  const storageKey = "mde-acessibilidade-v3";
   const defaults = Object.freeze({
     font: 0, contrast: false, grayscale: false, readable: false, links: false,
     spacing: false, motion: false, focus: true, headings: false, cursor: false,
-    guide: false, speechRate: .92,
+    guide: false, speechRate: .98, voiceURI: "auto",
   });
   let settings = { ...defaults };
   let lastFocus = null;
@@ -13,7 +13,10 @@
   const reader = { active: false, paused: false, blocks: [], block: 0, parts: [], part: 0, timer: null, highlighted: null };
 
   try {
-    const previous = JSON.parse(localStorage.getItem(storageKey) || localStorage.getItem("mde-acessibilidade-v1") || "{}");
+    const previous = JSON.parse(localStorage.getItem(storageKey) || localStorage.getItem("mde-acessibilidade-v2") || localStorage.getItem("mde-acessibilidade-v1") || "{}");
+    if (previous.speechRate === .82) previous.speechRate = .9;
+    if (previous.speechRate === .92) previous.speechRate = .98;
+    if (previous.speechRate === 1.04) previous.speechRate = 1.08;
     settings = { ...defaults, ...previous };
   } catch { settings = { ...defaults }; }
 
@@ -83,8 +86,11 @@
         </section>
         <section class="a11y-section a11y-reader" aria-labelledby="a11y-reader-title">
           <div class="a11y-reader-heading"><div><h3 id="a11y-reader-title">Leitura em voz alta</h3><p>Leitura por trechos, com pausas naturais e destaque do texto.</p></div><span aria-hidden="true">🔊</span></div>
+          <label class="a11y-rate-label" for="a11y-voice">Voz
+            <select id="a11y-voice"><option value="auto">Melhor voz disponível</option></select>
+          </label>
           <label class="a11y-rate-label" for="a11y-rate">Ritmo da voz
-            <select id="a11y-rate"><option value="0.82">Calmo</option><option value="0.92">Natural</option><option value="1.04">Mais rápido</option></select>
+            <select id="a11y-rate"><option value="0.9">Calmo</option><option value="0.98">Natural</option><option value="1.08">Mais rápido</option></select>
           </label>
           <p class="a11y-reader-progress" aria-live="polite">Selecione um texto para ouvir só aquele trecho, ou inicie a leitura da página.</p>
           <div class="a11y-reader-controls">
@@ -114,6 +120,7 @@
     const stop = root.querySelector("#a11y-stop");
     const progress = root.querySelector(".a11y-reader-progress");
     const rate = root.querySelector("#a11y-rate");
+    const voiceSelect = root.querySelector("#a11y-voice");
 
     function announce(message) { status.textContent = ""; requestAnimationFrame(() => { status.textContent = message; }); }
     function refresh() {
@@ -122,6 +129,7 @@
       root.querySelector('[data-font="down"]').disabled = settings.font === 0;
       root.querySelector('[data-font="up"]').disabled = settings.font === 3;
       rate.value = String(settings.speechRate);
+      voiceSelect.value = voices.some((voice) => voice.voiceURI === settings.voiceURI) ? settings.voiceURI : "auto";
     }
     function closePanel() {
       panel.hidden = true;
@@ -138,12 +146,20 @@
     }
     function togglePanel() { panel.hidden ? openPanel() : closePanel(); }
 
-    function loadVoices() { voices = window.speechSynthesis?.getVoices?.() || []; }
+    function loadVoices() {
+      voices = window.speechSynthesis?.getVoices?.() || [];
+      const portuguese = voices.filter((voice) => /^pt(?:-|_)/i.test(voice.lang));
+      voiceSelect.replaceChildren(new Option("Melhor voz disponível", "auto"));
+      portuguese.forEach((voice) => voiceSelect.add(new Option(`${voice.name} (${voice.lang})`, voice.voiceURI)));
+      voiceSelect.value = portuguese.some((voice) => voice.voiceURI === settings.voiceURI) ? settings.voiceURI : "auto";
+    }
     function naturalVoice() {
       const portuguese = voices.filter((voice) => /^pt(?:-|_)/i.test(voice.lang));
+      const chosen = portuguese.find((voice) => voice.voiceURI === settings.voiceURI);
+      if (chosen) return chosen;
       const score = (voice) => {
         const name = voice.name.toLowerCase();
-        return (/natural|neural|premium/.test(name) ? 50 : 0) + (/francisca|antonio|google/.test(name) ? 25 : 0) + (/pt-br/i.test(voice.lang) ? 15 : 0) + (voice.localService ? 2 : 0);
+        return (/natural|neural|premium/.test(name) ? 80 : 0) + (/google/.test(name) ? 45 : 0) + (/maria|francisca/.test(name) ? 40 : 0) + (/antonio/.test(name) ? 35 : 0) + (/microsoft/.test(name) ? 20 : 0) + (/pt-br/i.test(voice.lang) ? 15 : 0);
       };
       return portuguese.sort((a, b) => score(b) - score(a))[0] || voices.find((voice) => voice.default) || voices[0];
     }
@@ -182,14 +198,30 @@
         .filter(({ text }) => text.length > 1 && text.length < 1800 && !seen.has(text) && seen.add(text)).slice(0, 120);
     }
     function speechParts(text) {
-      return (text.match(/[^,;:.!?…]+(?:[,;:.!?…]+|$)/g) || [text]).map((part) => part.trim()).filter(Boolean);
+      const sentences = (text.match(/[^.!?…]+(?:[.!?…]+|$)/g) || [text]).map((part) => part.trim()).filter(Boolean);
+      const parts = [];
+      let current = "";
+      const push = () => { if (current) parts.push(current); current = ""; };
+      for (const sentence of sentences) {
+        if (sentence.length > 480) {
+          push();
+          const words = sentence.split(/\s+/);
+          for (const word of words) {
+            if (`${current} ${word}`.trim().length > 360) push();
+            current = `${current} ${word}`.trim();
+          }
+          push();
+        } else if (`${current} ${sentence}`.trim().length <= 420) {
+          current = `${current} ${sentence}`.trim();
+        } else {
+          push(); current = sentence;
+        }
+      }
+      push();
+      return parts;
     }
-    function pauseAfter(part, endOfBlock) {
-      if (endOfBlock) return 620;
-      if (/[.!?…]$/.test(part)) return 430;
-      if (/[;:]$/.test(part)) return 280;
-      if (/,$/.test(part)) return 170;
-      return 90;
+    function pauseAfter(_part, endOfBlock) {
+      return endOfBlock ? 180 : 70;
     }
     function speakPart() {
       if (!reader.active || reader.paused) return;
@@ -208,8 +240,8 @@
       if (!text) { reader.block += 1; reader.parts = []; reader.part = 0; reader.timer = setTimeout(speakPart, 620); return; }
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = "pt-BR";
-      utterance.rate = Number(settings.speechRate) || .92;
-      utterance.pitch = 1.02;
+      utterance.rate = Number(settings.speechRate) || .98;
+      utterance.pitch = 1;
       utterance.volume = 1;
       const selectedVoice = naturalVoice();
       if (selectedVoice) utterance.voice = selectedVoice;
@@ -258,6 +290,11 @@
       settings.speechRate = Number(rate.value); apply();
       if (reader.active) moveReader(0);
       announce(`Ritmo ${rate.selectedOptions[0].textContent.toLowerCase()}.`);
+    });
+    voiceSelect.addEventListener("change", () => {
+      settings.voiceURI = voiceSelect.value; apply();
+      if (reader.active) moveReader(0);
+      announce(`Voz ${voiceSelect.selectedOptions[0].textContent}.`);
     });
 
     if (!("speechSynthesis" in window)) {
