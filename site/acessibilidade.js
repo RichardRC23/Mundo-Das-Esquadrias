@@ -1,11 +1,11 @@
 (() => {
   "use strict";
 
-  const storageKey = "mde-acessibilidade-v3";
+  const storageKey = "mde-acessibilidade-v4";
   const defaults = Object.freeze({
-    font: 0, contrast: false, grayscale: false, readable: false, links: false,
+    font: 0, contrast: false, dark: false, grayscale: false, readable: false, links: false,
     spacing: false, motion: false, focus: true, headings: false, cursor: false,
-    guide: false, speechRate: .98, voiceURI: "auto",
+    guide: false, imageDescriptions: false, speechRate: .98, voiceURI: "auto",
   });
   let settings = { ...defaults };
   let lastFocus = null;
@@ -13,7 +13,7 @@
   const reader = { active: false, paused: false, blocks: [], block: 0, parts: [], part: 0, timer: null, highlighted: null };
 
   try {
-    const previous = JSON.parse(localStorage.getItem(storageKey) || localStorage.getItem("mde-acessibilidade-v2") || localStorage.getItem("mde-acessibilidade-v1") || "{}");
+    const previous = JSON.parse(localStorage.getItem(storageKey) || localStorage.getItem("mde-acessibilidade-v3") || localStorage.getItem("mde-acessibilidade-v2") || localStorage.getItem("mde-acessibilidade-v1") || "{}");
     if (previous.speechRate === .82) previous.speechRate = .9;
     if (previous.speechRate === .92) previous.speechRate = .98;
     if (previous.speechRate === 1.04) previous.speechRate = 1.08;
@@ -24,7 +24,7 @@
     const html = document.documentElement;
     settings.font = Math.min(3, Math.max(0, Number(settings.font) || 0));
     html.dataset.a11yFont = String(settings.font);
-    for (const key of ["contrast", "grayscale", "readable", "links", "spacing", "motion", "focus", "headings", "cursor", "guide"]) {
+    for (const key of ["contrast", "dark", "grayscale", "readable", "links", "spacing", "motion", "focus", "headings", "cursor", "guide", "imageDescriptions"]) {
       if (settings[key]) html.setAttribute(`data-a11y-${key}`, "");
       else html.removeAttribute(`data-a11y-${key}`);
     }
@@ -59,6 +59,14 @@
           <div><h2 id="a11y-title" tabindex="-1">Acessibilidade</h2><p>Personalize o site do seu jeito.</p></div>
           <button class="a11y-close" type="button" aria-label="Fechar painel">×</button>
         </header>
+        <section class="a11y-section a11y-presets" aria-labelledby="a11y-presets-title">
+          <div class="a11y-section-heading"><div><h3 id="a11y-presets-title">Atalhos para enxergar melhor</h3><p>Configure vários recursos com apenas um toque.</p></div><span aria-hidden="true">👁</span></div>
+          <div class="a11y-preset-grid">
+            <button type="button" data-preset="amplified"><span aria-hidden="true">A+</span><strong>Visão ampliada</strong><small>Texto, cursor e foco maiores</small></button>
+            <button type="button" data-preset="contrast"><span aria-hidden="true">◐</span><strong>Contraste máximo</strong><small>Preto, branco e amarelo</small></button>
+            <button type="button" data-preset="guided"><span aria-hidden="true">▬</span><strong>Leitura guiada</strong><small>Linha guia e texto espaçado</small></button>
+          </div>
+        </section>
         <section class="a11y-section" aria-labelledby="a11y-visual-title">
           <h3 id="a11y-visual-title">Visualização</h3>
           <div class="a11y-font-controls" aria-label="Tamanho do texto">
@@ -68,11 +76,13 @@
           </div>
           <div class="a11y-options">
             <button class="a11y-option" type="button" data-setting="contrast"><span aria-hidden="true">◐</span><strong>Alto contraste</strong></button>
+            <button class="a11y-option" type="button" data-setting="dark"><span aria-hidden="true">☾</span><strong>Modo escuro</strong></button>
             <button class="a11y-option" type="button" data-setting="grayscale"><span aria-hidden="true">◑</span><strong>Tons de cinza</strong></button>
             <button class="a11y-option" type="button" data-setting="readable"><span aria-hidden="true">Aa</span><strong>Fonte legível</strong></button>
             <button class="a11y-option" type="button" data-setting="spacing"><span aria-hidden="true">↕</span><strong>Mais espaçamento</strong></button>
             <button class="a11y-option" type="button" data-setting="links"><span aria-hidden="true">↗</span><strong>Destacar links</strong></button>
             <button class="a11y-option" type="button" data-setting="headings"><span aria-hidden="true">H</span><strong>Destacar títulos</strong></button>
+            <button class="a11y-option" type="button" data-setting="imageDescriptions"><span aria-hidden="true">▧</span><strong>Descrever imagens</strong></button>
           </div>
         </section>
         <section class="a11y-section" aria-labelledby="a11y-navigation-title">
@@ -100,6 +110,12 @@
             <button type="button" id="a11y-stop" disabled>■ Parar</button>
           </div>
         </section>
+        <section class="a11y-section a11y-libras" aria-labelledby="a11y-libras-title">
+          <div class="a11y-libras-icon" aria-hidden="true">🤟</div>
+          <div class="a11y-libras-copy"><span>Recurso oficial</span><h3 id="a11y-libras-title">Conteúdo em Libras</h3><p>Traduza textos do site com o intérprete virtual VLibras.</p></div>
+          <button type="button" id="a11y-libras"><span>Ativar VLibras</span><b aria-hidden="true">→</b></button>
+          <p class="a11y-libras-note" id="a11y-libras-status">O tradutor será carregado somente quando você ativar.</p>
+        </section>
         <div class="a11y-actions"><button class="a11y-reset" type="button">Restaurar padrão</button><button class="a11y-done" type="button" id="a11y-close-bottom">Concluir</button></div>
         <p class="a11y-help">Atalho: Alt+A para abrir · Esc para fechar</p>
         <p class="a11y-status" aria-live="polite"></p>
@@ -121,6 +137,21 @@
     const progress = root.querySelector(".a11y-reader-progress");
     const rate = root.querySelector("#a11y-rate");
     const voiceSelect = root.querySelector("#a11y-voice");
+    const libras = root.querySelector("#a11y-libras");
+    const librasStatus = root.querySelector("#a11y-libras-status");
+
+    function syncImageDescriptions() {
+      document.querySelectorAll(".a11y-image-description").forEach((caption) => caption.remove());
+      if (!settings.imageDescriptions) return;
+      document.querySelectorAll("body img[alt]").forEach((image) => {
+        const description = image.alt.trim();
+        if (!description || image.closest(".a11y-root")) return;
+        const caption = document.createElement("span");
+        caption.className = "a11y-image-description";
+        caption.textContent = `Imagem: ${description}`;
+        image.insertAdjacentElement("afterend", caption);
+      });
+    }
 
     function announce(message) { status.textContent = ""; requestAnimationFrame(() => { status.textContent = message; }); }
     function refresh() {
@@ -130,6 +161,13 @@
       root.querySelector('[data-font="up"]').disabled = settings.font === 3;
       rate.value = String(settings.speechRate);
       voiceSelect.value = voices.some((voice) => voice.voiceURI === settings.voiceURI) ? settings.voiceURI : "auto";
+      const activePresets = {
+        amplified: settings.font >= 2 && settings.readable && settings.spacing && settings.focus && settings.cursor,
+        contrast: settings.contrast && settings.links && settings.headings && settings.focus,
+        guided: settings.guide && settings.readable && settings.spacing && settings.links,
+      };
+      root.querySelectorAll("[data-preset]").forEach((button) => button.setAttribute("aria-pressed", String(activePresets[button.dataset.preset])));
+      syncImageDescriptions();
     }
     function closePanel() {
       panel.hidden = true;
@@ -279,6 +317,13 @@
       settings[key] = !settings[key];
       apply(); refresh(); announce(`${button.querySelector("strong").textContent}: ${settings[key] ? "ativado" : "desativado"}.`);
     }));
+    root.querySelectorAll("[data-preset]").forEach((button) => button.addEventListener("click", () => {
+      const preset = button.dataset.preset;
+      if (preset === "amplified") Object.assign(settings, { font: 2, readable: true, spacing: true, focus: true, cursor: true });
+      if (preset === "contrast") Object.assign(settings, { contrast: true, dark: false, links: true, headings: true, focus: true });
+      if (preset === "guided") Object.assign(settings, { guide: true, readable: true, spacing: true, links: true });
+      apply(); refresh(); announce(`${button.querySelector("strong").textContent} ativada.`);
+    }));
     root.querySelectorAll("[data-font]").forEach((button) => button.addEventListener("click", () => {
       settings.font = Math.min(3, Math.max(0, settings.font + (button.dataset.font === "up" ? 1 : -1)));
       apply(); refresh(); announce(fontValue.textContent);
@@ -295,6 +340,43 @@
       settings.voiceURI = voiceSelect.value; apply();
       if (reader.active) moveReader(0);
       announce(`Voz ${voiceSelect.selectedOptions[0].textContent}.`);
+    });
+
+    function openLibrasButton() {
+      const button = window.VLibrasWidget?.initBtn;
+      if (!button) return false;
+      button.style.setProperty("bottom", "86px", "important");
+      button.setAttribute("aria-label", "Abrir tradutor de Libras");
+      button.click();
+      libras.disabled = false;
+      libras.innerHTML = "<span>Abrir VLibras</span><b aria-hidden=\"true\">→</b>";
+      librasStatus.textContent = "VLibras está pronto. Selecione um texto para traduzir.";
+      announce("Tradutor VLibras ativado.");
+      return true;
+    }
+    function waitForLibras(attempt = 0) {
+      if (openLibrasButton()) return;
+      if (attempt < 40) { setTimeout(() => waitForLibras(attempt + 1), 150); return; }
+      libras.disabled = false;
+      libras.innerHTML = "<span>Tentar novamente</span><b aria-hidden=\"true\">↻</b>";
+      librasStatus.textContent = "Não foi possível carregar agora. Verifique sua conexão.";
+      announce("Não foi possível carregar o VLibras agora.");
+    }
+    libras.addEventListener("click", () => {
+      if (openLibrasButton()) return;
+      libras.disabled = true;
+      libras.textContent = "Carregando intérprete…";
+      librasStatus.textContent = "Preparando o tradutor de Libras…";
+      let script = document.querySelector('script[data-mde-vlibras]');
+      if (!script) {
+        script = document.createElement("script");
+        script.src = "https://vlibras.gov.br/app/vlibras-plugin.js";
+        script.dataset.mdeVlibras = "";
+        script.async = true;
+        script.onerror = () => waitForLibras(40);
+        document.body.append(script);
+      }
+      waitForLibras();
     });
 
     if (!("speechSynthesis" in window)) {

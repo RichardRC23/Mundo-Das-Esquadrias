@@ -94,7 +94,13 @@ async function createApp(options = {}) {
   if (process.env.TRUST_PROXY === "1") app.set("trust proxy", 1);
   app.use(helmet({ contentSecurityPolicy: { directives: {
     "upgrade-insecure-requests": production ? [] : null,
-    "img-src": ["'self'", "data:", "blob:"],
+    "script-src": ["'self'", "https://vlibras.gov.br", "https://cdn.jsdelivr.net"],
+    "img-src": ["'self'", "data:", "blob:", "https://vlibras.gov.br", "https://cdn.jsdelivr.net"],
+    "connect-src": ["'self'", "https://vlibras.gov.br", "https://cdn.jsdelivr.net"],
+    "frame-src": ["'self'", "https://vlibras.gov.br"],
+    "font-src": ["'self'", "data:", "https://vlibras.gov.br", "https://cdn.jsdelivr.net"],
+    "style-src": ["'self'", "'unsafe-inline'", "https://vlibras.gov.br", "https://cdn.jsdelivr.net"],
+    "worker-src": ["'self'", "blob:"],
   } } }));
   const siteDir = path.join(__dirname, "site");
   const logoUrl = new URL("/img/Mundo%20das%20Esquadrias%202.jpg", `${origin}/`).href;
