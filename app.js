@@ -17,6 +17,7 @@ const { initOrcamentos } = require("./lib/orcamentos");
 const { initAdmin } = require("./lib/admin");
 const { initPropostas } = require("./lib/propostas");
 const { initOrcamentoPdf } = require("./lib/orcamento-pdf");
+const { initAtendimento } = require("./lib/atendimento");
 
 const fail = (status, message) => Object.assign(new Error(message), { status });
 const text = (value) => typeof value === "string" ? value.trim() : "";
@@ -204,6 +205,8 @@ async function createApp(options = {}) {
     message: { erro: "Muitas tentativas. Aguarde 15 minutos." } });
   const changesLimit = rateLimit({ windowMs: 15 * 60 * 1000, limit: 60, standardHeaders: "draft-8", legacyHeaders: false,
     message: { erro: "Muitas alterações. Aguarde alguns minutos." } });
+  await initAtendimento({ app, config: options.atendimentoConfig || process.env,
+    transport: options.atendimentoTransport || fetch });
   const exigirLogin = async (req, res, next) => {
     if (!req.session.usuario || !await db.get("SELECT id FROM usuarios WHERE id = ?", [req.session.usuario.id])) {
       return res.status(401).json({ erro: "Faça login para acessar sua conta." });
