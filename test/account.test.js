@@ -114,10 +114,45 @@ function assertClientError(response) {
 test("private account and photo routes require a real authenticated session", async (t) => {
   const { client } = await fixture(t);
   const anonymous = client();
-  for (const route of ["/api/usuario", "/api/perfil", "/api/conta", "/api/perfil/foto", "/api/orcamentos"]) {
+  for (const route of ["/api/usuario", "/api/perfil", "/api/conta", "/api/perfil/foto", "/api/orcamentos", "/api/feedbacks"]) {
     const response = await anonymous.request(route);
     assert.equal(response.status, 401, `${route}: ${response.body}`);
   }
+});
+
+test("feedback is validated, stored, and isolated to the authenticated customer", async (t) => {
+  const { db, client } = await fixture(t);
+  const first = client();
+  const second = client();
+  const firstUser = await first.register();
+  await second.register({ nome: "Segunda Cliente", email: "segunda@example.test", telefone: "21999990002" });
+
+  const invalid = await first.request("/api/feedbacks", {
+    method: "POST", json: { tipo: "site", nota: 6, mensagem: "Muito curto" },
+  });
+  assert.equal(invalid.status, 400, invalid.body);
+
+  const created = await first.request("/api/feedbacks", {
+    method: "POST",
+    json: { tipo: "servico", nota: 5, mensagem: "O acabamento ficou excelente e o atendimento foi muito cuidadoso." },
+  });
+  assert.equal(created.status, 201, created.body);
+  assert.equal(created.data.feedback.nota, 5);
+  assert.equal(created.data.feedback.tipo, "servico");
+  assert.ok(!created.body.includes("usuario_id"));
+
+  const ownHistory = await first.request("/api/feedbacks");
+  assert.equal(ownHistory.status, 200, ownHistory.body);
+  assert.equal(ownHistory.data.feedbacks.length, 1);
+  assert.equal(ownHistory.data.feedbacks[0].mensagem, "O acabamento ficou excelente e o atendimento foi muito cuidadoso.");
+
+  const otherHistory = await second.request("/api/feedbacks");
+  assert.equal(otherHistory.status, 200, otherHistory.body);
+  assert.deepEqual(otherHistory.data.feedbacks, []);
+
+  const stored = await db.get("SELECT usuario_id,nota,tipo FROM feedbacks WHERE id=?", [created.data.feedback.id]);
+  assert.deepEqual(stored, { usuario_id: firstUser.id, nota: 5, tipo: "servico" });
+  assert.equal((await first.request("/api/admin/feedbacks")).status, 403);
 });
 
 test("CSRF protection rejects missing tokens and foreign origins", async (t) => {

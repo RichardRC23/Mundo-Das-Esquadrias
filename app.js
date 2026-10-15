@@ -18,6 +18,7 @@ const { initAdmin } = require("./lib/admin");
 const { initPropostas } = require("./lib/propostas");
 const { initOrcamentoPdf } = require("./lib/orcamento-pdf");
 const { initAtendimento } = require("./lib/atendimento");
+const { initFeedback } = require("./lib/feedback");
 
 const fail = (status, message) => Object.assign(new Error(message), { status });
 const text = (value) => typeof value === "string" ? value.trim() : "";
@@ -320,6 +321,7 @@ async function createApp(options = {}) {
     aceitarCreditosMPTeste: payments.aceitarCreditosMPTeste });
   await initPropostas({ app, db, exigirLogin, exigirAdmin, changesLimit });
   await initOrcamentoPdf({ app, db, exigirLogin, logoPath: path.join(__dirname, "img", "Mundo das Esquadrias 2.jpg") });
+  await initFeedback({ app, db, exigirLogin, exigirAdmin, changesLimit });
   await initAdmin({ app, db, exigirAdmin, changesLimit });
   app.post("/api/sair", async (req, res) => {
     await new Promise((resolve, reject) => req.session.destroy((error) => error ? reject(error) : resolve()));

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
   <title>Minha conta | Mundo das Esquadrias</title>
-  <link rel="stylesheet" href="conta.css">
+  <link rel="stylesheet" href="conta.css?v=20261015-feedback">
   <link rel="stylesheet" href="propostas.css">
   <link rel="stylesheet" href="acessibilidade.css">
   <script src="api.js" defer></script>
@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="atendimento.css">
   <script src="atendimento.js" defer></script>
   <script src="propostas.js" defer></script>
-  <script src="perfil.js" defer></script>
+  <script src="perfil.js?v=20261015-feedback" defer></script>
 </head>
 <body>
   <svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -26,6 +26,7 @@
     <symbol id="i-quote" viewBox="0 0 24 24"><path d="M4 4h16v16H4zM8 9h8M8 13h6M8 17h4"/></symbol>
     <symbol id="i-arrow" viewBox="0 0 24 24"><path d="m5 12h14m-5-5 5 5-5 5"/></symbol>
     <symbol id="i-help" viewBox="0 0 24 24"><path d="M21 11a9 9 0 0 1-9 9H4l-2 2V11a10 10 0 0 1 19 0Z M8 10h.01M12 10h.01M16 10h.01"/></symbol>
+    <symbol id="i-feedback" viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/></symbol>
     <symbol id="i-exit" viewBox="0 0 24 24"><path d="M9 3H3v18h6M10 12h12m-4-4 4 4-4 4"/></symbol>
   </svg>
   <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
@@ -43,6 +44,7 @@
       <a href="#contratos" data-page="contratos"><svg><use href="#i-file"/></svg>Meus contratos</a>
       <a href="#assinaturas" data-page="assinaturas"><svg><use href="#i-repeat"/></svg>Assinaturas</a>
       <a href="#pagamentos" data-page="pagamentos"><svg><use href="#i-card"/></svg>Pagamentos</a>
+      <a href="#feedback" data-page="feedback"><svg><use href="#i-feedback"/></svg>Feedback</a>
     </nav>
     <div class="sidebar-bottom">
       <a class="admin-link" id="admin-link" href="admin.html" hidden><svg><use href="#i-grid"/></svg>Painel administrativo</a>
@@ -77,6 +79,7 @@
             <a href="#perfil" class="quick-card"><svg class="quick-icon"><use href="#i-user"/></svg><h3>Seu perfil, do seu jeito</h3><p>Atualize seus dados e adicione uma foto à sua conta.</p><span>Editar perfil <svg><use href="#i-arrow"/></svg></span></a>
             <a href="#pagamentos" class="quick-card"><svg class="quick-icon"><use href="#i-card"/></svg><h3>Preferências de pagamento</h3><p id="resumo-pagamento">Escolha como prefere pagar seus próximos projetos.</p><span>Ver pagamentos <svg><use href="#i-arrow"/></svg></span></a>
             <a href="#contratos" class="quick-card"><svg class="quick-icon"><use href="#i-file"/></svg><h3>Documentos à mão</h3><p>Consulte seus contratos e os documentos disponibilizados.</p><span>Ver contratos <svg><use href="#i-arrow"/></svg></span></a>
+            <a href="#feedback" class="quick-card feedback-quick-card"><svg class="quick-icon"><use href="#i-feedback"/></svg><h3>Sua opinião importa</h3><p>Conte como foi sua experiência com nossos serviços ou com o site.</p><span>Enviar feedback <svg><use href="#i-arrow"/></svg></span></a>
           </div>
           <div class="service-banner"><span class="icon-box"><svg><use href="#i-help"/></svg></span><div><h3>Seu próximo projeto começa com uma conversa.</h3><p>Conte com nossa equipe para tirar suas dúvidas.</p></div><a class="button secondary" href="orcamento.html">Solicitar orçamento →</a></div>
         </section>
@@ -94,6 +97,40 @@
         <section id="painel-pagamentos" data-panel="pagamentos" aria-label="Pagamentos" hidden>
           <div class="panel"><h2>Como você prefere pagar?</h2><p class="panel-description">Salve sua preferência para conversar com a equipe sobre seus próximos projetos.</p><form id="form-preferencia"><fieldset id="pagamento-fields"><legend class="sr-only">Método de pagamento preferido</legend><div class="payment-options"><label class="payment-option"><input type="radio" name="metodo" value="pix"><span class="method-icon">◇</span><strong>Pix</strong><small>Pagamento à vista</small></label><label class="payment-option"><input type="radio" name="metodo" value="boleto"><span class="method-icon barcode" aria-hidden="true">▥</span><strong>Boleto</strong><small>Conforme seu pedido</small></label><label class="payment-option"><input type="radio" name="metodo" value="cartao"><svg class="method-icon"><use href="#i-card"/></svg><strong>Cartão</strong><small>Crédito ou débito</small></label></div><p class="hint">A preferência não cadastra um cartão nem altera cobranças ou assinaturas existentes.</p><div class="form-footer"><button class="button primary" type="submit">Salvar preferência</button><button class="text-button" type="button" id="limpar-preferencia">Limpar preferência</button></div></fieldset></form></div>
           <div class="panel billing-panel"><div class="section-heading"><div><h2>Cartões e cobranças</h2><p>Gerencie seus métodos salvos e assinaturas recorrentes.</p></div><span id="billing-mode" class="pill" hidden></span></div><div id="lista-metodos" class="record-list"></div><p id="limite-metodos" class="hint" hidden>Veja os demais métodos no portal de pagamentos.</p><div id="pagamento-pendente" class="billing-note"><span class="icon-box"><svg><use href="#i-card"/></svg></span><div><h3>Gerenciamento online em breve</h3><p>A empresa ainda não ativou o cadastro de cartões e a gestão de cobranças. Por enquanto, escolha sua preferência acima ou fale com o atendimento.</p></div></div><form id="form-portal" hidden><div class="field"><label for="senha-portal">Confirme sua senha atual</label><input id="senha-portal" type="password" autocomplete="current-password" required></div><p class="hint">Você será direcionado ao portal seguro de pagamentos para adicionar ou trocar cartões e gerenciar assinaturas existentes.</p><button class="button primary" type="submit">Abrir portal de pagamentos ↗</button></form></div>
+        </section>
+        <section id="painel-feedback" data-panel="feedback" aria-label="Feedback" hidden>
+          <div class="feedback-hero">
+            <div><span class="feedback-kicker">QUEREMOS OUVIR VOCÊ</span><h2>Sua opinião transforma nosso trabalho.</h2><p>Compartilhe sua experiência. Cada comentário nos ajuda a cuidar melhor dos próximos projetos — inclusive o seu.</p></div>
+            <div class="feedback-hero-art" aria-hidden="true"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
+          </div>
+          <div class="feedback-layout">
+            <form id="form-feedback" class="panel feedback-form">
+              <fieldset id="feedback-fields">
+                <div class="feedback-step"><span>01</span><div><h2>Sobre o que deseja falar?</h2><p>Escolha o assunto que combina melhor com sua experiência.</p></div></div>
+                <div class="feedback-types">
+                  <label><input type="radio" name="tipo" value="servico" required><span><b>Serviço realizado</b><small>Qualidade, instalação ou acabamento</small></span></label>
+                  <label><input type="radio" name="tipo" value="site"><span><b>Experiência no site</b><small>Navegação, recursos ou facilidade de uso</small></span></label>
+                  <label><input type="radio" name="tipo" value="atendimento"><span><b>Atendimento</b><small>Contato, atenção ou comunicação</small></span></label>
+                  <label><input type="radio" name="tipo" value="outro"><span><b>Outro assunto</b><small>Conte o que mais podemos melhorar</small></span></label>
+                </div>
+                <div class="feedback-step feedback-rating-heading"><span>02</span><div><h2>Como foi sua experiência?</h2><p>Sua nota geral para este assunto.</p></div></div>
+                <fieldset class="star-rating"><legend class="sr-only">Nota de uma a cinco estrelas</legend>
+                  <label><input type="radio" name="nota" value="1" required><span aria-hidden="true">★</span><small>Ruim</small></label>
+                  <label><input type="radio" name="nota" value="2"><span aria-hidden="true">★</span><small>Regular</small></label>
+                  <label><input type="radio" name="nota" value="3"><span aria-hidden="true">★</span><small>Bom</small></label>
+                  <label><input type="radio" name="nota" value="4"><span aria-hidden="true">★</span><small>Muito bom</small></label>
+                  <label><input type="radio" name="nota" value="5"><span aria-hidden="true">★</span><small>Excelente</small></label>
+                </fieldset>
+                <div class="feedback-step feedback-comment-heading"><span>03</span><div><h2>Conte um pouco mais</h2><p>Seja sincero: elogios e sugestões são muito bem-vindos.</p></div></div>
+                <div class="feedback-comment"><label class="sr-only" for="feedback-mensagem">Seu comentário</label><textarea id="feedback-mensagem" name="mensagem" minlength="20" maxlength="1000" required placeholder="Escreva aqui como foi sua experiência..."></textarea><span id="feedback-contador">0 / 1.000</span></div>
+                <div class="feedback-submit"><p><svg><use href="#i-feedback"/></svg>Seu feedback ficará vinculado à sua conta e será visto apenas pela nossa equipe.</p><button class="button primary" type="submit">Enviar meu feedback <svg><use href="#i-arrow"/></svg></button></div>
+              </fieldset>
+            </form>
+            <aside class="feedback-side">
+              <div class="feedback-promise"><span class="feedback-promise-icon"><svg><use href="#i-feedback"/></svg></span><p class="eyebrow">NOSSO COMPROMISSO</p><h2>Escutar faz parte de construir bem.</h2><p>Lemos cada mensagem com atenção para aprimorar o atendimento, o site e a qualidade dos nossos serviços.</p><ul><li><span>✓</span>Opinião protegida</li><li><span>✓</span>Leitura pela nossa equipe</li><li><span>✓</span>Melhoria contínua</li></ul></div>
+            </aside>
+          </div>
+          <div class="panel feedback-history"><div class="section-heading"><div><h2>Seus feedbacks</h2><p>Acompanhe as opiniões que você já compartilhou.</p></div><span class="pill">HISTÓRICO</span></div><div id="lista-feedbacks" class="feedback-list"><p class="hint">Carregando seus feedbacks…</p></div></div>
         </section>
       </div>
       <p class="account-footer">Mundo das Esquadrias <span>Qualidade em cada detalhe.</span></p>

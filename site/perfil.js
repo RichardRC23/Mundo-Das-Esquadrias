@@ -3,6 +3,7 @@
   let usuario;
   let conta;
   let orcamentos = [];
+  let feedbacks = [];
   const pages = {
     inicio: ["Tudo sobre seus projetos.", "Seu perfil, serviços e pagamentos, em um só lugar."],
     perfil: ["Seu perfil, do seu jeito.", "Um espaço para manter seus dados sempre atualizados."],
@@ -11,6 +12,7 @@
     contratos: ["Tudo no seu lugar.", "Seus contratos, documentos e informações importantes."],
     assinaturas: ["Cuidado que continua.", "Acompanhe seus planos e serviços recorrentes."],
     pagamentos: ["Mais praticidade para você.", "Organize suas preferências e métodos de pagamento."],
+    feedback: ["Sua opinião faz a diferença.", "Conte como foi sua experiência e ajude a gente a evoluir."],
   };
   const methods = { pix: "Pix", boleto: "boleto", cartao: "cartão" };
   const paymentLabels = { reembolsado: "Reembolsado", contestado: "Em contestação", recusado: "Recusado" };
@@ -94,7 +96,10 @@
     const key = Object.hasOwn(pages, location.hash.slice(1)) ? location.hash.slice(1) : "inicio";
     document.querySelectorAll("[data-panel]").forEach((el) => { el.hidden = el.dataset.panel !== key; });
     document.querySelectorAll("[data-page]").forEach((el) => {
-      if (el.dataset.page === key) el.setAttribute("aria-current", "page"); else el.removeAttribute("aria-current");
+      if (el.dataset.page === key) {
+        el.setAttribute("aria-current", "page");
+        if (window.matchMedia("(max-width: 850px)").matches) el.scrollIntoView({ inline: "center", block: "nearest" });
+      } else el.removeAttribute("aria-current");
     });
     $("page-title").textContent = pages[key][0];
     $("page-description").textContent = pages[key][1];
@@ -255,6 +260,36 @@
       target.append(row);
     });
   }
+  const feedbackTypeLabels = { servico: "Serviço realizado", site: "Experiência no site", atendimento: "Atendimento", outro: "Outro assunto" };
+  function renderFeedbacks() {
+    const target = $("lista-feedbacks");
+    if (!feedbacks.length) {
+      empty(target, "feedback", "Sua primeira opinião pode começar aqui", "Quando você enviar um feedback, ele ficará guardado neste histórico.");
+      return;
+    }
+    target.replaceChildren();
+    feedbacks.forEach((item) => {
+      const card = node("article", "feedback-history-card");
+      const top = node("div", "feedback-history-top");
+      const stars = node("span", "feedback-history-stars", "★".repeat(item.nota) + "☆".repeat(5 - item.nota));
+      stars.setAttribute("aria-label", `${item.nota} de 5 estrelas`);
+      top.append(node("span", "feedback-history-type", feedbackTypeLabels[item.tipo] || "Feedback"), stars);
+      card.append(top, node("p", "", item.mensagem));
+      const footer = node("div", "feedback-history-footer");
+      footer.append(node("span", "", `Enviado em ${data(item.criado_em)}`), node("span", "badge positive", "Recebido"));
+      card.append(footer);
+      target.append(card);
+    });
+  }
+  async function carregarFeedbacks() {
+    try {
+      feedbacks = (await ContaAPI.request("/api/feedbacks")).feedbacks;
+      renderFeedbacks();
+    } catch (error) {
+      $("lista-feedbacks").replaceChildren(node("p", "hint", "Não foi possível carregar seu histórico agora."));
+      if (error.status === 401) erro(error);
+    }
+  }
   async function carregarConta() {
     $("erro-conta").hidden = true;
     $("retry-conta").disabled = true;
@@ -296,6 +331,7 @@
       renderProfile();
       $("account-content").hidden = false;
       await carregarConta();
+      await carregarFeedbacks();
     } catch (error) {
       $("account-content").hidden = true;
       $("erro-perfil").hidden = false;
@@ -523,6 +559,29 @@
     const chosen = document.querySelector('input[name="metodo"]:checked');
     if (!chosen) { mensagem("Selecione uma forma de pagamento."); return; }
     salvarPreferencia(chosen.value);
+  });
+  $("feedback-mensagem").addEventListener("input", (event) => {
+    $("feedback-contador").textContent = `${event.target.value.length.toLocaleString("pt-BR")} / 1.000`;
+  });
+  $("form-feedback").addEventListener("submit", async (event) => {
+    event.preventDefault(); mensagem("");
+    const form = event.currentTarget;
+    const tipo = document.querySelector('input[name="tipo"]:checked');
+    const nota = document.querySelector('input[name="nota"]:checked');
+    if (!tipo || !nota) { mensagem("Escolha o assunto e uma nota para enviar seu feedback."); return; }
+    $("feedback-fields").disabled = true;
+    try {
+      const result = await ContaAPI.request("/api/feedbacks", { method: "POST", body: {
+        tipo: tipo.value, nota: Number(nota.value), mensagem: $("feedback-mensagem").value,
+      } });
+      feedbacks.unshift(result.feedback);
+      renderFeedbacks();
+      form.reset();
+      $("feedback-contador").textContent = "0 / 1.000";
+      mensagem(result.mensagem, true);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (error) { erro(error); }
+    finally { $("feedback-fields").disabled = false; }
   });
   $("limpar-preferencia").addEventListener("click", () => salvarPreferencia(null));
   $("form-portal").addEventListener("submit", async (event) => {
