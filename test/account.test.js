@@ -395,7 +395,11 @@ test("quote requests validate measurements, generate protocols, and stay isolate
   });
   assert.equal(invalidSpecification.status, 400, invalidSpecification.body);
   const ownQuote = await alice.request("/api/orcamentos", {
-    method: "POST", json: { ...contact, nome: "Cliente de Teste" },
+    method: "POST", json: {
+      ...contact,
+      nome: "Cliente de Teste",
+      itens: Array.from({ length: 10 }, (_, index) => ({ ...item, ambiente: `Ambiente ${index + 1}` })),
+    },
   });
   assert.equal(ownQuote.status, 201, ownQuote.body);
   assert.match(ownQuote.data.orcamento.codigo, /^MDE-\d{4}-\d{6}$/);
@@ -416,6 +420,8 @@ test("quote requests validate measurements, generate protocols, and stay isolate
   assert.match(pdf.headers.get("content-disposition"), new RegExp(`orcamento-${ownQuote.data.orcamento.codigo}\\.pdf`));
   assert.equal(pdf.buffer.subarray(0, 5).toString(), "%PDF-");
   assert.ok(pdf.buffer.length > 5000);
+  assert.ok((pdf.buffer.toString("latin1").match(/\/Type\s*\/Page\b/g) || []).length >= 2,
+    "A quote with ten detailed items must generate a multipage PDF");
   assert.equal((await bob.request(pdfRoute)).status, 404);
   assert.equal((await visitor.request(pdfRoute)).status, 401);
   const quoteRoute = `/api/orcamentos/${ownQuote.data.orcamento.codigo}`;
