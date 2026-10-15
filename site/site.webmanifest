@@ -1,0 +1,12 @@
+{
+  "name": "Mundo das Esquadrias",
+  "short_name": "Mundo das Esquadrias",
+  "description": "Soluções sob medida em alumínio e vidro no Rio de Janeiro.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0d3045",
+  "icons": [
+    { "src": "/favicon-192.png", "sizes": "192x192", "type": "image/png" }
+  ]
+}

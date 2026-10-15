@@ -106,15 +106,21 @@ async function createApp(options = {}) {
   } } }));
   const siteDir = path.join(__dirname, "site");
   const logoUrl = new URL("/img/Mundo%20das%20Esquadrias%202.jpg", `${origin}/`).href;
+  const squareLogoUrl = new URL("/favicon-192.png", `${origin}/`).href;
   for (const [route, seo] of seoPages) {
     app.get(route, (_req, res, next) => {
       fs.readFile(path.join(siteDir, seo.file), "utf8", (error, html) => {
         if (error) return next(error);
         const canonicalUrl = new URL(seo.path, `${origin}/`).href;
         const structuredData = seo.path === "/" ? `<script type="application/ld+json">${JSON.stringify({
-          "@context": "https://schema.org", "@type": "LocalBusiness", name: "Mundo das Esquadrias",
-          url: canonicalUrl, image: logoUrl, telephone: "+55 21 96407-0134",
-          description: seo.description, areaServed: { "@type": "City", name: "Rio de Janeiro" },
+          "@context": "https://schema.org", "@graph": [
+            { "@type": "WebSite", "@id": `${canonicalUrl}#website`, name: "Mundo das Esquadrias",
+              alternateName: "Mundo das Esquadrias RJ", url: canonicalUrl },
+            { "@type": "LocalBusiness", "@id": `${canonicalUrl}#empresa`, name: "Mundo das Esquadrias",
+              alternateName: "Mundo das Esquadrias RJ", url: canonicalUrl, logo: squareLogoUrl,
+              image: logoUrl, telephone: "+55 21 96407-0134", description: seo.description,
+              areaServed: { "@type": "City", name: "Rio de Janeiro" } },
+          ],
         }).replaceAll("<", "\\u003c")}</script>` : "";
         const metadata = [
           `<link rel="canonical" href="${htmlAttribute(canonicalUrl)}">`,

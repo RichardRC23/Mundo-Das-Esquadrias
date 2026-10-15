@@ -111,6 +111,24 @@ function assertClientError(response) {
   assert.equal(typeof response.data?.erro, "string", response.body);
 }
 
+test("home page exposes the company site name and crawlable brand icons", async (t) => {
+  const { client } = await fixture(t);
+  const visitor = client();
+  const home = await visitor.request("/");
+  assert.equal(home.status, 200, home.body);
+  assert.match(home.body, /<meta name="application-name" content="Mundo das Esquadrias">/);
+  assert.match(home.body, /<link rel="icon" type="image\/png" sizes="48x48" href="\/favicon-48\.png">/);
+  assert.match(home.body, /"@type":"WebSite"/);
+  assert.match(home.body, /"name":"Mundo das Esquadrias"/);
+  assert.match(home.body, /"alternateName":"Mundo das Esquadrias RJ"/);
+
+  for (const [route, expectedType] of [["/favicon-48.png", "image/png"], ["/favicon-192.png", "image/png"], ["/site.webmanifest", "application/manifest+json"]]) {
+    const asset = await visitor.request(route);
+    assert.equal(asset.status, 200, `${route}: ${asset.body}`);
+    assert.match(asset.headers.get("content-type"), new RegExp(expectedType.replace("+", "\\+")));
+  }
+});
+
 test("private account and photo routes require a real authenticated session", async (t) => {
   const { client } = await fixture(t);
   const anonymous = client();
