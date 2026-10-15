@@ -153,6 +153,16 @@ test("feedback is validated, stored, and isolated to the authenticated customer"
   const stored = await db.get("SELECT usuario_id,nota,tipo FROM feedbacks WHERE id=?", [created.data.feedback.id]);
   assert.deepEqual(stored, { usuario_id: firstUser.id, nota: 5, tipo: "servico" });
   assert.equal((await first.request("/api/admin/feedbacks")).status, 403);
+
+  await db.run("UPDATE usuarios SET papel='admin' WHERE id=?", [firstUser.id]);
+  const adminView = await first.request("/api/admin/feedbacks");
+  assert.equal(adminView.status, 200, adminView.body);
+  assert.equal(adminView.data.feedbacks.length, 1);
+  assert.equal(adminView.data.feedbacks[0].nome, "Cliente de Teste");
+  assert.equal(adminView.data.resumo.total, 1);
+  assert.equal(adminView.data.resumo.media, 5);
+  assert.equal(adminView.data.resumo.cinco_estrelas, 1);
+  assert.equal(adminView.data.resumo.recentes, 1);
 });
 
 test("CSRF protection rejects missing tokens and foreign origins", async (t) => {

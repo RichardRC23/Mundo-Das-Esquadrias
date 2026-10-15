@@ -24,6 +24,9 @@
   };
   let quotes = [];
   let prices = [];
+  let feedbacks = [];
+  let feedbackSummary = { total: 0, media: 0, cinco_estrelas: 0, recentes: 0 };
+  const feedbackTypeLabels = { servico: "Serviço realizado", site: "Experiência no site", atendimento: "Atendimento", outro: "Outro assunto" };
 
   function element(tag, className, content) {
     const node = document.createElement(tag);
@@ -152,6 +155,58 @@
       row.append(info, element("strong", "", `${money(price.preco_m2_centavos)}/m²`), edit); target.append(row);
     });
   }
+  function stars(note) {
+    const value = element("span", "admin-feedback-stars", "★".repeat(note) + "☆".repeat(5 - note));
+    value.setAttribute("aria-label", `${note} de 5 estrelas`);
+    return value;
+  }
+  function contactLink(value, type) {
+    const digits = type === "phone" ? String(value).replace(/\D/g, "") : "";
+    const shown = type === "phone" && /^\d{10,11}$/.test(digits)
+      ? `(${digits.slice(0, 2)}) ${digits.length === 11 ? `${digits.slice(2, 7)}-${digits.slice(7)}` : `${digits.slice(2, 6)}-${digits.slice(6)}`}`
+      : value;
+    const link = element("a", "", shown);
+    link.href = type === "email" ? `mailto:${value}` : `tel:+55${digits}`;
+    return link;
+  }
+  function renderFeedbackSummary() {
+    $("feedback-total").textContent = feedbackSummary.total.toLocaleString("pt-BR");
+    $("feedback-average").textContent = Number(feedbackSummary.media).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    $("feedback-five").textContent = feedbackSummary.cinco_estrelas.toLocaleString("pt-BR");
+    $("feedback-recent").textContent = feedbackSummary.recentes.toLocaleString("pt-BR");
+  }
+  function renderFeedbacks() {
+    const query = $("feedback-search").value.trim().toLocaleLowerCase("pt-BR");
+    const type = $("feedback-type-filter").value;
+    const rating = Number($("feedback-rating-filter").value || 0);
+    const selected = feedbacks.filter((item) => {
+      const searchable = [item.nome, item.email, item.telefone, item.mensagem, feedbackTypeLabels[item.tipo]].filter(Boolean).join(" ").toLocaleLowerCase("pt-BR");
+      return (!query || searchable.includes(query)) && (!type || item.tipo === type) && (!rating || item.nota === rating);
+    });
+    const target = $("admin-feedbacks"); target.replaceChildren();
+    $("feedback-results-count").textContent = `${selected.length} ${selected.length === 1 ? "feedback encontrado" : "feedbacks encontrados"}${selected.length !== feedbacks.length ? ` de ${feedbacks.length}` : ""}.`;
+    $("feedback-clear-filters").hidden = !query && !type && !rating;
+    if (!selected.length) return target.append(element("div", "empty feedback-empty", feedbacks.length ? "Nenhum feedback corresponde aos filtros escolhidos." : "Nenhum cliente enviou feedback até agora."));
+    selected.forEach((item) => {
+      const card = element("article", "admin-feedback-card");
+      const head = element("div", "admin-feedback-head");
+      const identity = element("div", "feedback-client");
+      const initial = element("span", "feedback-client-avatar", (item.nome || "C").trim().charAt(0).toUpperCase());
+      const name = element("div"); name.append(element("h2", "", item.nome), element("p", "", feedbackTypeLabels[item.tipo] || "Feedback"));
+      identity.append(initial, name);
+      const ratingBlock = element("div", "feedback-rating-block");
+      ratingBlock.append(stars(item.nota), element("small", "", `${item.nota} de 5`));
+      head.append(identity, ratingBlock);
+      const comment = element("p", "admin-feedback-comment", item.mensagem);
+      const footer = element("div", "admin-feedback-footer");
+      const contacts = element("div", "feedback-contacts");
+      if (item.email) contacts.append(contactLink(item.email, "email"));
+      if (item.telefone) contacts.append(contactLink(item.telefone, "phone"));
+      if (!item.email && !item.telefone) contacts.append(element("span", "", "Contato não informado"));
+      footer.append(contacts, element("time", "", `Recebido em ${date(item.criado_em)}`));
+      card.append(head, comment, footer); target.append(card);
+    });
+  }
   function modelSuggestions() {
     $("model-suggestions").replaceChildren(...(productModels[$("price-category").value] || []).map((value) => {
       const option = document.createElement("option"); option.value = value; return option;
@@ -184,17 +239,18 @@
   }
   async function load() {
     try {
-      const [profile, summary, quoteData, priceData] = await Promise.all([
+      const [profile, summary, quoteData, priceData, feedbackData] = await Promise.all([
         ContaAPI.request("/api/perfil"), ContaAPI.request("/api/admin/resumo"),
-        ContaAPI.request("/api/admin/orcamentos"), ContaAPI.request("/api/admin/precos"),
+        ContaAPI.request("/api/admin/orcamentos"), ContaAPI.request("/api/admin/precos"), ContaAPI.request("/api/admin/feedbacks"),
       ]);
       $("admin-name").textContent = profile.usuario.nome;
       quotes = quoteData.orcamentos; prices = priceData.precos;
+      feedbacks = feedbackData.feedbacks; feedbackSummary = feedbackData.resumo;
       $("metric-pending").textContent = summary.orcamentos.pendentes;
       $("metric-quotes").textContent = summary.orcamentos.total;
       $("metric-approved").textContent = summary.orcamentos.aprovados;
       $("metric-prices").textContent = summary.precos_ativos;
-      renderRecent(); renderQuotes(); renderPrices(); modelSuggestions();
+      renderRecent(); renderQuotes(); renderPrices(); renderFeedbackSummary(); renderFeedbacks(); modelSuggestions();
       $("admin-loading").hidden = true; $("admin-content").hidden = false;
     } catch (error) { handleError(error); $("admin-loading").hidden = true; }
   }
@@ -202,6 +258,12 @@
   document.querySelectorAll("[data-view]").forEach((button) => button.addEventListener("click", () => showView(button.dataset.view)));
   document.querySelectorAll("[data-go]").forEach((button) => button.addEventListener("click", () => showView(button.dataset.go)));
   $("quote-filter").addEventListener("change", renderQuotes);
+  $("feedback-search").addEventListener("input", renderFeedbacks);
+  $("feedback-type-filter").addEventListener("change", renderFeedbacks);
+  $("feedback-rating-filter").addEventListener("change", renderFeedbacks);
+  $("feedback-clear-filters").addEventListener("click", () => {
+    $("feedback-search").value = ""; $("feedback-type-filter").value = ""; $("feedback-rating-filter").value = ""; renderFeedbacks();
+  });
   $("price-category").addEventListener("change", modelSuggestions);
   $("price-cancel").addEventListener("click", clearPriceForm);
   $("price-form").addEventListener("submit", async (event) => {

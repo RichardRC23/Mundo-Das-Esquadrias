@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
   <title>Painel administrativo | Mundo das Esquadrias</title>
-  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="admin.css?v=20261015-feedback-admin">
   <link rel="stylesheet" href="propostas.css">
 </head>
 <body>
@@ -14,6 +14,7 @@
     <nav aria-label="Painel administrativo">
       <button type="button" data-view="inicio" class="active"><span>⌂</span>Visão geral</button>
       <button type="button" data-view="orcamentos"><span>▤</span>Orçamentos</button>
+      <button type="button" data-view="feedbacks"><span>★</span>Feedbacks</button>
       <button type="button" data-view="precos"><span>R$</span>Tabela de preços</button>
     </nav>
     <div class="sidebar-footer">
@@ -50,6 +51,25 @@
           <div id="admin-quotes" class="quote-list"></div>
         </section>
 
+        <section data-panel="feedbacks" hidden>
+          <div class="page-title feedback-page-title"><div><span class="eyebrow">VOZ DO CLIENTE</span><h1>Feedbacks recebidos</h1><p>Veja o que os clientes estão dizendo sobre os serviços, o atendimento e o site.</p></div><span class="feedback-limit">Exibindo os 200 mais recentes</span></div>
+          <div class="feedback-metrics" aria-label="Resumo dos feedbacks">
+            <article><span>Total recebido</span><strong id="feedback-total">—</strong><small>opiniões registradas</small></article>
+            <article class="highlight"><span>Média geral</span><strong id="feedback-average">—</strong><small><span aria-hidden="true">★</span> de 5 estrelas</small></article>
+            <article><span>Notas máximas</span><strong id="feedback-five">—</strong><small>avaliações com 5 estrelas</small></article>
+            <article><span>Últimos 30 dias</span><strong id="feedback-recent">—</strong><small>novos feedbacks</small></article>
+          </div>
+          <section class="admin-panel feedback-admin-panel">
+            <div class="feedback-toolbar">
+              <label class="feedback-search"><span>Buscar</span><input id="feedback-search" type="search" placeholder="Cliente, contato ou comentário…"></label>
+              <label class="filter">Assunto<select id="feedback-type-filter"><option value="">Todos</option><option value="servico">Serviço realizado</option><option value="site">Experiência no site</option><option value="atendimento">Atendimento</option><option value="outro">Outro assunto</option></select></label>
+              <label class="filter">Nota<select id="feedback-rating-filter"><option value="">Todas</option><option value="5">5 estrelas</option><option value="4">4 estrelas</option><option value="3">3 estrelas</option><option value="2">2 estrelas</option><option value="1">1 estrela</option></select></label>
+            </div>
+            <div class="feedback-results-heading"><p id="feedback-results-count">Carregando feedbacks…</p><button type="button" id="feedback-clear-filters" class="text-button" hidden>Limpar filtros</button></div>
+            <div id="admin-feedbacks" class="admin-feedback-list"></div>
+          </section>
+        </section>
+
         <section data-panel="precos" hidden>
           <div class="page-title"><div><span class="eyebrow">TABELA COMERCIAL</span><h1>Preços para estimativas</h1><p>Cadastre somente valores reais. Eles serão usados no formulário público.</p></div></div>
           <div class="pricing-layout">
@@ -71,6 +91,6 @@
   </div>
   <script src="api.js"></script>
   <script src="propostas.js"></script>
-  <script src="admin.js"></script>
+  <script src="admin.js?v=20261015-feedback-admin"></script>
 </body>
 </html>
