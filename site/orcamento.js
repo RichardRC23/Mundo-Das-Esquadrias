@@ -52,6 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let step = 1;
   let selected = null;
   let draftAdded = false;
+  let latestAccess = null;
   const form = document.getElementById("quote-form");
   const steps = [...document.querySelectorAll(".step")];
   const progress = [...document.querySelectorAll("[data-progress]")];
@@ -510,7 +511,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch { /* Authentication is handled by loadAccess. */ }
   }
 
-  function showPaywall(access) {
+  function showPaywall(access, allowReturn = false) {
     document.getElementById("access-loading").hidden = true;
     document.getElementById("quota-banner").hidden = true;
     document.querySelector(".progress-wrap").hidden = true;
@@ -521,8 +522,11 @@ document.addEventListener("DOMContentLoaded", () => {
     paywall.hidden = false;
     note.className = "paywall-note";
 
-    paywall.querySelector("h2").textContent = "Continue planejando seus projetos";
-    paywall.querySelector(":scope > p").textContent = "Seu orçamento gratuito já foi utilizado. Escolha quantos novos orçamentos deseja comprar, sem mensalidade.";
+    paywall.querySelector("h2").textContent = allowReturn ? "Adicione mais orçamentos à sua conta" : "Continue planejando seus projetos";
+    paywall.querySelector(":scope > p").textContent = allowReturn
+      ? "Você ainda tem orçamento disponível e pode comprar novos créditos antecipadamente, sem mensalidade."
+      : "Seu orçamento gratuito já foi utilizado. Escolha quantos novos orçamentos deseja comprar, sem mensalidade.";
+    document.getElementById("continue-current-quote").hidden = !allowReturn;
     buttons.forEach((button) => { button.hidden = false; button.disabled = !access.compra_disponivel; });
     note.textContent = access.compra_disponivel
       ? "Pagamento único em ambiente seguro. Os créditos não vencem a cada mês."
@@ -535,6 +539,7 @@ document.addEventListener("DOMContentLoaded", () => {
     loading.textContent = "Conferindo seus orçamentos disponíveis…";
     try {
       const { acesso } = await ContaAPI.request("/api/orcamentos/acesso");
+      latestAccess = acesso;
       if (!acesso.restantes) {
         showPaywall(acesso);
         return;
@@ -543,6 +548,7 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("quote-paywall").hidden = true;
       const banner = document.getElementById("quota-banner");
       banner.hidden = false;
+      document.getElementById("buy-more-quotes").hidden = !acesso.compra_disponivel;
       if (acesso.plano === "creditos") {
         document.getElementById("quota-title").textContent = "Você tem orçamentos disponíveis";
         document.getElementById("quota-description").textContent = `${acesso.restantes} ${acesso.restantes === 1 ? "orçamento disponível" : "orçamentos disponíveis"} para usar quando quiser.`;
@@ -560,6 +566,11 @@ document.addEventListener("DOMContentLoaded", () => {
       loading.textContent = error.message || "Não foi possível conferir seu acesso. Atualize a página para tentar novamente.";
     }
   }
+
+  document.getElementById("buy-more-quotes").addEventListener("click", () => {
+    if (latestAccess?.compra_disponivel) showPaywall(latestAccess, true);
+  });
+  document.getElementById("continue-current-quote").addEventListener("click", loadAccess);
 
   document.querySelectorAll(".buy-quotes").forEach((button) => button.addEventListener("click", async () => {
     const note = document.getElementById("paywall-note");
