@@ -214,16 +214,23 @@
         quote.itens.forEach((item, index) => {
           const detail = quote.estimativa_detalhes[index];
           breakdown.append(node("p", "", `${item.quantidade}× ${item.modelo}: ${dinheiro(detail.subtotal_centavos, "BRL")}`));
+          (detail.partes || []).forEach((parte) => {
+            breakdown.append(node("p", "quote-price-part", `${parte.rotulo}: ${dinheiro(parte.valor_centavos, "BRL")}`));
+          });
           const technical = [item.linha_aluminio, item.cor, item.tipo_vidro, item.composicao_vidro, item.espessura_vidro]
             .filter((value) => value && value !== "A definir").join(" · ");
           if (technical) breakdown.append(node("p", "quote-specifications", technical));
           if (doorSpecs(item)) breakdown.append(node("p", "quote-specifications", doorSpecs(item)));
+          if (Array.isArray(item.acessorios) && item.acessorios.length) breakdown.append(node("p", "quote-specifications", `Acessórios: ${item.acessorios.join(" · ")}`));
         });
         info.append(breakdown);
+        if (quote.estimativa_detalhes.some((detail) => detail.metodo === "composicao")) {
+          info.append(node("p", "quote-price-note", "Valores de venda por categoria, com margem, impostos e taxas incluídos."));
+        }
       }
       info.append(node("p", "date", `Enviado em ${data(quote.criado_em)} · ${quote.instalacao ? "Com instalação" : "Somente fornecimento"}`));
       const right = node("div", "record-meta");
-      right.append(node("strong", "", `Estimativa inicial: ${dinheiro(quote.estimativa_centavos, "BRL")}`));
+      right.append(node("strong", "", `${quote.tipo_calculo === "composicao" ? "Valor calculado" : "Estimativa inicial"}: ${dinheiro(quote.estimativa_centavos, "BRL")}`));
       const positive = ["aprovado", "concluido"].includes(quote.status);
       const pending = ["recebido", "em_analise", "aguardando_cliente"].includes(quote.status);
       right.append(node("span", `badge${positive ? " positive" : pending ? " pending" : ""}`, labels[quote.status] || quote.status));

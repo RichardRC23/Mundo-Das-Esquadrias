@@ -25,6 +25,7 @@
   let quotes = [];
   let prices = [];
   let feedbacks = [];
+  let costData = { configuracao: {}, materiais: [], fichas: [], opcoes: { bases_calculo: {} } };
   let feedbackSummary = { total: 0, media: 0, cinco_estrelas: 0, recentes: 0 };
   const feedbackTypeLabels = { servico: "Serviço realizado", site: "Experiência no site", atendimento: "Atendimento", outro: "Outro assunto" };
 
@@ -109,12 +110,15 @@
           .filter((value) => value && value !== "A definir").join(" · ");
         if (technical) box.append(element("small", "item-specifications", technical));
         if (doorSpecs(item)) box.append(element("small", "item-specifications", doorSpecs(item)));
+        if (Array.isArray(item.acessorios) && item.acessorios.length) box.append(element("small", "item-specifications", `Acessórios: ${item.acessorios.join(" · ")}`));
         const detail = quote.estimativa_detalhes?.[index];
-        if (detail) box.append(element("small", "item-estimate", `Estimativa do item: ${money(detail.subtotal_centavos)}`));
+        if (detail) box.append(element("small", "item-estimate", `${detail.metodo === "composicao" ? "Valor por composição" : "Estimativa do item"}: ${money(detail.subtotal_centavos)}`));
         itemList.append(box);
       });
       itemColumn.append(itemList);
-      const actions = element("div", "quote-actions"); actions.append(element("h3", "", "Atendimento"), element("p", "estimate", money(quote.estimativa_centavos)));
+      const actions = element("div", "quote-actions");
+      actions.append(element("h3", "", quote.tipo_calculo === "composicao" ? "Valor calculado" : "Atendimento"), element("p", "estimate", money(quote.estimativa_centavos)));
+      if (quote.tipo_calculo === "composicao") actions.append(element("p", "", "Calculado pela ficha técnica e pelos custos vigentes no envio."));
       const label = element("label", "", "Alterar situação");
       const select = element("select");
       Object.entries(statusLabels).forEach(([value, text]) => {
@@ -230,6 +234,112 @@
     $("price-form").reset(); $("price-id").value = ""; $("price-minimum").value = "0"; $("price-installation").value = "0"; $("price-active").checked = true;
     $("price-form-title").textContent = "Novo preço"; $("price-cancel").hidden = true; modelSuggestions();
   }
+  function percentFromBp(value) { return (Number(value || 0) / 100).toFixed(2); }
+  function centsFromInput(id) { return Math.round(Number($(id).value || 0) * 100); }
+  function bpFromInput(id) { return Math.round(Number($(id).value || 0) * 100); }
+  function units(value) { return costData.opcoes.unidades?.[value] || value; }
+
+  function fillCostSettings() {
+    const item = costData.configuracao;
+    $("cost-margin").value = percentFromBp(item.margem_bp);
+    $("cost-taxes").value = percentFromBp(item.impostos_bp);
+    $("cost-payment-fee").value = percentFromBp(item.taxa_pagamento_bp);
+    $("cost-overhead").value = (Number(item.despesa_fixa_centavos || 0) / 100).toFixed(2);
+    $("cost-freight").value = (Number(item.frete_base_centavos || 0) / 100).toFixed(2);
+  }
+
+  function renderMaterials() {
+    const target = $("materials-list"); target.replaceChildren();
+    $("materials-count").textContent = `${costData.materiais.length} ${costData.materiais.length === 1 ? "item cadastrado" : "itens cadastrados"}.`;
+    if (!costData.materiais.length) return target.append(element("div", "empty", "Cadastre os materiais, serviços e horas de mão de obra usados na fabricação."));
+    costData.materiais.forEach((item) => {
+      const row = element("article", "cost-row");
+      const info = element("div"); info.append(element("h3", "", `${item.codigo} · ${item.nome}`));
+      info.append(element("p", item.custo_confirmado ? "" : "unconfirmed", `${costData.opcoes.tipos_custo?.[item.tipo_custo] || "Materiais"} · ${item.grupo} · ${item.fornecedor || "Sem fornecedor"} · ${item.custo_confirmado ? "custo confirmado" : "aguardando conferência"}${item.ativo ? "" : " · inativo"}`));
+      const edit = element("button", "", "Editar"); edit.type = "button"; edit.addEventListener("click", () => editMaterial(item));
+      row.append(info, element("strong", "", `${money(item.custo_unitario_centavos)}/${units(item.unidade)}`), edit); target.append(row);
+    });
+  }
+
+  function editMaterial(item) {
+    $("material-id").value = item.id; $("material-code").value = item.codigo; $("material-name").value = item.nome;
+    $("material-group").value = item.grupo; $("material-type").value = item.tipo_custo || "materiais"; $("material-unit").value = item.unidade;
+    $("material-cost").value = (item.custo_unitario_centavos / 100).toFixed(2); $("material-waste").value = percentFromBp(item.perda_padrao_bp);
+    $("material-date").value = item.referencia_em || ""; $("material-supplier").value = item.fornecedor || "";
+    $("material-confirmed").checked = item.custo_confirmado; $("material-active").checked = item.ativo;
+    $("material-form-title").textContent = "Editar material ou serviço"; $("material-cancel").hidden = false;
+    $("material-form").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function clearMaterialForm() {
+    $("material-form").reset(); $("material-id").value = ""; $("material-waste").value = "0"; $("material-active").checked = true;
+    $("material-form-title").textContent = "Novo material ou serviço"; $("material-cancel").hidden = true;
+  }
+
+  function populateCostSelects() {
+    $("component-material").replaceChildren(...costData.materiais.filter((item) => item.ativo).map((item) => {
+      const option = element("option", "", `${item.codigo} · ${item.nome}`); option.value = item.id; return option;
+    }));
+    $("component-recipe").replaceChildren(...costData.fichas.filter((item) => item.ativo).map((item) => {
+      const option = element("option", "", `${categories[item.categoria]} · ${item.modelo}`); option.value = item.id; return option;
+    }));
+    $("component-base").replaceChildren(...Object.entries(costData.opcoes.bases_calculo || {}).map(([value, label]) => {
+      const option = element("option", "", label); option.value = value; return option;
+    }));
+    const ready = costData.fichas.filter((ficha) => ficha.ativo && ficha.validada && ficha.componentes.length && ficha.componentes.every((component) => {
+      const material = costData.materiais.find((item) => item.id === component.material_id);
+      return material?.ativo && material?.custo_confirmado;
+    })).length;
+    $("cost-status").textContent = `${ready} ${ready === 1 ? "ficha pronta" : "fichas prontas"} para cálculo real`;
+  }
+
+  function renderRecipes() {
+    const target = $("recipes-list"); target.replaceChildren();
+    $("recipes-count").textContent = `${costData.fichas.length} ${costData.fichas.length === 1 ? "ficha cadastrada" : "fichas cadastradas"}.`;
+    if (!costData.fichas.length) return target.append(element("div", "empty", "Crie uma ficha para cada modelo que será calculado pelos custos reais."));
+    costData.fichas.forEach((ficha) => {
+      const card = element("article", "recipe-card"); const head = element("div", "recipe-head"); const title = element("div");
+      title.append(element("h3", "", `${categories[ficha.categoria]} · ${ficha.modelo}`), element("p", ficha.validada ? "" : "unconfirmed", `Versão ${ficha.versao} · mínimo ${money(ficha.preco_minimo_centavos)} · ${ficha.validada ? "revisada" : "aguardando revisão"}${ficha.ativo ? "" : " · inativa"}`));
+      const edit = element("button", "", "Editar ficha"); edit.type = "button"; edit.addEventListener("click", () => editRecipe(ficha)); head.append(title, edit); card.append(head);
+      const list = element("ul", "component-list");
+      if (!ficha.componentes.length) list.append(element("li", "", "Nenhum componente. Esta ficha ainda não calcula preços."));
+      ficha.componentes.forEach((component) => {
+        const li = element("li"); const info = element("span", "", `${component.codigo} · ${component.nome}`);
+        const factor = component.fator_milesimos / 1000; const fixed = component.adicional_milesimos / 1000;
+        info.append(element("small", "", `${costData.opcoes.bases_calculo[component.base_calculo]} × ${factor}${fixed ? ` + ${fixed}` : ""}${component.condicao_campo ? ` · somente ${component.condicao_campo}: ${component.condicao_valor}` : ""}${component.somente_instalacao ? " · instalação" : ""}`));
+        const remove = element("button", "component-remove", "Remover"); remove.type = "button";
+        remove.addEventListener("click", async () => {
+          remove.disabled = true;
+          try { await ContaAPI.request(`/api/admin/custos/componentes/${component.id}`, { method: "DELETE" }); await reloadCosts(); message("Componente removido da ficha.", true); }
+          catch (error) { handleError(error); remove.disabled = false; }
+        });
+        li.append(info, remove); list.append(li);
+      });
+      card.append(list); target.append(card);
+    });
+  }
+
+  function editRecipe(ficha) {
+    $("recipe-id").value = ficha.id; $("recipe-category").value = ficha.categoria; recipeSuggestions();
+    $("recipe-model").value = ficha.modelo; $("recipe-minimum").value = (ficha.preco_minimo_centavos / 100).toFixed(2); $("recipe-validated").checked = ficha.validada; $("recipe-active").checked = ficha.ativo;
+    $("recipe-form-title").textContent = "Editar ficha técnica"; $("recipe-cancel").hidden = false; $("recipe-form").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function clearRecipeForm() {
+    $("recipe-form").reset(); $("recipe-id").value = ""; $("recipe-minimum").value = "0"; $("recipe-validated").checked = false; $("recipe-active").checked = true;
+    $("recipe-form-title").textContent = "Nova ficha técnica"; $("recipe-cancel").hidden = true; recipeSuggestions();
+  }
+
+  function recipeSuggestions() {
+    $("recipe-model-suggestions").replaceChildren(...(productModels[$("recipe-category").value] || []).map((value) => {
+      const option = document.createElement("option"); option.value = value; return option;
+    }));
+  }
+
+  async function reloadCosts() {
+    costData = await ContaAPI.request("/api/admin/custos");
+    fillCostSettings(); renderMaterials(); renderRecipes(); populateCostSelects();
+  }
   async function loadSummary() {
     const summary = await ContaAPI.request("/api/admin/resumo");
     $("metric-pending").textContent = summary.orcamentos.pendentes;
@@ -239,18 +349,20 @@
   }
   async function load() {
     try {
-      const [profile, summary, quoteData, priceData, feedbackData] = await Promise.all([
+      const [profile, summary, quoteData, priceData, feedbackData, loadedCosts] = await Promise.all([
         ContaAPI.request("/api/perfil"), ContaAPI.request("/api/admin/resumo"),
-        ContaAPI.request("/api/admin/orcamentos"), ContaAPI.request("/api/admin/precos"), ContaAPI.request("/api/admin/feedbacks"),
+        ContaAPI.request("/api/admin/orcamentos"), ContaAPI.request("/api/admin/precos"), ContaAPI.request("/api/admin/feedbacks"), ContaAPI.request("/api/admin/custos"),
       ]);
       $("admin-name").textContent = profile.usuario.nome;
       quotes = quoteData.orcamentos; prices = priceData.precos;
       feedbacks = feedbackData.feedbacks; feedbackSummary = feedbackData.resumo;
+      costData = loadedCosts;
       $("metric-pending").textContent = summary.orcamentos.pendentes;
       $("metric-quotes").textContent = summary.orcamentos.total;
       $("metric-approved").textContent = summary.orcamentos.aprovados;
       $("metric-prices").textContent = summary.precos_ativos;
       renderRecent(); renderQuotes(); renderPrices(); renderFeedbackSummary(); renderFeedbacks(); modelSuggestions();
+      fillCostSettings(); renderMaterials(); renderRecipes(); populateCostSelects(); recipeSuggestions();
       $("admin-loading").hidden = true; $("admin-content").hidden = false;
     } catch (error) { handleError(error); $("admin-loading").hidden = true; }
   }
@@ -282,6 +394,59 @@
       await ContaAPI.request(id ? `/api/admin/precos/${id}` : "/api/admin/precos", { method: id ? "PUT" : "POST", body });
       prices = (await ContaAPI.request("/api/admin/precos")).precos;
       renderPrices(); clearPriceForm(); await loadSummary(); message(id ? "Preço atualizado com sucesso." : "Preço cadastrado com sucesso.", true);
+    } catch (error) { handleError(error); }
+    finally { submit.disabled = false; }
+  });
+  $("cost-settings-form").addEventListener("submit", async (event) => {
+    event.preventDefault(); const submit = event.currentTarget.querySelector('[type="submit"]'); submit.disabled = true;
+    try {
+      await ContaAPI.request("/api/admin/custos/configuracao", { method: "PUT", body: {
+        margem_bp: bpFromInput("cost-margin"), impostos_bp: bpFromInput("cost-taxes"), taxa_pagamento_bp: bpFromInput("cost-payment-fee"),
+        despesa_fixa_centavos: centsFromInput("cost-overhead"), frete_base_centavos: centsFromInput("cost-freight"),
+      } });
+      await reloadCosts(); message("Configuração comercial atualizada.", true);
+    } catch (error) { handleError(error); }
+    finally { submit.disabled = false; }
+  });
+  $("material-cancel").addEventListener("click", clearMaterialForm);
+  $("material-form").addEventListener("submit", async (event) => {
+    event.preventDefault(); const id = $("material-id").value; const submit = event.currentTarget.querySelector('[type="submit"]'); submit.disabled = true;
+    try {
+      await ContaAPI.request(id ? `/api/admin/custos/materiais/${id}` : "/api/admin/custos/materiais", { method: id ? "PUT" : "POST", body: {
+        codigo: $("material-code").value, nome: $("material-name").value, grupo: $("material-group").value, tipo_custo: $("material-type").value, unidade: $("material-unit").value,
+        custo_unitario_centavos: centsFromInput("material-cost"), perda_padrao_bp: bpFromInput("material-waste"), fornecedor: $("material-supplier").value,
+        referencia_em: $("material-date").value, custo_confirmado: $("material-confirmed").checked, ativo: $("material-active").checked,
+      } });
+      clearMaterialForm(); await reloadCosts(); message(id ? "Material atualizado." : "Material cadastrado.", true);
+    } catch (error) { handleError(error); }
+    finally { submit.disabled = false; }
+  });
+  $("recipe-category").addEventListener("change", recipeSuggestions);
+  $("recipe-cancel").addEventListener("click", clearRecipeForm);
+  $("recipe-form").addEventListener("submit", async (event) => {
+    event.preventDefault(); const id = $("recipe-id").value; const submit = event.currentTarget.querySelector('[type="submit"]'); submit.disabled = true;
+    try {
+      await ContaAPI.request(id ? `/api/admin/custos/fichas/${id}` : "/api/admin/custos/fichas", { method: id ? "PUT" : "POST", body: {
+        categoria: $("recipe-category").value, modelo: $("recipe-model").value,
+        preco_minimo_centavos: centsFromInput("recipe-minimum"), validada: $("recipe-validated").checked, ativo: $("recipe-active").checked,
+      } });
+      clearRecipeForm(); await reloadCosts(); message(id ? "Ficha técnica atualizada." : "Ficha técnica cadastrada.", true);
+    } catch (error) { handleError(error); }
+    finally { submit.disabled = false; }
+  });
+  $("component-form").addEventListener("submit", async (event) => {
+    event.preventDefault(); const submit = event.currentTarget.querySelector('[type="submit"]'); submit.disabled = true;
+    try {
+      const conditionField = $("component-condition-field").value;
+      await ContaAPI.request("/api/admin/custos/componentes", { method: "POST", body: {
+        ficha_id: Number($("component-recipe").value), material_id: Number($("component-material").value), base_calculo: $("component-base").value,
+        fator_milesimos: Math.round(Number($("component-factor").value) * 1000), adicional_milesimos: Math.round(Number($("component-fixed").value) * 1000),
+        perda_bp: $("component-waste").value === "" ? null : bpFromInput("component-waste"),
+        condicao_campo: conditionField, condicao_valor: conditionField ? $("component-condition-value").value : "",
+        somente_instalacao: $("component-installation").checked,
+      } });
+      const selectedRecipe = $("component-recipe").value; event.currentTarget.reset(); $("component-factor").value = "1"; $("component-fixed").value = "0";
+      await reloadCosts(); $("component-recipe").value = selectedRecipe; message("Componente adicionado à ficha.", true);
     } catch (error) { handleError(error); }
     finally { submit.disabled = false; }
   });

@@ -6,7 +6,7 @@
   <meta name="description" content="Solicite seu orçamento personalizado de esquadrias de alumínio, vidros, box e fachadas.">
     <title>Solicitar orçamento | Mundo das Esquadrias</title>
     <meta name="application-name" content="Mundo das Esquadrias"><meta name="theme-color" content="#0d3045"><link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png"><link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest">
-  <link rel="stylesheet" href="orcamento.css">
+  <link rel="stylesheet" href="orcamento.css?v=20261016-acessorios">
   <link rel="stylesheet" href="acessibilidade.css">
   <script src="acessibilidade.js" defer></script>
   <link rel="stylesheet" href="atendimento.css">
@@ -221,6 +221,11 @@
                 </select></label>
               </div>
             </fieldset>
+            <fieldset class="field full specification-group accessory-group" id="accessory-group">
+              <legend>Acessórios adicionais <small>(opcional)</small></legend>
+              <p>Marque os acessórios que deseja incluir neste item. Eles aparecerão no orçamento para conferência.</p>
+              <div class="accessory-options" id="accessory-options"></div>
+            </fieldset>
             <label class="field glass-field">
               <span>Cor ou acabamento do vidro</span>
               <select id="item-vidro">
@@ -301,7 +306,7 @@
           <div class="step-heading compact">
             <span class="step-kicker">Etapa 4 de 4</span>
             <h2>Confira sua solicitação</h2>
-            <p>Veja a estimativa de cada item e o total antes de enviar. A equipe confirmará tudo após a medição técnica.</p>
+            <p>Veja os valores de cada item e a separação entre materiais, mão de obra e instalação quando a ficha técnica estiver completa. A equipe confirmará as medidas.</p>
           </div>
           <div id="review-content" class="review-content"></div>
           <div class="price-notice" id="price-notice"><span>i</span><p><strong>Por que o valor não aparece agora?</strong> Cada projeto é feito sob medida. A equipe confirmará perfil, tipo de vidro, ferragens, acesso e instalação antes de informar o preço final.</p></div>
@@ -317,9 +322,11 @@
         <h2>Orçamento enviado com sucesso!</h2>
         <p>Seu protocolo é <strong id="success-code"></strong>. Guarde esse número para acompanhar o atendimento.</p>
         <p class="success-estimate" id="success-estimate" hidden></p>
+        <div class="success-price-breakdown" id="success-price-breakdown" hidden></div>
         <div class="success-visuals" id="success-visuals" aria-label="Visualização dos itens do orçamento"></div>
         <div class="success-actions">
           <a class="button whatsapp" id="whatsapp-link" href="#" target="_blank" rel="noopener">Continuar pelo WhatsApp</a>
+          <a class="button ghost" id="success-pdf-link" href="#" target="_blank" rel="noopener">Baixar orçamento em PDF</a>
           <a class="button ghost" href="index.html">Voltar ao início</a>
         </div>
       </div>
@@ -344,7 +351,7 @@
     <p id="viewer-help">Imagem ilustrativa com giro em perspectiva. Pause para observar os detalhes. Amplie com + e −, a roda do mouse ou dois dedos e arraste para mover.</p>
   </dialog>
   <script src="api.js"></script>
-  <script src="orcamento.js"></script>
+  <script src="orcamento.js?v=20261016-acessorios"></script>
   <script src="visualizador.js"></script>
 </body>
 </html>

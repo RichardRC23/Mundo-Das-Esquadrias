@@ -16,6 +16,18 @@ document.addEventListener("DOMContentLoaded", () => {
     manutencao: ["Troca de roldanas", "Troca de vidro", "Ajuste de esquadria", "Vedação", "Fechadura / puxador", "Outro reparo"],
     outro: ["Projeto sob medida", "Ainda não sei definir"],
   };
+  const accessories = {
+    porta: ["Roldanas reforçadas", "Fechamento suave", "Limitador de abertura", "Kit de vedação", "Controle remoto adicional"],
+    janela: ["Roldanas reforçadas", "Limitador de abertura", "Kit de vedação", "Tela mosquiteira removível", "Trava de segurança"],
+    box: ["Kit de ferragens inox", "Puxador duplo", "Barra de apoio", "Película de segurança"],
+    fachada: ["Película de segurança", "Fechadura adicional", "Mola aérea", "Controle de acesso"],
+    guarda_corpo: ["Corrimão adicional", "Kit de fixação inox", "Acabamento de base"],
+    fechamento: ["Roldanas reforçadas", "Fechamento suave", "Kit de vedação", "Trava de segurança"],
+    espelho: ["Moldura de alumínio", "Iluminação LED", "Película de segurança", "Fixação invisível"],
+    cobertura: ["Calha", "Rufo", "Kit de vedação", "Película de controle solar"],
+    manutencao: ["Kit de roldanas", "Kit de vedação", "Fechadura", "Puxador"],
+    outro: ["Kit de vedação", "Película de segurança", "Fixação reforçada"],
+  };
   const materialNames = {
     aluminio_vidro: "Alumínio com vidro", aluminio: "Somente alumínio", vidro: "Somente vidro",
     manutencao: "Manutenção / reparo", outro: "A definir",
@@ -50,6 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let priceAdjustments = {};
   let priceReference = null;
   let step = 1;
+  let reviewRequest = 0;
   let selected = null;
   let draftAdded = false;
   let latestAccess = null;
@@ -162,6 +175,7 @@ document.addEventListener("DOMContentLoaded", () => {
       item.categoria === "porta" && item.fechadura && !/sem|definir/i.test(item.fechadura) ? `Fechadura ${item.fechadura}` : "",
       item.categoria === "porta" && item.tela_mosquiteira === "Sim" ? "Tela mosquiteira" : "",
       item.categoria === "porta" && item.automatizacao === "Sim" ? "Automatizada" : "",
+      ...(item.acessorios || []),
     ].filter((detail) => detail && detail !== "A definir");
     return details.join(" · ");
   }
@@ -204,6 +218,7 @@ document.addEventListener("DOMContentLoaded", () => {
     materialInput.value = selected.material;
     updateMaterialFields();
     updateDoorFields();
+    renderAccessoryOptions();
     addButton.disabled = false;
     addButton.textContent = "＋ Adicionar este item ao orçamento";
     document.getElementById("selected-product").innerHTML = `<strong>${escapeHtml(selected.nome)}</strong><button type="button" id="change-product">Trocar produto</button>`;
@@ -221,6 +236,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updateDoorFields() {
     document.getElementById("door-specs").hidden = selected?.categoria !== "porta";
+  }
+
+  function renderAccessoryOptions() {
+    const target = document.getElementById("accessory-options");
+    const options = accessories[selected?.categoria] || [];
+    target.innerHTML = options.map((accessory) => `<label class="accessory-option"><input type="checkbox" name="acessorios" value="${escapeHtml(accessory)}"><span>${escapeHtml(accessory)}</span></label>`).join("");
+    document.getElementById("accessory-group").hidden = options.length === 0;
+  }
+
+  function accessorySpecifications(item) {
+    return Array.isArray(item.acessorios) ? item.acessorios : [];
   }
 
   function doorSpecifications(item) {
@@ -257,6 +283,7 @@ document.addEventListener("DOMContentLoaded", () => {
       retirada_existente: isDoor ? value("item-retirada-existente") : "",
       tela_mosquiteira: isDoor ? value("item-tela-mosquiteira") : "",
       automatizacao: isDoor ? value("item-automatizacao") : "",
+      acessorios: [...document.querySelectorAll('input[name="acessorios"]:checked')].map((input) => input.value),
       largura_cm: Number(value("item-largura")),
       altura_cm: Number(value("item-altura")),
       quantidade: Number(value("item-quantidade")),
@@ -314,7 +341,8 @@ document.addEventListener("DOMContentLoaded", () => {
         <small>${item.largura_cm} × ${item.altura_cm} cm · ${escapeHtml(materialNames[item.material])} · ${item.quantidade} un.</small>
         ${[item.linha_aluminio, item.cor, item.tipo_vidro, item.composicao_vidro, item.espessura_vidro].filter((detail) => detail && detail !== "A definir").length ? `<small>${escapeHtml([item.linha_aluminio, item.cor, item.tipo_vidro, item.composicao_vidro, item.espessura_vidro].filter((detail) => detail && detail !== "A definir").join(" · "))}</small>` : ""}
         ${doorSpecifications(item).length ? `<small>${escapeHtml(doorSpecifications(item).join(" · "))}</small>` : ""}
-        ${price ? `<small class="item-price">Produtos: ${money(price.produto_unitario_centavos * item.quantidade)}</small>` : ""}</p>
+        ${accessorySpecifications(item).length ? `<small><strong>Acessórios:</strong> ${escapeHtml(accessorySpecifications(item).join(" · "))}</small>` : ""}
+        ${price ? `<small class="item-price">Referência inicial por m²: ${money(price.produto_unitario_centavos * item.quantidade)}</small>` : ""}</p>
         <button type="button" data-remove="${index}" aria-label="Remover ${escapeHtml(categoryNames[item.categoria])}">Remover</button>
       </div>`;
     }).join("");
@@ -344,19 +372,29 @@ document.addEventListener("DOMContentLoaded", () => {
     return "";
   }
 
-  function renderReview() {
+  async function renderReview() {
     const data = contactPayload();
-    const estimate = calculateEstimate(data.instalacao);
+    const request = ++reviewRequest;
+    const notice = document.getElementById("price-notice");
+    notice.innerHTML = "<span>i</span><p>Calculando os valores do orçamento…</p>";
+    let estimate;
+    let error;
+    try {
+      estimate = await ContaAPI.request("/api/orcamentos/previa", { method: "POST", body: data });
+    } catch (caught) { error = caught; }
+    if (request !== reviewRequest || step !== 4) return;
     document.getElementById("review-content").innerHTML = `
-      <section class="review-section"><h3>Itens e preços estimados</h3>${items.map((item, index) => {
+      <section class="review-section"><h3>Itens e valores</h3>${items.map((item, index) => {
         const price = estimate?.detalhes[index];
+        const partes = Array.isArray(price?.partes) ? price.partes : [];
         return `
         <div class="review-item">${animatedVisual(item, true)}<span class="review-number">${index + 1}</span><div>
           <strong>${escapeHtml(categoryNames[item.categoria])} · ${escapeHtml(item.modelo)}</strong>
           <p>${item.largura_cm} × ${item.altura_cm} cm · ${escapeHtml(materialNames[item.material])}${item.linha_aluminio ? ` · ${escapeHtml(item.linha_aluminio)}` : ""}${item.cor ? ` · ${escapeHtml(item.cor)}` : ""}${item.tipo_vidro ? ` · Vidro ${escapeHtml(item.tipo_vidro)}` : ""}${item.composicao_vidro ? ` ${escapeHtml(item.composicao_vidro)}` : ""}${item.espessura_vidro && item.espessura_vidro !== "A definir" ? ` · ${escapeHtml(item.espessura_vidro)}` : ""}</p>
           ${doorSpecifications(item).length ? `<p class="review-specifications">${escapeHtml(doorSpecifications(item).join(" · "))}</p>` : ""}
+          ${accessorySpecifications(item).length ? `<p class="review-specifications"><strong>Acessórios:</strong> ${escapeHtml(accessorySpecifications(item).join(" · "))}</p>` : ""}
           ${item.ambiente ? `<p>Ambiente: ${escapeHtml(item.ambiente)}</p>` : ""}
-          ${price ? `<p class="review-price-detail">Produto: ${money(price.produto_unitario_centavos)} por unidade${data.instalacao ? ` · instalação: ${money(price.instalacao_unitaria_centavos)} por unidade` : ""}</p>` : ""}
+          ${partes.length ? `<ul class="review-breakdown">${partes.map((parte) => `<li><span>${escapeHtml(parte.rotulo)}</span><strong>${money(parte.valor_centavos)}</strong></li>`).join("")}</ul>` : ""}
         </div><span class="review-qty">${item.quantidade} un.${price ? `<strong>${money(price.subtotal_centavos)}</strong>` : ""}</span></div>`;
       }).join("")}</section>
       <section class="review-section"><h3>Contato e local</h3><div class="contact-summary">
@@ -365,12 +403,14 @@ document.addEventListener("DOMContentLoaded", () => {
         <span><strong>Local:</strong> ${escapeHtml([data.bairro, data.cidade].filter(Boolean).join(", "))}</span>
         <span><strong>Instalação:</strong> ${data.instalacao ? "Sim, incluir" : "Não, só fornecimento"}</span>
       </div></section>`;
-    const notice = document.getElementById("price-notice");
-    if (estimate != null) {
-      const reference = priceReference?.rotulo ? ` ${escapeHtml(priceReference.rotulo)}.` : "";
-      notice.innerHTML = `<span>i</span><p><strong>Total estimado: ${money(estimate.total)}</strong>${reference} O cálculo considera as medidas, quantidades, materiais, acabamentos e ${data.instalacao ? "a instalação selecionada" : "somente o fornecimento"}. O preço final será confirmado após medição e avaliação técnica.</p>`;
+    if (Number.isSafeInteger(estimate?.total_centavos)) {
+      const reference = estimate.tipo_calculo === "estimativa" && priceReference?.rotulo ? ` ${escapeHtml(priceReference.rotulo)}.` : "";
+      const note = estimate.tipo_calculo === "composicao"
+        ? "Os valores separados são preços de venda: incluem margem, impostos e taxas. A equipe confirmará as medidas e condições do local."
+        : "Nos itens estimados por m², produto/serviço não separa materiais e mão de obra. O preço final será confirmado após medição técnica.";
+      notice.innerHTML = `<span>i</span><p><strong>${estimate.tipo_calculo === "composicao" ? "Valor calculado" : "Total estimado"}: ${money(estimate.total_centavos)}</strong>${reference} ${note}</p>`;
     } else {
-      notice.innerHTML = "<span>i</span><p><strong>Por que o valor não aparece agora?</strong> Ainda não há preço cadastrado para todos os itens. A equipe confirmará materiais, ferragens, acesso e instalação antes de informar o valor final.</p>";
+      notice.innerHTML = `<span>i</span><p><strong>Valor a confirmar.</strong> ${escapeHtml(error?.message || "Ainda não há preço cadastrado para todos os itens. A equipe confirmará os valores.")}</p>`;
     }
   }
 
@@ -420,6 +460,8 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("item-ambiente").value = "";
     document.getElementById("item-detalhes").value = "";
     document.querySelectorAll("#door-specs select").forEach((select) => { select.value = "A definir"; });
+    document.querySelectorAll('input[name="acessorios"]').forEach((input) => { input.checked = false; });
+    document.getElementById("accessory-options").replaceChildren();
     updateDoorFields();
     addButton.disabled = false;
     addButton.textContent = "＋ Adicionar este item ao orçamento";
@@ -449,8 +491,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const error = validateContact(contactPayload());
       document.getElementById("contact-error").textContent = error;
       if (error) return;
-      renderReview();
       showStep(4);
+      renderReview();
     }
   }));
   document.querySelectorAll("[data-back]").forEach((button) => button.addEventListener("click", () => showStep(Math.max(1, step - 1))));
@@ -473,12 +515,40 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("success-code").textContent = code;
       const estimateElement = document.getElementById("success-estimate");
       if (Number.isSafeInteger(result.orcamento.estimativa_centavos)) {
-        estimateElement.textContent = `Estimativa inicial registrada: ${money(result.orcamento.estimativa_centavos)}. O valor final depende da conferência técnica.`;
+        estimateElement.textContent = result.orcamento.tipo_calculo === "composicao"
+          ? `Valor calculado pelos materiais e serviços cadastrados: ${money(result.orcamento.estimativa_centavos)}. As medidas ainda serão conferidas pela equipe.`
+          : `Estimativa inicial registrada: ${money(result.orcamento.estimativa_centavos)}. O valor final depende da conferência técnica.`;
         estimateElement.hidden = false;
       }
+      const priceBreakdown = document.getElementById("success-price-breakdown");
+      priceBreakdown.replaceChildren();
+      const details = result.orcamento.estimativa_detalhes || [];
+      if (details.length === items.length) {
+        const heading = document.createElement("h3"); heading.textContent = "Valores por item"; priceBreakdown.append(heading);
+        details.forEach((detail, index) => {
+          const article = document.createElement("article");
+          const title = document.createElement("strong"); title.textContent = `${items[index].quantidade}× ${items[index].modelo} — ${money(detail.subtotal_centavos)}`;
+          article.append(title);
+          (detail.partes || []).forEach((part) => {
+            const row = document.createElement("p");
+            const label = document.createElement("span"); label.textContent = part.rotulo;
+            const amount = document.createElement("strong"); amount.textContent = money(part.valor_centavos);
+            row.append(label, amount); article.append(row);
+          });
+          priceBreakdown.append(article);
+        });
+        if (details.some((detail) => detail.metodo === "composicao")) {
+          const note = document.createElement("small");
+          note.textContent = "Valores de venda por categoria, com margem, impostos e taxas incluídos.";
+          priceBreakdown.append(note);
+        }
+        priceBreakdown.hidden = false;
+      }
+      document.getElementById("success-pdf-link").href = ContaAPI.url(`/api/orcamentos/${encodeURIComponent(code)}/pdf`);
       const summary = items.map((item, index) => {
         const specifications = doorSpecifications(item);
-        return `${index + 1}. ${categoryNames[item.categoria]} - ${item.modelo} - ${item.largura_cm}x${item.altura_cm} cm - ${item.quantidade} un.${specifications.length ? ` - ${specifications.join(", ")}` : ""}`;
+        const selectedAccessories = accessorySpecifications(item);
+        return `${index + 1}. ${categoryNames[item.categoria]} - ${item.modelo} - ${item.largura_cm}x${item.altura_cm} cm - ${item.quantidade} un.${specifications.length ? ` - ${specifications.join(", ")}` : ""}${selectedAccessories.length ? ` - Acessórios: ${selectedAccessories.join(", ")}` : ""}`;
       }).join("\n");
       const message = `Olá! Acabei de registrar o orçamento ${code} pelo site.\n\n${summary}\n\nNome: ${data.nome}\nCidade: ${data.cidade}\nInstalação: ${data.instalacao ? "Sim" : "Não"}`;
       document.getElementById("whatsapp-link").href = `https://wa.me/5521964070134?text=${encodeURIComponent(message)}`;

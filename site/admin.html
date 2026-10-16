@@ -6,8 +6,8 @@
   <meta name="color-scheme" content="light">
   <title>Painel administrativo | Mundo das Esquadrias</title>
   <meta name="application-name" content="Mundo das Esquadrias"><meta name="theme-color" content="#0d3045"><link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png"><link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest">
-  <link rel="stylesheet" href="admin.css?v=20261015-feedback-admin">
-  <link rel="stylesheet" href="propostas.css">
+  <link rel="stylesheet" href="admin.css?v=20261016-custos-separados">
+  <link rel="stylesheet" href="propostas.css?v=20261016-tres-categorias">
 </head>
 <body>
   <aside class="admin-sidebar">
@@ -17,6 +17,7 @@
       <button type="button" data-view="orcamentos"><span>▤</span>Orçamentos</button>
       <button type="button" data-view="feedbacks"><span>★</span>Feedbacks</button>
       <button type="button" data-view="precos"><span>R$</span>Tabela de preços</button>
+      <button type="button" data-view="custos"><span>∑</span>Custos reais</button>
     </nav>
     <div class="sidebar-footer">
       <a href="perfil.html">← Minha conta</a>
@@ -87,11 +88,57 @@
             <section class="admin-panel"><div class="panel-heading"><div><h2>Preços cadastrados</h2><p id="prices-count">Nenhuma regra cadastrada.</p></div></div><div id="prices-list" class="price-list"></div></section>
           </div>
         </section>
+
+        <section data-panel="custos" hidden>
+          <div class="page-title"><div><span class="eyebrow">FORMAÇÃO DO PREÇO</span><h1>Custos reais dos produtos</h1><p>Cadastre os custos das notas dos fornecedores e a composição técnica de cada modelo.</p></div><span class="cost-status" id="cost-status">Carregando…</span></div>
+
+          <form id="cost-settings-form" class="admin-panel cost-settings-form">
+            <div class="panel-heading"><div><h2>Configuração comercial</h2><p>Percentuais calculados sobre o preço de venda. Os valores ficam registrados no orçamento.</p></div></div>
+            <div class="cost-grid five"><label>Margem (%)<input id="cost-margin" type="number" min="0" max="99" step="0.01" required></label><label>Impostos (%)<input id="cost-taxes" type="number" min="0" max="99" step="0.01" required></label><label>Taxa de pagamento (%)<input id="cost-payment-fee" type="number" min="0" max="99" step="0.01" required></label><label>Custo operacional/unidade (R$)<input id="cost-overhead" type="number" min="0" step="0.01" required></label><label>Custo adicional de materiais/unidade (R$)<input id="cost-freight" type="number" min="0" step="0.01" required></label></div>
+            <div class="form-actions"><button class="button primary" type="submit">Salvar configuração</button></div>
+          </form>
+
+          <div class="cost-layout">
+            <form id="material-form" class="admin-panel cost-form">
+              <div class="panel-heading"><div><h2 id="material-form-title">Novo material ou serviço</h2><p>Use o custo unitário pago pela empresa, antes da margem.</p></div></div>
+              <input id="material-id" type="hidden">
+              <div class="cost-grid two"><label>Código<input id="material-code" maxlength="40" required placeholder="Ex.: PERF-SUP-001"></label><label>Grupo<input id="material-group" maxlength="60" required placeholder="Ex.: Alumínio"></label></div>
+              <label>Nome<input id="material-name" maxlength="120" required placeholder="Ex.: Perfil lateral Suprema branco"></label>
+              <div class="cost-grid two"><label>Categoria no orçamento<select id="material-type" required><option value="materiais">Materiais</option><option value="mao_obra">Mão de obra de fabricação</option><option value="instalacao">Instalação</option></select></label><label>Unidade<select id="material-unit" required><option value="m">Metro</option><option value="m2">Metro quadrado</option><option value="un">Unidade</option><option value="kg">Quilograma</option><option value="h">Hora</option></select></label><label>Custo unitário (R$)<input id="material-cost" type="number" min="0" step="0.01" required></label><label>Perda padrão (%)<input id="material-waste" type="number" min="0" max="100" step="0.01" value="0" required></label><label>Data do preço<input id="material-date" type="date"></label></div>
+              <label>Fornecedor <small>(opcional)</small><input id="material-supplier" maxlength="120"></label>
+              <label class="switch"><input id="material-confirmed" type="checkbox"><span></span>Custo conferido em nota ou cotação</label>
+              <label class="switch"><input id="material-active" type="checkbox" checked><span></span>Material ativo</label>
+              <div class="form-actions"><button class="button primary" type="submit">Salvar material</button><button class="button secondary" id="material-cancel" type="button" hidden>Cancelar edição</button></div>
+            </form>
+            <section class="admin-panel"><div class="panel-heading"><div><h2>Materiais cadastrados</h2><p id="materials-count">Nenhum material cadastrado.</p></div></div><div id="materials-list" class="cost-list"></div></section>
+          </div>
+
+          <div class="cost-layout recipe-layout">
+            <form id="recipe-form" class="admin-panel cost-form">
+              <div class="panel-heading"><div><h2 id="recipe-form-title">Nova ficha técnica</h2><p>Crie uma ficha para o modelo e depois adicione os materiais consumidos.</p></div></div>
+              <input id="recipe-id" type="hidden">
+              <label>Categoria<select id="recipe-category" required><option value="porta">Porta</option><option value="janela">Janela</option><option value="box">Box</option><option value="fachada">Fachada</option><option value="guarda_corpo">Guarda-corpo</option><option value="fechamento">Fechamento</option><option value="espelho">Espelho ou vidro</option><option value="cobertura">Cobertura</option><option value="manutencao">Manutenção</option><option value="outro">Outro</option></select></label>
+              <label>Modelo exato<input id="recipe-model" maxlength="100" required list="recipe-model-suggestions" placeholder="Ex.: De correr"><datalist id="recipe-model-suggestions"></datalist></label>
+              <label>Preço mínimo de venda (R$)<input id="recipe-minimum" type="number" min="0" step="0.01" value="0" required></label>
+              <label class="switch"><input id="recipe-validated" type="checkbox"><span></span>Ficha revisada e completa</label>
+              <label class="switch"><input id="recipe-active" type="checkbox" checked><span></span>Ficha ativa</label>
+              <div class="form-actions"><button class="button primary" type="submit">Salvar ficha</button><button class="button secondary" id="recipe-cancel" type="button" hidden>Cancelar edição</button></div>
+            </form>
+            <section class="admin-panel"><div class="panel-heading"><div><h2>Fichas e componentes</h2><p id="recipes-count">Nenhuma ficha cadastrada.</p></div></div><div id="recipes-list" class="recipe-list"></div></section>
+          </div>
+
+          <form id="component-form" class="admin-panel component-form">
+            <div class="panel-heading"><div><h2>Adicionar componente à ficha</h2><p>Quantidade = medida escolhida × fator + consumo fixo. Exemplo: perímetro × 1 usa todo o contorno.</p></div></div>
+              <div class="cost-grid three"><label>Ficha técnica<select id="component-recipe" required></select></label><label>Material ou serviço<select id="component-material" required></select></label><label>Base do cálculo<select id="component-base" required></select></label><label>Fator de consumo<input id="component-factor" type="number" min="0" step="0.001" value="1" required></label><label>Consumo fixo<input id="component-fixed" type="number" min="0" step="0.001" value="0" required></label><label>Perda específica (%) <small>(vazio usa a do material)</small><input id="component-waste" type="number" min="0" max="100" step="0.01"></label><label>Aplicar somente quando<select id="component-condition-field"><option value="">Sempre</option><option value="linha_aluminio">Linha de alumínio</option><option value="cor">Cor</option><option value="tipo_vidro">Tipo de vidro</option><option value="composicao_vidro">Composição do vidro</option><option value="espessura_vidro">Espessura do vidro</option><option value="numero_folhas">Número de folhas</option><option value="trilhos">Trilhos</option><option value="fechadura">Fechadura</option><option value="puxador">Puxador</option><option value="tela_mosquiteira">Tela mosquiteira</option><option value="automatizacao">Automatização</option><option value="acessorios">Acessório selecionado</option></select></label><label>Valor exato da condição<input id="component-condition-value" maxlength="80" placeholder="Ex.: Suprema"></label></div>
+            <label class="switch"><input id="component-installation" type="checkbox"><span></span>Usar apenas quando o cliente solicitar instalação</label>
+            <div class="form-actions"><button class="button primary" type="submit">Adicionar componente</button></div>
+          </form>
+        </section>
       </div>
     </main>
   </div>
   <script src="api.js"></script>
-  <script src="propostas.js"></script>
-  <script src="admin.js?v=20261015-feedback-admin"></script>
+  <script src="propostas.js?v=20261016-tres-categorias"></script>
+  <script src="admin.js?v=20261016-acessorios"></script>
 </body>
 </html>

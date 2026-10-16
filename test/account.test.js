@@ -431,6 +431,7 @@ test("quote requests validate measurements, generate protocols, and stay isolate
     numero_folhas: "4", configuracao_folhas: "2 móveis e demais fixas", sentido_abertura: "Ambos os lados",
     trilhos: "2 trilhos", fechadura: "Multiponto", puxador: "Tubular", soleira: "Embutida",
     tipo_instalacao: "Substituição", retirada_existente: "Sim", tela_mosquiteira: "Não", automatizacao: "Não",
+    acessorios: ["Roldanas reforçadas", "Fechamento suave"],
     largura_cm: 120, altura_cm: 100, quantidade: 2, ambiente: "Sala", detalhes: "",
   };
   const contact = {
@@ -457,6 +458,10 @@ test("quote requests validate measurements, generate protocols, and stay isolate
     method: "POST", json: { ...contact, itens: [{ ...item, numero_folhas: "7" }] },
   });
   assert.equal(invalidSpecification.status, 400, invalidSpecification.body);
+  const invalidAccessory = await alice.request("/api/orcamentos", {
+    method: "POST", json: { ...contact, itens: [{ ...item, acessorios: ["Acessório inexistente"] }] },
+  });
+  assert.equal(invalidAccessory.status, 400, invalidAccessory.body);
   const ownQuote = await alice.request("/api/orcamentos", {
     method: "POST", json: {
       ...contact,
@@ -499,6 +504,7 @@ test("quote requests validate measurements, generate protocols, and stay isolate
   assert.equal(JSON.parse(stored.itens_json)[0].quantidade, 2);
   assert.equal(JSON.parse(stored.itens_json)[0].numero_folhas, "4");
   assert.equal(JSON.parse(stored.itens_json)[0].fechadura, "Multiponto");
+  assert.deepEqual(JSON.parse(stored.itens_json)[0].acessorios, ["Roldanas reforçadas", "Fechamento suave"]);
 });
 
 test("proposal revisions and customer decisions are private, atomic and preserve accepted terms", async (t) => {
@@ -514,16 +520,22 @@ test("proposal revisions and customer decisions are private, atomic and preserve
   const row = await db.get("SELECT id FROM orcamentos WHERE codigo=?", [code]);
   const route = `/api/admin/orcamentos/${row.id}/proposta`;
   const responseRoute = `/api/orcamentos/${code}/resposta`;
-  const proposal = { versao: 0, valor_centavos: 250000, prazo: "15 dias úteis após medição", observacoes: "Vidro e instalação incluídos" };
+  const proposal = { versao: 0, valor_centavos: 250000,
+    partes_valor_centavos: { materiais: 165000, mao_obra: 50000, instalacao: 35000 },
+    prazo: "15 dias úteis após medição", observacoes: "Vidro e instalação incluídos" };
   assert.equal((await alice.request(route, { method: "POST", json: proposal })).status, 403);
   assert.equal((await admin.request(route, { method: "POST", json: proposal, csrf: false })).status, 403);
   for (const value of [0, -1, 1.5, "250000", null, true]) {
     assert.equal((await admin.request(route, { method: "POST", json: { ...proposal, valor_centavos: value } })).status, 400);
   }
   assert.equal((await admin.request(route, { method: "POST", json: { ...proposal, prazo: "" } })).status, 400);
+  assert.equal((await admin.request(route, { method: "POST", json: { ...proposal, partes_valor_centavos: null } })).status, 400);
+  assert.equal((await admin.request(route, { method: "POST", json: { ...proposal, partes_valor_centavos: { ...proposal.partes_valor_centavos, instalacao: 35001 } } })).status, 400);
   assert.equal((await admin.request(route, { method: "POST", json: proposal })).status, 201);
   let own = (await alice.request("/api/orcamentos")).data.orcamentos[0];
   assert.equal(own.propostas[0].valor_centavos, 250000);
+  assert.deepEqual(own.propostas[0].partes_valor_centavos, proposal.partes_valor_centavos);
+  assert.equal((await alice.request(`/api/orcamentos/${code}/pdf`)).status, 200);
   assert.equal(own.proposta_versao, 1);
   assert.deepEqual((await bob.request("/api/orcamentos")).data.orcamentos, []);
   assert.equal((await bob.request(responseRoute, { method: "POST", json: { acao: "aceitar", versao: 1 } })).status, 404);
@@ -598,9 +610,8 @@ test("only administrators manage quotes and real price rules produce customer es
   assert.equal(created.data.orcamento.estimativa_centavos, 328000);
   const own = await customer.request("/api/orcamentos");
   assert.equal(own.data.orcamentos[0].estimativa_centavos, 328000);
-  assert.equal(own.data.orcamentos[0].estimativa_detalhes[0].produto_unitario_centavos, 144000);
-  assert.equal(own.data.orcamentos[0].estimativa_detalhes[0].instalacao_unitaria_centavos, 20000);
   assert.equal(own.data.orcamentos[0].estimativa_detalhes[0].subtotal_centavos, 328000);
+  assert.deepEqual(own.data.orcamentos[0].estimativa_detalhes[0].partes.map((part) => part.valor_centavos), [288000, 40000]);
 
   const adminQuotes = await admin.request("/api/admin/orcamentos");
   assert.equal(adminQuotes.status, 200, adminQuotes.body);
@@ -612,4 +623,77 @@ test("only administrators manage quotes and real price rules produce customer es
   });
   assert.equal(updated.status, 200, updated.body);
   assert.equal((await customer.request("/api/orcamentos")).data.orcamentos[0].status, "aprovado");
+});
+
+test("validated technical sheets calculate and snapshot real business costs", async (t) => {
+  const { db, client } = await fixture(t);
+  const admin = client();
+  const customer = client();
+  const adminUser = await admin.register({ email: "custos-admin@example.test", telefone: "21999990007" });
+  await db.run("UPDATE usuarios SET papel='admin' WHERE id=?", [adminUser.id]);
+
+  const config = await admin.request("/api/admin/custos/configuracao", { method: "PUT", json: {
+    margem_bp: 2000, impostos_bp: 500, taxa_pagamento_bp: 300,
+    despesa_fixa_centavos: 1000, frete_base_centavos: 2000,
+  } });
+  assert.equal(config.status, 200, config.body);
+  const material = await admin.request("/api/admin/custos/materiais", { method: "POST", json: {
+    codigo: "VID-6", nome: "Vidro temperado 6 mm", grupo: "Vidro", unidade: "m2", tipo_custo: "materiais",
+    custo_unitario_centavos: 10000, perda_padrao_bp: 1000, fornecedor: "Fornecedor teste",
+    referencia_em: "2026-10-16", custo_confirmado: true, ativo: true,
+  } });
+  assert.equal(material.status, 201, material.body);
+  const labor = await admin.request("/api/admin/custos/materiais", { method: "POST", json: {
+    codigo: "FAB-1", nome: "Fabricação", grupo: "Mão de obra", unidade: "h", tipo_custo: "mao_obra",
+    custo_unitario_centavos: 5000, perda_padrao_bp: 0, custo_confirmado: true,
+  } });
+  assert.equal(labor.status, 201, labor.body);
+  const installation = await admin.request("/api/admin/custos/materiais", { method: "POST", json: {
+    codigo: "INST-1", nome: "Instalação", grupo: "Mão de obra", unidade: "h", tipo_custo: "instalacao",
+    custo_unitario_centavos: 4000, perda_padrao_bp: 0, custo_confirmado: true,
+  } });
+  assert.equal(installation.status, 201, installation.body);
+  const sheet = await admin.request("/api/admin/custos/fichas", { method: "POST", json: {
+    categoria: "janela", modelo: "De correr", preco_minimo_centavos: 0, validada: true, ativo: true,
+  } });
+  assert.equal(sheet.status, 201, sheet.body);
+  const component = await admin.request("/api/admin/custos/componentes", { method: "POST", json: {
+    ficha_id: sheet.data.id, material_id: material.data.id, base_calculo: "area_m2",
+    fator_milesimos: 1000, adicional_milesimos: 0, perda_bp: null,
+    condicao_campo: "", condicao_valor: "", somente_instalacao: false,
+  } });
+  assert.equal(component.status, 201, component.body);
+  for (const materialId of [labor.data.id, installation.data.id]) {
+    const added = await admin.request("/api/admin/custos/componentes", { method: "POST", json: {
+      ficha_id: sheet.data.id, material_id: materialId, base_calculo: "unidade",
+      fator_milesimos: 1000, adicional_milesimos: 0, perda_bp: null,
+      condicao_campo: "", condicao_valor: "", somente_instalacao: false,
+    } });
+    assert.equal(added.status, 201, added.body);
+  }
+
+  await customer.register({ email: "custos-cliente@example.test", telefone: "21999990008" });
+  const request = {
+    nome: "Cliente Custos", telefone: "21999990008", cidade: "Rio de Janeiro", instalacao: true,
+    itens: [{ categoria: "janela", material: "aluminio_vidro", modelo: "De correr", largura_cm: 200, altura_cm: 100, quantidade: 2 }],
+  };
+  const preview = await customer.request("/api/orcamentos/previa", { method: "POST", json: request });
+  assert.equal(preview.status, 200, preview.body);
+  assert.equal((await customer.request("/api/orcamentos/acesso")).data.acesso.restantes, 1);
+  const created = await customer.request("/api/orcamentos", { method: "POST", json: request });
+  assert.equal(created.status, 201, created.body);
+  assert.equal(created.data.orcamento.tipo_calculo, "composicao");
+  assert.equal(created.data.orcamento.estimativa_centavos, preview.data.total_centavos);
+  const saved = (await customer.request("/api/orcamentos")).data.orcamentos[0];
+  assert.equal(saved.tipo_calculo, "composicao");
+  const parts = saved.estimativa_detalhes[0].partes;
+  assert.deepEqual(parts.map((part) => part.chave), ["materiais", "mao_obra", "instalacao"]);
+  assert.equal(parts.reduce((sum, part) => sum + part.valor_centavos, 0), saved.estimativa_centavos);
+  assert.equal(JSON.stringify(saved).includes("custo_unitario_centavos"), false);
+  assert.equal(JSON.stringify(preview.data).includes("custo_unitario_centavos"), false);
+  const stored = await db.get("SELECT estimativa_detalhes_json FROM orcamentos WHERE codigo=?", [created.data.orcamento.codigo]);
+  const internal = JSON.parse(stored.estimativa_detalhes_json)[0];
+  assert.equal(internal.custo_materiais_centavos, 22000);
+  assert.equal(internal.componentes[0].custo_unitario_centavos, 10000);
+  assert.equal(internal.configuracao.margem_bp, 2000);
 });

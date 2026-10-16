@@ -7,10 +7,22 @@
     return node;
   };
   const money = (value) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value / 100);
+  const categories = { materiais: "Materiais", mao_obra: "Mão de obra de fabricação", instalacao: "Instalação" };
+  const cents = (input) => Math.round(Number(input.value) * 100);
   function detail(p) {
     const box = el("div", null, "proposal-detail");
     box.append(el("strong", `Proposta ${p.numero} · ${money(p.valor_centavos)}`),
       el("p", states[p.situacao]), el("p", `Prazo: ${p.prazo}`));
+    if (p.partes_valor_centavos) {
+      const list = el("dl", null, "proposal-parts");
+      Object.entries(categories).forEach(([key, label]) => {
+        const value = key === "materiais" ? (p.partes_valor_centavos[key] || 0) + (p.partes_valor_centavos.frete || 0)
+          : key === "mao_obra" ? (p.partes_valor_centavos[key] || 0) + (p.partes_valor_centavos.outros || 0)
+            : p.partes_valor_centavos[key];
+        if (Number.isSafeInteger(value) && value > 0) list.append(el("dt", label), el("dd", money(value)));
+      });
+      box.append(list);
+    }
     if (p.observacoes) box.append(el("p", p.observacoes));
     box.append(el("small", `Enviada em ${new Date(p.enviada_em).toLocaleString("pt-BR")}`));
     if (p.respondida_em) box.append(el("p", `Resposta em ${new Date(p.respondida_em).toLocaleString("pt-BR")}${p.resposta ? `: ${p.resposta}` : ""}`));
@@ -43,9 +55,20 @@
     }
     if (!(admin ? editable : current?.situacao === "pendente" && quote.status === "aguardando_cliente")) return panel;
     const form = el("form", null, "proposal-form");
-    let amount, deadline, notes, agree;
+    let amount, deadline, notes, agree, partInputs;
     if (admin) {
       amount = field(form, "Valor final total (R$)", "input", { type: "number", min: "0.01", max: "10000000", step: "0.01", required: true, value: current ? (current.valor_centavos / 100).toFixed(2) : "" });
+      const partsTitle = el("p", "Separe o valor final em materiais, mão de obra e instalação. A soma deve ser igual ao total acima.");
+      form.append(partsTitle);
+      const partsBox = el("div", null, "proposal-parts-inputs");
+      partInputs = Object.fromEntries(Object.entries(categories).map(([key, label]) => {
+        const input = field(partsBox, `${label} (R$)`, "input", { type: "number", min: "0", max: "10000000", step: "0.01", required: true,
+          value: current?.partes_valor_centavos ? (((current.partes_valor_centavos[key] || 0)
+            + (key === "materiais" ? current.partes_valor_centavos.frete || 0 : 0)
+            + (key === "mao_obra" ? current.partes_valor_centavos.outros || 0 : 0)) / 100).toFixed(2) : "0.00" });
+        return [key, input];
+      }));
+      form.append(partsBox);
       deadline = field(form, "Prazo e a partir de quando começa a contar", "input", { maxLength: 300, required: true, placeholder: "Ex.: 15 dias úteis após a medição técnica", value: current?.prazo || "" });
       notes = field(form, "Observações e condições da proposta", "textarea", { maxLength: 2000, rows: 4, value: current?.observacoes || "", placeholder: "Informe materiais, instalação e condições de pagamento incluídos no valor." });
       form.append(el("p", "A proposta ficará disponível em Minha Conta. O envio não dispara mensagem pelo WhatsApp."));
@@ -70,11 +93,15 @@
       const action = event.submitter?.value || (admin ? "enviar" : "aceitar");
       if (!admin && action === "aceitar" && !agree.checked) { status.textContent = "Marque a confirmação de leitura para aceitar."; return; }
       if (!admin && action === "ajustes" && !notes.value.trim()) { status.textContent = "Descreva quais ajustes deseja solicitar."; notes.focus(); return; }
+      const parts = admin ? Object.fromEntries(Object.entries(partInputs).map(([key, input]) => [key, cents(input)])) : null;
+      if (admin && Object.values(parts).reduce((sum, value) => sum + value, 0) !== cents(amount)) {
+        status.textContent = "A soma dos valores separados precisa ser igual ao valor final total."; return;
+      }
       busy = true;
       actions.querySelectorAll("button").forEach((b) => { b.disabled = true; });
       status.textContent = "Enviando…";
       try {
-        const body = admin ? { versao: quote.proposta_versao, valor_centavos: Math.round(Number(amount.value) * 100), prazo: deadline.value, observacoes: notes.value }
+        const body = admin ? { versao: quote.proposta_versao, valor_centavos: cents(amount), partes_valor_centavos: parts, prazo: deadline.value, observacoes: notes.value }
           : { versao: quote.proposta_versao, acao: action, mensagem: action === "ajustes" ? notes.value : "" };
         const result = await ContaAPI.request(admin ? `/api/admin/orcamentos/${quote.id}/proposta` : `/api/orcamentos/${encodeURIComponent(quote.codigo)}/resposta`, { method: "POST", body });
         status.textContent = result.mensagem;
