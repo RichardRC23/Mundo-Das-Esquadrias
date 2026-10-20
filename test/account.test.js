@@ -594,6 +594,11 @@ test("only administrators manage quotes and real price rules produce customer es
   assert.ok(publicCatalog.data.precos.length >= 50);
   assert.equal(publicCatalog.data.referencia.data, "2026-10-08");
   assert.equal(publicCatalog.data.ajustes.espessura_vidro["10 mm"], 12000);
+  assert.ok(publicCatalog.data.precos.some(({ categoria, modelo }) => categoria === "box" && modelo === "Box Open"));
+  assert.ok(!publicCatalog.data.precos.some(({ categoria, modelo }) => categoria === "box" && modelo === "De abrir"));
+  for (const modelo of ["Espelho lapidado", "Espelho orgânico", "Espelho de camarim / LED", "Espelho com moldura", "Espelho sob medida"]) {
+    assert.ok(publicCatalog.data.precos.some((preco) => preco.categoria === "espelho" && preco.modelo === modelo), modelo);
+  }
 
   await customer.register({ email: "orcamento@example.test", telefone: "21999990006" });
   const created = await customer.request("/api/orcamentos", {

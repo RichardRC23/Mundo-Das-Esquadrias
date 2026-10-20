@@ -1,17 +1,17 @@
 document.addEventListener("DOMContentLoaded", () => {
   const categoryNames = {
     porta: "Porta", janela: "Janela", box: "Box de banheiro", fachada: "Fachada",
-    guarda_corpo: "Guarda-corpo", fechamento: "Fechamento", espelho: "Espelho ou vidro",
+    guarda_corpo: "Guarda-corpo", fechamento: "Fechamento", espelho: "Espelhos e vidros",
     cobertura: "Cobertura", manutencao: "Manutenção", outro: "Outro projeto",
   };
   const models = {
     porta: ["De correr", "De giro", "Pivotante", "Camarão / articulada", "Porta-balcão", "Outro modelo"],
     janela: ["De correr", "Maxim-ar", "Basculante", "Guilhotina", "Fixa", "Outro modelo"],
-    box: ["Frontal de correr", "De canto", "De abrir", "Até o teto", "Banheira", "Outro modelo"],
+    box: ["Frontal de correr", "De canto", "Box Open", "Até o teto", "Banheira", "Outro modelo"],
     fachada: ["Pele de vidro", "Structural glazing", "Fachada comercial", "Vitrine", "Outro modelo"],
     guarda_corpo: ["Com vidro", "Com alumínio", "Vidro autoportante", "Corrimão", "Outro modelo"],
     fechamento: ["Fechamento de varanda", "Área gourmet", "Divisória", "Cortina de vidro", "Outro modelo"],
-    espelho: ["Espelho lapidado", "Tampo de mesa", "Prateleira", "Painel de vidro", "Vidro sob medida", "Outro modelo"],
+    espelho: ["Espelho lapidado", "Espelho bisotê", "Espelho orgânico", "Espelho redondo", "Espelho para banheiro", "Espelho de camarim / LED", "Espelho de parede inteira", "Espelho bronze ou fumê", "Espelho com moldura", "Espelho decorativo", "Espelho sob medida", "Tampo de mesa", "Prateleira", "Painel de vidro", "Vidro sob medida", "Outro modelo"],
     cobertura: ["Cobertura de vidro", "Policarbonato", "Claraboia", "Toldo / estrutura", "Outro modelo"],
     manutencao: ["Troca de roldanas", "Troca de vidro", "Ajuste de esquadria", "Vedação", "Fechadura / puxador", "Outro reparo"],
     outro: ["Projeto sob medida", "Ainda não sei definir"],
@@ -124,7 +124,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (/guilhotina/i.test(model)) return "variant-guilhotina";
     if (/fixa|fixo/i.test(model)) return "variant-fixed";
     if (/canto/i.test(model)) return "variant-corner";
-    if (/abrir|giro/i.test(model)) return "variant-open";
+    if (/abrir|open|giro/i.test(model)) return "variant-open";
     if (/teto/i.test(model)) return "variant-tall";
     if (/pele|structural/i.test(model)) return "variant-structural";
     if (/cortina|articulad/i.test(model)) return "variant-folding";
@@ -146,7 +146,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const thickness = Math.min(12, Math.max(4, Number.parseInt(item.espessura_vidro, 10) || 6));
     const ratio = Math.min(2.1, Math.max(.58, Number(item.largura_cm) / Number(item.altura_cm) || 1.15));
     const counts = { janela: /fixa|maxim/i.test(item.modelo) ? 1 : /basculante/i.test(item.modelo) ? 3 : /guilhotina/i.test(item.modelo) ? 2 : 4,
-      box: /abrir/i.test(item.modelo) ? 1 : /banheira/i.test(item.modelo) ? 3 : 2, fachada: 8, guarda_corpo: 3,
+      box: /abrir|open/i.test(item.modelo) ? 1 : /banheira/i.test(item.modelo) ? 3 : 2, fachada: 8, guarda_corpo: 3,
       fechamento: /divisória/i.test(item.modelo) ? 3 : 5, espelho: 1, cobertura: 3, manutencao: 1, outro: 4 };
     const count = counts[item.categoria] || 2;
     const panes = Array.from({ length: count }, (_, index) => `<span class="model-panel" style="--panel:${index}"><i></i></span>`).join("");
@@ -216,6 +216,7 @@ document.addEventListener("DOMContentLoaded", () => {
     modelInput.innerHTML = models[selected.categoria]
       .map((model) => `<option value="${escapeHtml(model)}">${escapeHtml(model)}</option>`).join("");
     materialInput.value = selected.material;
+    document.getElementById("item-vidro").value = selected.categoria === "espelho" ? "Espelho" : "Incolor";
     updateMaterialFields();
     updateDoorFields();
     renderAccessoryOptions();

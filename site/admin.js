@@ -1,6 +1,6 @@
 (() => {
   const $ = (id) => document.getElementById(id);
-  const categories = { porta: "Porta", janela: "Janela", box: "Box", fachada: "Fachada", guarda_corpo: "Guarda-corpo", fechamento: "Fechamento", espelho: "Espelho ou vidro", cobertura: "Cobertura", manutencao: "Manutenção", outro: "Outro" };
+  const categories = { porta: "Porta", janela: "Janela", box: "Box", fachada: "Fachada", guarda_corpo: "Guarda-corpo", fechamento: "Fechamento", espelho: "Espelhos e vidros", cobertura: "Cobertura", manutencao: "Manutenção", outro: "Outro" };
   const doorSpecs = (item) => item.categoria === "porta" ? [
     item.numero_folhas && item.numero_folhas !== "A definir" ? `${item.numero_folhas} folha${item.numero_folhas === "1" ? "" : "s"}` : "",
     item.configuracao_folhas, item.sentido_abertura && `Abertura: ${item.sentido_abertura}`,
@@ -13,11 +13,11 @@
   const productModels = {
     porta: ["De correr", "De giro", "Pivotante", "Camarão / articulada", "Porta-balcão", "Outro modelo"],
     janela: ["De correr", "Maxim-ar", "Basculante", "Guilhotina", "Fixa", "Outro modelo"],
-    box: ["Frontal de correr", "De canto", "De abrir", "Até o teto", "Banheira", "Outro modelo"],
+    box: ["Frontal de correr", "De canto", "Box Open", "Até o teto", "Banheira", "Outro modelo"],
     fachada: ["Pele de vidro", "Structural glazing", "Fachada comercial", "Vitrine", "Outro modelo"],
     guarda_corpo: ["Com vidro", "Com alumínio", "Vidro autoportante", "Corrimão", "Outro modelo"],
     fechamento: ["Fechamento de varanda", "Área gourmet", "Divisória", "Cortina de vidro", "Outro modelo"],
-    espelho: ["Espelho lapidado", "Tampo de mesa", "Prateleira", "Painel de vidro", "Vidro sob medida", "Outro modelo"],
+    espelho: ["Espelho lapidado", "Espelho bisotê", "Espelho orgânico", "Espelho redondo", "Espelho para banheiro", "Espelho de camarim / LED", "Espelho de parede inteira", "Espelho bronze ou fumê", "Espelho com moldura", "Espelho decorativo", "Espelho sob medida", "Tampo de mesa", "Prateleira", "Painel de vidro", "Vidro sob medida", "Outro modelo"],
     cobertura: ["Cobertura de vidro", "Policarbonato", "Claraboia", "Toldo / estrutura", "Outro modelo"],
     manutencao: ["Troca de roldanas", "Troca de vidro", "Ajuste de esquadria", "Vedação", "Fechadura / puxador", "Outro reparo"],
     outro: ["Projeto sob medida", "Ainda não sei definir"],

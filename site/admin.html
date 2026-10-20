@@ -78,7 +78,7 @@
             <form id="price-form" class="admin-panel price-form">
               <div class="panel-heading"><div><h2 id="price-form-title">Novo preço</h2><p>Valor por m², mínimo do item e instalação por unidade.</p></div></div>
               <input type="hidden" id="price-id">
-              <label>Categoria<select id="price-category" required><option value="porta">Porta</option><option value="janela">Janela</option><option value="box">Box</option><option value="fachada">Fachada</option><option value="guarda_corpo">Guarda-corpo</option><option value="fechamento">Fechamento</option><option value="espelho">Espelho ou vidro</option><option value="cobertura">Cobertura</option><option value="manutencao">Manutenção</option><option value="outro">Outro</option></select></label>
+              <label>Categoria<select id="price-category" required><option value="porta">Porta</option><option value="janela">Janela</option><option value="box">Box</option><option value="fachada">Fachada</option><option value="guarda_corpo">Guarda-corpo</option><option value="fechamento">Fechamento</option><option value="espelho">Espelhos e vidros</option><option value="cobertura">Cobertura</option><option value="manutencao">Manutenção</option><option value="outro">Outro</option></select></label>
               <label>Modelo exato<input id="price-model" maxlength="100" required placeholder="Ex.: De correr" list="model-suggestions"><datalist id="model-suggestions"></datalist></label>
               <label>Descrição <small>(opcional)</small><input id="price-description" maxlength="300" placeholder="Ex.: linha padrão, sem ferragens especiais"></label>
               <div class="money-grid"><label>Preço por m²<input id="price-square" type="number" min="0.01" max="10000000" step="0.01" required placeholder="0,00"></label><label>Valor mínimo<input id="price-minimum" type="number" min="0" max="10000000" step="0.01" value="0"></label><label>Instalação/unidade<input id="price-installation" type="number" min="0" max="10000000" step="0.01" value="0"></label></div>
@@ -139,6 +139,6 @@
   </div>
   <script src="api.js"></script>
   <script src="propostas.js?v=20261016-tres-categorias"></script>
-  <script src="admin.js?v=20261016-acessorios"></script>
+  <script src="admin.js?v=20261020-catalogo"></script>
 </body>
 </html>
