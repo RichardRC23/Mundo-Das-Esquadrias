@@ -12,7 +12,7 @@ const { createApp } = require("../server");
   const user = await instance.db.run("INSERT INTO usuarios(nome,email,senha_hash,papel) VALUES(?,?,?,?)", ["Ana Ribeiro", "ana@example.test", await bcrypt.hash("Teste-visual-2026!", 12), "admin"]);
   await instance.db.run("INSERT INTO compras(usuario_id,titulo,descricao,status,valor_centavos) VALUES(?,?,?,?,?)", [user.lastID, "Janelas de alumínio", "Pedido de demonstração para conferir o layout", "em_andamento", 240000]);
   await instance.db.run("INSERT INTO contratos(usuario_id,titulo,status,valor_centavos) VALUES(?,?,?,?)", [user.lastID, "Instalação de esquadrias", "assinado", 240000]);
-  await instance.db.run("UPDATE precos_orcamento SET descricao=?,preco_m2_centavos=?,preco_minimo_centavos=?,instalacao_centavos=?,origem='empresa' WHERE categoria=? AND modelo=?", ["Linha padrão de demonstração", 95000, 80000, 18000, "janela", "De correr"]);
+  await instance.db.run("UPDATE precos_orcamento SET descricao=?,precos_cores_json=?,preco_m2_centavos=?,preco_minimo_centavos=?,instalacao_centavos=?,origem='empresa' WHERE categoria=? AND modelo=?", ["Linha padrão de demonstração", JSON.stringify({ Branco: 95000, Preto: 109000, Bronze: 112000, Amadeirado: 128000 }), 95000, 80000, 18000, "janela", "De correr"]);
   const material = await instance.db.run(`INSERT INTO materiais_custo
     (codigo,nome,grupo,unidade,custo_unitario_centavos,perda_padrao_bp,fornecedor,referencia_em,custo_confirmado)
     VALUES(?,?,?,?,?,?,?,?,1)`, ["VID-6", "Vidro temperado 6 mm", "Vidro", "m2", 18500, 800, "Fornecedor de demonstração", "2026-10-16"]);

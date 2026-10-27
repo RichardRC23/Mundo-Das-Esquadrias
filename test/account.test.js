@@ -581,7 +581,7 @@ test("only administrators manage quotes and real price rules produce customer es
     json: {
       categoria: "janela", modelo: "De correr", descricao: "Tabela real de teste",
       preco_m2_centavos: 100000, preco_minimo_centavos: 80000,
-      instalacao_centavos: 20000, ativo: true,
+      instalacao_centavos: 20000, precos_cores: { Branco: 110000, Preto: 130000 }, ativo: true,
     },
   });
   assert.equal(price.status, 201, price.body);
@@ -599,6 +599,11 @@ test("only administrators manage quotes and real price rules produce customer es
   for (const modelo of ["Espelho lapidado", "Espelho orgânico", "Espelho de camarim / LED", "Espelho com moldura", "Espelho sob medida"]) {
     assert.ok(publicCatalog.data.precos.some((preco) => preco.categoria === "espelho" && preco.modelo === modelo), modelo);
   }
+  const publicRule = publicCatalog.data.precos.find((item) => item.categoria === "janela" && item.modelo === "De correr");
+  assert.deepEqual(publicRule.precos_cores, { Branco: 110000, Preto: 130000 });
+  assert.equal((await admin.request("/api/admin/precos", {
+    method: "POST", json: { categoria: "porta", modelo: "De correr", preco_m2_centavos: 100000, precos_cores: { Azul: 120000 } },
+  })).status, 400);
 
   await customer.register({ email: "orcamento@example.test", telefone: "21999990006" });
   const created = await customer.request("/api/orcamentos", {
@@ -607,21 +612,21 @@ test("only administrators manage quotes and real price rules produce customer es
       nome: "Cliente Orçamento", telefone: "21999990006", cidade: "Rio de Janeiro", instalacao: true,
       itens: [{
         categoria: "janela", material: "aluminio_vidro", modelo: "De correr",
-        largura_cm: 120, altura_cm: 100, quantidade: 2, espessura_vidro: "10 mm",
+        largura_cm: 120, altura_cm: 100, quantidade: 2, cor: "Preto", espessura_vidro: "10 mm",
       }],
     },
   });
   assert.equal(created.status, 201, created.body);
-  assert.equal(created.data.orcamento.estimativa_centavos, 328000);
+  assert.equal(created.data.orcamento.estimativa_centavos, 414400);
   const own = await customer.request("/api/orcamentos");
-  assert.equal(own.data.orcamentos[0].estimativa_centavos, 328000);
-  assert.equal(own.data.orcamentos[0].estimativa_detalhes[0].subtotal_centavos, 328000);
-  assert.deepEqual(own.data.orcamentos[0].estimativa_detalhes[0].partes.map((part) => part.valor_centavos), [288000, 40000]);
+  assert.equal(own.data.orcamentos[0].estimativa_centavos, 414400);
+  assert.equal(own.data.orcamentos[0].estimativa_detalhes[0].subtotal_centavos, 414400);
+  assert.deepEqual(own.data.orcamentos[0].estimativa_detalhes[0].partes.map((part) => part.valor_centavos), [374400, 40000]);
 
   const adminQuotes = await admin.request("/api/admin/orcamentos");
   assert.equal(adminQuotes.status, 200, adminQuotes.body);
   assert.equal(adminQuotes.data.orcamentos[0].telefone, "21999990006");
-  assert.equal(adminQuotes.data.orcamentos[0].estimativa_detalhes[0].subtotal_centavos, 328000);
+  assert.equal(adminQuotes.data.orcamentos[0].estimativa_detalhes[0].subtotal_centavos, 414400);
   const quoteId = adminQuotes.data.orcamentos[0].id;
   const updated = await admin.request(`/api/admin/orcamentos/${quoteId}/status`, {
     method: "PUT", json: { status: "aprovado" },

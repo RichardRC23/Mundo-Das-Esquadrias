@@ -423,10 +423,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const rule = catalog.get(`${item.categoria}\u0000${item.modelo}`);
     if (!rule) return null;
     const area = Math.round((item.largura_cm * item.altura_cm / 10000) * 1000) / 1000;
-    const productBase = Math.max(Math.round(area * rule.preco_m2_centavos), rule.preco_minimo_centavos);
+    const colorPrice = rule.precos_cores?.[item.cor];
+    const productBase = Math.max(Math.round(area * (colorPrice || rule.preco_m2_centavos)), rule.preco_minimo_centavos);
     let product = productBase;
     Object.entries(priceAdjustments).forEach(([field, factors]) => {
-      const factor = factors[item[field]];
+      const factor = field === "cor" && colorPrice ? null : factors[item[field]];
       if (factor) product = Math.round(product * factor / 10000);
     });
     const installationUnit = installation ? rule.instalacao_centavos : 0;
