@@ -22,6 +22,8 @@
     manutencao: ["Troca de roldanas", "Troca de vidro", "Ajuste de esquadria", "Vedação", "Fechadura / puxador", "Outro reparo"],
     outro: ["Projeto sob medida", "Ainda não sei definir"],
   };
+  const standardPriceColors = ["Branco", "Preto", "Bronze", "Natural fosco", "Amadeirado"];
+  const ceilingBoxPriceColors = ["Branco", "Preto", "Bronze", "Cromada", "Dourado"];
   let quotes = [];
   let prices = [];
   let draftColorPrices = {};
@@ -241,6 +243,26 @@
     if (activePriceColor) draftColorPrices[activePriceColor] = values;
     else draftDefaultPrice = values;
   }
+  function refreshPriceColorOptions(preserveCurrent = true) {
+    if (preserveCurrent) storeVisiblePrice();
+    const isCeilingBox = $("price-category").value === "box" && $("price-model").value.trim() === "Até o teto";
+    const allowedColors = isCeilingBox ? ceilingBoxPriceColors : standardPriceColors;
+    if (isCeilingBox) {
+      delete draftColorPrices["Natural fosco"];
+      delete draftColorPrices.Amadeirado;
+    } else {
+      delete draftColorPrices.Cromada;
+      delete draftColorPrices.Dourado;
+    }
+    const requestedColor = allowedColors.includes(activePriceColor) ? activePriceColor : "";
+    const options = [{ value: "", label: "Preço padrão / outras cores" }, ...allowedColors.map((color) => ({ value: color, label: color }))];
+    $("price-color-select").replaceChildren(...options.map(({ value, label }) => {
+      const option = document.createElement("option"); option.value = value; option.textContent = label; return option;
+    }));
+    activePriceColor = requestedColor;
+    $("price-color-select").value = requestedColor;
+    showPriceValues(requestedColor ? draftColorPrices[requestedColor] : draftDefaultPrice);
+  }
   function normalizeColorPrice(value, fallback) {
     return typeof value === "number"
       ? { preco_m2_centavos: value, preco_minimo_centavos: fallback.preco_minimo_centavos, instalacao_centavos: fallback.instalacao_centavos }
@@ -254,7 +276,7 @@
     $("price-description").value = price.descricao || "";
     draftDefaultPrice = { preco_m2_centavos: price.preco_m2_centavos, preco_minimo_centavos: price.preco_minimo_centavos, instalacao_centavos: price.instalacao_centavos };
     draftColorPrices = Object.fromEntries(Object.entries(price.precos_cores || {}).map(([color, value]) => [color, normalizeColorPrice(value, draftDefaultPrice)]));
-    activePriceColor = ""; $("price-color-select").value = ""; showPriceValues(draftDefaultPrice);
+    activePriceColor = ""; refreshPriceColorOptions(false);
     $("price-active").checked = price.ativo;
     $("price-form-title").textContent = "Editar preço";
     $("price-cancel").hidden = false;
@@ -262,7 +284,7 @@
   }
   function clearPriceForm() {
     $("price-form").reset(); $("price-id").value = ""; $("price-minimum").value = "0"; $("price-installation").value = "0"; $("price-active").checked = true;
-    draftDefaultPrice = { preco_m2_centavos: 0, preco_minimo_centavos: 0, instalacao_centavos: 0 }; draftColorPrices = {}; activePriceColor = ""; $("price-color-select").value = "";
+    draftDefaultPrice = { preco_m2_centavos: 0, preco_minimo_centavos: 0, instalacao_centavos: 0 }; draftColorPrices = {}; activePriceColor = ""; refreshPriceColorOptions(false);
     $("price-form-title").textContent = "Novo preço"; $("price-cancel").hidden = true; modelSuggestions();
   }
   function percentFromBp(value) { return (Number(value || 0) / 100).toFixed(2); }
@@ -407,12 +429,14 @@
   $("feedback-clear-filters").addEventListener("click", () => {
     $("feedback-search").value = ""; $("feedback-type-filter").value = ""; $("feedback-rating-filter").value = ""; renderFeedbacks();
   });
-  $("price-category").addEventListener("change", modelSuggestions);
+  $("price-category").addEventListener("change", () => { modelSuggestions(); refreshPriceColorOptions(); });
+  $("price-model").addEventListener("input", () => refreshPriceColorOptions());
   $("price-color-select").addEventListener("change", () => {
     storeVisiblePrice();
     activePriceColor = $("price-color-select").value;
     showPriceValues(activePriceColor ? draftColorPrices[activePriceColor] : draftDefaultPrice);
   });
+  refreshPriceColorOptions(false);
   $("price-cancel").addEventListener("click", clearPriceForm);
   $("price-form").addEventListener("submit", async (event) => {
     event.preventDefault();

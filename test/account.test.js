@@ -607,6 +607,12 @@ test("only administrators manage quotes and real price rules produce customer es
   assert.equal((await admin.request("/api/admin/precos", {
     method: "POST", json: { categoria: "porta", modelo: "De correr", preco_m2_centavos: 100000, precos_cores: { Azul: 120000 } },
   })).status, 400);
+  assert.equal((await admin.request("/api/admin/precos", {
+    method: "POST", json: { categoria: "box", modelo: "Até o teto", preco_m2_centavos: 100000, precos_cores: { Cromada: 125000, Dourado: 145000 } },
+  })).status, 201);
+  assert.equal((await admin.request("/api/admin/precos", {
+    method: "POST", json: { categoria: "box", modelo: "Outro teste", preco_m2_centavos: 100000, precos_cores: { Cromada: 125000 } },
+  })).status, 400);
 
   await customer.register({ email: "orcamento@example.test", telefone: "21999990006" });
   const created = await customer.request("/api/orcamentos", {
