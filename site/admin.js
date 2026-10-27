@@ -25,6 +25,8 @@
   let quotes = [];
   let prices = [];
   let draftColorPrices = {};
+  let draftDefaultPrice = { preco_m2_centavos: 0, preco_minimo_centavos: 0, instalacao_centavos: 0 };
+  let activePriceColor = "";
   let feedbacks = [];
   let costData = { configuracao: {}, materiais: [], fichas: [], opcoes: { bases_calculo: {} } };
   let feedbackSummary = { total: 0, media: 0, cinco_estrelas: 0, recentes: 0 };
@@ -156,7 +158,10 @@
       const info = element("div"); info.append(element("h3", "", `${categories[price.categoria]} · ${price.modelo}`));
       info.append(element("p", "", `${price.ativo ? "Ativo" : "Inativo"} · Mínimo ${money(price.preco_minimo_centavos)} · Instalação ${money(price.instalacao_centavos)}`));
       const colorPrices = Object.entries(price.precos_cores || {});
-      if (colorPrices.length) info.append(element("p", "price-colors", colorPrices.map(([color, value]) => `${color}: ${money(value)}/m²`).join(" · ")));
+      if (colorPrices.length) info.append(element("p", "price-colors", colorPrices.map(([color, value]) => {
+        const values = typeof value === "number" ? { preco_m2_centavos: value } : value;
+        return `${color}: ${money(values.preco_m2_centavos)}/m²`;
+      }).join(" · ")));
       const edit = element("button", "", "Editar"); edit.type = "button";
       edit.addEventListener("click", () => editPrice(price));
       row.append(info, element("strong", "", `${money(price.preco_m2_centavos)}/m²`), edit); target.append(row);
@@ -219,33 +224,27 @@
       const option = document.createElement("option"); option.value = value; return option;
     }));
   }
-  function renderColorPriceDraft() {
-    const target = $("price-color-list");
-    target.replaceChildren();
-    const entries = Object.entries(draftColorPrices);
-    if (!entries.length) return target.append(element("p", "color-price-empty", "Nenhuma cor com preço próprio. Todas usarão o preço padrão."));
-    entries.forEach(([color, value]) => {
-      const row = element("div", "color-price-item");
-      const remove = element("button", "", "Remover"); remove.type = "button";
-      remove.addEventListener("click", () => {
-        delete draftColorPrices[color];
-        if ($("price-color-select").value === color) $("price-color-value").value = "";
-        renderColorPriceDraft();
-      });
-      row.append(element("span", "", color), element("strong", "", `${money(value)}/m²`), remove);
-      target.append(row);
-    });
+  function readVisiblePrice() {
+    return {
+      preco_m2_centavos: Math.round(Number($("price-square").value || 0) * 100),
+      preco_minimo_centavos: Math.round(Number($("price-minimum").value || 0) * 100),
+      instalacao_centavos: Math.round(Number($("price-installation").value || 0) * 100),
+    };
   }
-  function storeDraftColor() {
-    const input = $("price-color-value");
-    const value = Math.round(Number(input.value) * 100);
-    if (!Number.isSafeInteger(value) || value < 1) {
-      input.setCustomValidity("Informe o preço desta cor por m²."); input.reportValidity(); return false;
-    }
-    input.setCustomValidity("");
-    draftColorPrices[$("price-color-select").value] = value;
-    renderColorPriceDraft();
-    return true;
+  function showPriceValues(values = {}) {
+    $("price-square").value = values.preco_m2_centavos ? (values.preco_m2_centavos / 100).toFixed(2) : "";
+    $("price-minimum").value = (Number(values.preco_minimo_centavos || 0) / 100).toFixed(2);
+    $("price-installation").value = (Number(values.instalacao_centavos || 0) / 100).toFixed(2);
+  }
+  function storeVisiblePrice() {
+    const values = readVisiblePrice();
+    if (activePriceColor) draftColorPrices[activePriceColor] = values;
+    else draftDefaultPrice = values;
+  }
+  function normalizeColorPrice(value, fallback) {
+    return typeof value === "number"
+      ? { preco_m2_centavos: value, preco_minimo_centavos: fallback.preco_minimo_centavos, instalacao_centavos: fallback.instalacao_centavos }
+      : { ...fallback, ...(value || {}) };
   }
   function editPrice(price) {
     $("price-id").value = price.id;
@@ -253,13 +252,9 @@
     modelSuggestions();
     $("price-model").value = price.modelo;
     $("price-description").value = price.descricao || "";
-    $("price-square").value = (price.preco_m2_centavos / 100).toFixed(2);
-    $("price-minimum").value = (price.preco_minimo_centavos / 100).toFixed(2);
-    $("price-installation").value = (price.instalacao_centavos / 100).toFixed(2);
-    draftColorPrices = { ...(price.precos_cores || {}) };
-    $("price-color-select").value = "Branco";
-    $("price-color-value").value = Number.isSafeInteger(draftColorPrices.Branco) ? (draftColorPrices.Branco / 100).toFixed(2) : "";
-    renderColorPriceDraft();
+    draftDefaultPrice = { preco_m2_centavos: price.preco_m2_centavos, preco_minimo_centavos: price.preco_minimo_centavos, instalacao_centavos: price.instalacao_centavos };
+    draftColorPrices = Object.fromEntries(Object.entries(price.precos_cores || {}).map(([color, value]) => [color, normalizeColorPrice(value, draftDefaultPrice)]));
+    activePriceColor = ""; $("price-color-select").value = ""; showPriceValues(draftDefaultPrice);
     $("price-active").checked = price.ativo;
     $("price-form-title").textContent = "Editar preço";
     $("price-cancel").hidden = false;
@@ -267,7 +262,7 @@
   }
   function clearPriceForm() {
     $("price-form").reset(); $("price-id").value = ""; $("price-minimum").value = "0"; $("price-installation").value = "0"; $("price-active").checked = true;
-    draftColorPrices = {}; $("price-color-value").value = ""; renderColorPriceDraft();
+    draftDefaultPrice = { preco_m2_centavos: 0, preco_minimo_centavos: 0, instalacao_centavos: 0 }; draftColorPrices = {}; activePriceColor = ""; $("price-color-select").value = "";
     $("price-form-title").textContent = "Novo preço"; $("price-cancel").hidden = true; modelSuggestions();
   }
   function percentFromBp(value) { return (Number(value || 0) / 100).toFixed(2); }
@@ -414,24 +409,21 @@
   });
   $("price-category").addEventListener("change", modelSuggestions);
   $("price-color-select").addEventListener("change", () => {
-    const value = draftColorPrices[$("price-color-select").value];
-    $("price-color-value").value = Number.isSafeInteger(value) ? (value / 100).toFixed(2) : "";
-    $("price-color-value").setCustomValidity("");
+    storeVisiblePrice();
+    activePriceColor = $("price-color-select").value;
+    showPriceValues(activePriceColor ? draftColorPrices[activePriceColor] : draftDefaultPrice);
   });
-  $("price-color-add").addEventListener("click", storeDraftColor);
-  renderColorPriceDraft();
   $("price-cancel").addEventListener("click", clearPriceForm);
   $("price-form").addEventListener("submit", async (event) => {
     event.preventDefault();
-    if ($("price-color-value").value && !storeDraftColor()) return;
+    storeVisiblePrice();
+    if (!draftDefaultPrice.preco_m2_centavos && activePriceColor) draftDefaultPrice = { ...draftColorPrices[activePriceColor] };
     const id = $("price-id").value;
     const body = {
       categoria: $("price-category").value, modelo: $("price-model").value,
       descricao: $("price-description").value,
       precos_cores: { ...draftColorPrices },
-      preco_m2_centavos: Math.round(Number($("price-square").value) * 100),
-      preco_minimo_centavos: Math.round(Number($("price-minimum").value || 0) * 100),
-      instalacao_centavos: Math.round(Number($("price-installation").value || 0) * 100),
+      ...draftDefaultPrice,
       ativo: $("price-active").checked,
     };
     const submit = event.currentTarget.querySelector('[type="submit"]'); submit.disabled = true;

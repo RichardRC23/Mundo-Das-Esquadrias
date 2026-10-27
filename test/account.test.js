@@ -581,7 +581,10 @@ test("only administrators manage quotes and real price rules produce customer es
     json: {
       categoria: "janela", modelo: "De correr", descricao: "Tabela real de teste",
       preco_m2_centavos: 100000, preco_minimo_centavos: 80000,
-      instalacao_centavos: 20000, precos_cores: { Branco: 110000, Preto: 130000 }, ativo: true,
+      instalacao_centavos: 20000, precos_cores: {
+        Branco: { preco_m2_centavos: 110000, preco_minimo_centavos: 85000, instalacao_centavos: 22000 },
+        Preto: { preco_m2_centavos: 130000, preco_minimo_centavos: 90000, instalacao_centavos: 25000 },
+      }, ativo: true,
     },
   });
   assert.equal(price.status, 201, price.body);
@@ -600,7 +603,7 @@ test("only administrators manage quotes and real price rules produce customer es
     assert.ok(publicCatalog.data.precos.some((preco) => preco.categoria === "espelho" && preco.modelo === modelo), modelo);
   }
   const publicRule = publicCatalog.data.precos.find((item) => item.categoria === "janela" && item.modelo === "De correr");
-  assert.deepEqual(publicRule.precos_cores, { Branco: 110000, Preto: 130000 });
+  assert.deepEqual(publicRule.precos_cores.Preto, { preco_m2_centavos: 130000, preco_minimo_centavos: 90000, instalacao_centavos: 25000 });
   assert.equal((await admin.request("/api/admin/precos", {
     method: "POST", json: { categoria: "porta", modelo: "De correr", preco_m2_centavos: 100000, precos_cores: { Azul: 120000 } },
   })).status, 400);
@@ -617,16 +620,16 @@ test("only administrators manage quotes and real price rules produce customer es
     },
   });
   assert.equal(created.status, 201, created.body);
-  assert.equal(created.data.orcamento.estimativa_centavos, 414400);
+  assert.equal(created.data.orcamento.estimativa_centavos, 424400);
   const own = await customer.request("/api/orcamentos");
-  assert.equal(own.data.orcamentos[0].estimativa_centavos, 414400);
-  assert.equal(own.data.orcamentos[0].estimativa_detalhes[0].subtotal_centavos, 414400);
-  assert.deepEqual(own.data.orcamentos[0].estimativa_detalhes[0].partes.map((part) => part.valor_centavos), [374400, 40000]);
+  assert.equal(own.data.orcamentos[0].estimativa_centavos, 424400);
+  assert.equal(own.data.orcamentos[0].estimativa_detalhes[0].subtotal_centavos, 424400);
+  assert.deepEqual(own.data.orcamentos[0].estimativa_detalhes[0].partes.map((part) => part.valor_centavos), [374400, 50000]);
 
   const adminQuotes = await admin.request("/api/admin/orcamentos");
   assert.equal(adminQuotes.status, 200, adminQuotes.body);
   assert.equal(adminQuotes.data.orcamentos[0].telefone, "21999990006");
-  assert.equal(adminQuotes.data.orcamentos[0].estimativa_detalhes[0].subtotal_centavos, 414400);
+  assert.equal(adminQuotes.data.orcamentos[0].estimativa_detalhes[0].subtotal_centavos, 424400);
   const quoteId = adminQuotes.data.orcamentos[0].id;
   const updated = await admin.request(`/api/admin/orcamentos/${quoteId}/status`, {
     method: "PUT", json: { status: "aprovado" },
