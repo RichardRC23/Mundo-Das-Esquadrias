@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="light">
   <title>Painel administrativo | Mundo das Esquadrias</title>
   <meta name="application-name" content="Mundo das Esquadrias"><meta name="theme-color" content="#0d3045"><link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png"><link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest">
-  <link rel="stylesheet" href="admin.css?v=20261027-layout-cores">
+  <link rel="stylesheet" href="admin.css?v=20261027-salvar-fixo">
   <link rel="stylesheet" href="propostas.css?v=20261016-tres-categorias">
 </head>
 <body>
@@ -76,7 +76,7 @@
           <div class="page-title"><div><span class="eyebrow">TABELA COMERCIAL</span><h1>Preços para estimativas</h1><p>Cadastre somente valores reais. Eles serão usados no formulário público.</p></div></div>
           <div class="pricing-layout">
             <form id="price-form" class="admin-panel price-form">
-              <div class="panel-heading"><div><h2 id="price-form-title">Novo preço</h2><p>Valor padrão por m², variações por cor, mínimo do item e instalação por unidade.</p></div></div>
+              <div class="panel-heading price-form-heading"><div><h2 id="price-form-title">Novo preço</h2><p>Valor padrão por m², variações por cor, mínimo do item e instalação por unidade.</p></div><button class="button primary" type="submit">Salvar</button></div>
               <input type="hidden" id="price-id">
               <label>Categoria<select id="price-category" required><option value="porta">Porta</option><option value="janela">Janela</option><option value="box">Box</option><option value="fachada">Fachada</option><option value="guarda_corpo">Guarda-corpo</option><option value="fechamento">Fechamento</option><option value="espelho">Espelhos e vidros</option><option value="cobertura">Cobertura</option><option value="manutencao">Manutenção</option><option value="outro">Outro</option></select></label>
               <label>Modelo exato<input id="price-model" maxlength="100" required placeholder="Ex.: De correr" list="model-suggestions"><datalist id="model-suggestions"></datalist></label>
