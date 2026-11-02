@@ -13,7 +13,7 @@
   const productModels = {
     porta: ["De correr", "De giro", "Pivotante", "Camarão / articulada", "Porta-balcão", "Outro modelo"],
     janela: ["De correr", "Maxim-ar", "Basculante", "Guilhotina", "Fixa", "Outro modelo"],
-    box: ["Frontal de correr", "De canto", "Box Open", "Até o teto", "Banheira", "Outro modelo"],
+    box: ["Frontal de correr", "Box frontal F1", "Box frontal F2", "Box frontal F3", "De canto", "Box Open", "Até o teto", "Banheira", "Outro modelo"],
     fachada: ["Pele de vidro", "Structural glazing", "Fachada comercial", "Vitrine", "Outro modelo"],
     guarda_corpo: ["Com vidro", "Com alumínio", "Vidro autoportante", "Corrimão", "Outro modelo"],
     fechamento: ["Fechamento de varanda", "Área gourmet", "Divisória", "Cortina de vidro", "Outro modelo"],

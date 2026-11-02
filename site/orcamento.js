@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const models = {
     porta: ["De correr", "De giro", "Pivotante", "Camarão / articulada", "Porta-balcão", "Outro modelo"],
     janela: ["De correr", "Maxim-ar", "Basculante", "Guilhotina", "Fixa", "Outro modelo"],
-    box: ["Frontal de correr", "De canto", "Box Open", "Até o teto", "Banheira", "Outro modelo"],
+    box: ["Frontal de correr", "Box frontal F1", "Box frontal F2", "Box frontal F3", "De canto", "Box Open", "Até o teto", "Banheira", "Outro modelo"],
     fachada: ["Pele de vidro", "Structural glazing", "Fachada comercial", "Vitrine", "Outro modelo"],
     guarda_corpo: ["Com vidro", "Com alumínio", "Vidro autoportante", "Corrimão", "Outro modelo"],
     fechamento: ["Fechamento de varanda", "Área gourmet", "Divisória", "Cortina de vidro", "Outro modelo"],
@@ -146,7 +146,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const thickness = Math.min(12, Math.max(4, Number.parseInt(item.espessura_vidro, 10) || 6));
     const ratio = Math.min(2.1, Math.max(.58, Number(item.largura_cm) / Number(item.altura_cm) || 1.15));
     const counts = { janela: /fixa|maxim/i.test(item.modelo) ? 1 : /basculante/i.test(item.modelo) ? 3 : /guilhotina/i.test(item.modelo) ? 2 : 4,
-      box: /abrir|open/i.test(item.modelo) ? 1 : /banheira/i.test(item.modelo) ? 3 : 2, fachada: 8, guarda_corpo: 3,
+      box: /F1$/i.test(item.modelo) ? 1 : /F3$/i.test(item.modelo) ? 3 : /abrir|open/i.test(item.modelo) ? 1 : /banheira/i.test(item.modelo) ? 3 : 2, fachada: 8, guarda_corpo: 3,
       fechamento: /divisória/i.test(item.modelo) ? 3 : 5, espelho: 1, cobertura: 3, manutencao: 1, outro: 4 };
     const count = counts[item.categoria] || 2;
     const panes = Array.from({ length: count }, (_, index) => `<span class="model-panel" style="--panel:${index}"><i></i></span>`).join("");
