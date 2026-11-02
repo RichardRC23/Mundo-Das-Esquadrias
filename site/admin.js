@@ -229,10 +229,16 @@
       card.append(head, comment, footer); target.append(card);
     });
   }
-  function modelSuggestions() {
-    $("model-suggestions").replaceChildren(...(productModels[$("price-category").value] || []).map((value) => {
-      const option = document.createElement("option"); option.value = value; return option;
+  function modelSuggestions(selectedValue = "") {
+    const values = [...(productModels[$("price-category").value] || [])];
+    if (selectedValue && !values.includes(selectedValue)) values.unshift(selectedValue);
+    $("price-model").replaceChildren(...values.map((value) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = value.replace(/^Box frontal /, "");
+      return option;
     }));
+    if (selectedValue) $("price-model").value = selectedValue;
   }
   function readVisiblePrice() {
     return {
@@ -276,8 +282,7 @@
   function editPrice(price) {
     $("price-id").value = price.id;
     $("price-category").value = price.categoria;
-    modelSuggestions();
-    $("price-model").value = price.modelo;
+    modelSuggestions(price.modelo);
     $("price-description").value = price.descricao || "";
     draftDefaultPrice = { preco_m2_centavos: price.preco_m2_centavos, preco_minimo_centavos: price.preco_minimo_centavos, instalacao_centavos: price.instalacao_centavos };
     draftColorPrices = Object.fromEntries(Object.entries(price.precos_cores || {}).map(([color, value]) => [color, normalizeColorPrice(value, draftDefaultPrice)]));
@@ -437,7 +442,7 @@
     $("feedback-search").value = ""; $("feedback-type-filter").value = ""; $("feedback-rating-filter").value = ""; renderFeedbacks();
   });
   $("price-category").addEventListener("change", () => { modelSuggestions(); refreshPriceColorOptions(); });
-  $("price-model").addEventListener("input", () => refreshPriceColorOptions());
+  $("price-model").addEventListener("change", () => refreshPriceColorOptions());
   $("price-variation-type").addEventListener("change", () => {
     storeVisiblePrice();
     activePriceVariation = $("price-variation-type").value;

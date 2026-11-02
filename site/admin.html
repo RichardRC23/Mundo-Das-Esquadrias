@@ -79,7 +79,7 @@
               <div class="panel-heading price-form-heading"><div><h2 id="price-form-title">Novo preço</h2><p>Escolha a cor e preencha os valores correspondentes.</p></div><button class="button primary" type="submit">Salvar</button></div>
               <input type="hidden" id="price-id">
               <label>Categoria<select id="price-category" required><option value="porta">Porta</option><option value="janela">Janela</option><option value="box">Box</option><option value="fachada">Fachada</option><option value="guarda_corpo">Guarda-corpo</option><option value="fechamento">Fechamento</option><option value="espelho">Espelhos e vidros</option><option value="cobertura">Cobertura</option><option value="manutencao">Manutenção</option><option value="outro">Outro</option></select></label>
-              <label>Modelo exato<input id="price-model" maxlength="100" required placeholder="Ex.: De correr" list="model-suggestions"><datalist id="model-suggestions"></datalist></label>
+              <label>Modelo exato<select id="price-model" required></select></label>
               <label>Descrição <small>(opcional)</small><input id="price-description" maxlength="300" placeholder="Ex.: linha padrão, sem ferragens especiais"></label>
               <label class="price-variation-bar">Tabela de preços<select id="price-variation-type"><option value="aluminio">Cores do alumínio</option><option value="vidro">Cores e acabamentos do vidro</option></select></label>
               <label class="price-color-bar"><span id="price-color-label">Cor do alumínio</span><select id="price-color-select"></select><small>Ao trocar a cor ou o vidro, os valores abaixo mudam automaticamente.</small></label>
@@ -141,6 +141,6 @@
   </div>
   <script src="api.js"></script>
   <script src="propostas.js?v=20261016-tres-categorias"></script>
-  <script src="admin.js?v=20261102-box-f123"></script>
+  <script src="admin.js?v=20261102-seletor-f123"></script>
 </body>
 </html>
