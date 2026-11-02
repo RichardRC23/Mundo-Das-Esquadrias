@@ -601,7 +601,7 @@ test("only administrators manage quotes and real price rules produce customer es
   assert.equal(publicCatalog.data.ajustes.espessura_vidro["10 mm"], 12000);
   assert.ok(publicCatalog.data.precos.some(({ categoria, modelo }) => categoria === "box" && modelo === "Box Open"));
   assert.ok(!publicCatalog.data.precos.some(({ categoria, modelo }) => categoria === "box" && modelo === "De abrir"));
-  assert.ok(publicCatalog.data.precos.some(({ categoria, modelo }) => categoria === "box" && modelo === "Frontal de correr F2"));
+  assert.ok(!publicCatalog.data.precos.some(({ categoria, modelo }) => categoria === "box" && modelo === "Frontal de correr F2"));
   assert.ok(!publicCatalog.data.precos.some(({ categoria, modelo }) => categoria === "box" && modelo === "Frontal de correr"));
   for (const modelo of ["Espelho lapidado", "Espelho orgânico", "Espelho de camarim / LED", "Espelho com moldura", "Espelho sob medida"]) {
     assert.ok(publicCatalog.data.precos.some((preco) => preco.categoria === "espelho" && preco.modelo === modelo), modelo);
