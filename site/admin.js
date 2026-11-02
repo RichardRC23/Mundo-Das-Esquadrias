@@ -156,6 +156,8 @@
   }
   function renderPrices() {
     const target = $("prices-list"); target.replaceChildren();
+    const variationLabel = activePriceVariation === "vidro" ? "Vidro" : "Alumínio";
+    $("prices-view-label").textContent = activePriceColor ? `Exibindo: ${variationLabel} · ${activePriceColor}` : "Exibindo preço padrão";
     $("prices-count").textContent = `${prices.length} ${prices.length === 1 ? "regra cadastrada" : "regras cadastradas"}.`;
     if (!prices.length) return target.append(element("div", "empty", "Cadastre o primeiro preço para ativar estimativas no formulário."));
     prices.forEach((price) => {
@@ -174,7 +176,10 @@
       }).join(" · ")}`));
       const edit = element("button", "", "Editar"); edit.type = "button";
       edit.addEventListener("click", () => editPrice(price));
-      row.append(info, element("strong", "", `${money(price.preco_m2_centavos)}/m²`), edit); target.append(row);
+      const variations = activePriceVariation === "vidro" ? price.precos_vidros : price.precos_cores;
+      const selectedPrice = activePriceColor ? variations?.[activePriceColor] : null;
+      const displayedCents = typeof selectedPrice === "number" ? selectedPrice : selectedPrice?.preco_m2_centavos;
+      row.append(info, element("strong", "", `${money(displayedCents ?? price.preco_m2_centavos)}/m²`), edit); target.append(row);
     });
   }
   function stars(note) {
@@ -273,6 +278,7 @@
     $("price-color-label").textContent = isGlass ? "Cor ou acabamento do vidro" : "Cor do alumínio";
     $("price-color-select").value = requestedColor;
     showPriceValues(requestedColor ? variations[requestedColor] : draftDefaultPrice);
+    renderPrices();
   }
   function normalizeColorPrice(value, fallback) {
     return typeof value === "number"
@@ -448,12 +454,14 @@
     activePriceVariation = $("price-variation-type").value;
     activePriceColor = "";
     refreshPriceColorOptions(false);
+    renderPrices();
   });
   $("price-color-select").addEventListener("change", () => {
     storeVisiblePrice();
     activePriceColor = $("price-color-select").value;
     const variations = activePriceVariation === "vidro" ? draftGlassPrices : draftColorPrices;
     showPriceValues(activePriceColor ? variations[activePriceColor] : draftDefaultPrice);
+    renderPrices();
   });
   refreshPriceColorOptions(false);
   $("price-cancel").addEventListener("click", clearPriceForm);
