@@ -291,7 +291,7 @@
       ? { preco_m2_centavos: value, preco_minimo_centavos: fallback.preco_minimo_centavos, instalacao_centavos: fallback.instalacao_centavos }
       : { ...fallback, ...(value || {}) };
   }
-  function editPrice(price) {
+  function editPrice(price, scroll = true) {
     $("price-id").value = price.id;
     $("price-category").value = price.categoria;
     modelSuggestions(price.modelo);
@@ -304,7 +304,26 @@
     $("price-active").checked = price.ativo;
     $("price-form-title").textContent = "Editar preço";
     $("price-cancel").hidden = false;
-    $("price-form").scrollIntoView({ behavior: "smooth", block: "start" });
+    if (scroll) $("price-form").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  function prepareNewPriceForSelectedModel() {
+    $("price-id").value = "";
+    $("price-description").value = "";
+    draftDefaultPrice = { preco_m2_centavos: 0, preco_minimo_centavos: 0, instalacao_centavos: 0 };
+    draftColorPrices = {};
+    draftGlassPrices = {};
+    activePriceVariation = "aluminio";
+    activePriceColor = "";
+    $("price-variation-type").value = activePriceVariation;
+    $("price-active").checked = true;
+    refreshPriceColorOptions(false);
+    $("price-form-title").textContent = "Novo preço";
+    $("price-cancel").hidden = true;
+  }
+  function loadSelectedPrice() {
+    const selectedPrice = prices.find((price) => price.categoria === $("price-category").value && price.modelo === $("price-model").value);
+    if (selectedPrice) editPrice(selectedPrice, false);
+    else prepareNewPriceForSelectedModel();
   }
   function clearPriceForm() {
     $("price-form").reset(); $("price-id").value = ""; $("price-minimum").value = "0"; $("price-installation").value = "0"; $("price-active").checked = true;
@@ -453,8 +472,8 @@
   $("feedback-clear-filters").addEventListener("click", () => {
     $("feedback-search").value = ""; $("feedback-type-filter").value = ""; $("feedback-rating-filter").value = ""; renderFeedbacks();
   });
-  $("price-category").addEventListener("change", () => { modelSuggestions(); refreshPriceColorOptions(); });
-  $("price-model").addEventListener("change", () => refreshPriceColorOptions());
+  $("price-category").addEventListener("change", () => { modelSuggestions(); loadSelectedPrice(); });
+  $("price-model").addEventListener("change", loadSelectedPrice);
   $("price-variation-type").addEventListener("change", () => {
     storeVisiblePrice();
     activePriceVariation = $("price-variation-type").value;

@@ -618,14 +618,22 @@ test("only administrators manage quotes and real price rules produce customer es
   assert.equal((await admin.request("/api/admin/precos", {
     method: "POST", json: { categoria: "box", modelo: "Outro teste", preco_m2_centavos: 100000, precos_vidros: { Azul: 125000 } },
   })).status, 400);
-  assert.equal((await admin.request("/api/admin/precos", {
+  const roundBoxPrice = await admin.request("/api/admin/precos", {
     method: "POST", json: { categoria: "box", modelo: "Frontal de Correr F1 Caixa Redonda", preco_m2_centavos: 100000 },
-  })).status, 201);
-  assert.equal((await admin.request("/api/admin/precos", {
+  });
+  assert.equal(roundBoxPrice.status, 201, roundBoxPrice.body);
+  const squareBoxPrice = await admin.request("/api/admin/precos", {
     method: "POST", json: { categoria: "box", modelo: "Frontal de Correr F1 Caixa Quadrada", preco_m2_centavos: 140000 },
-  })).status, 201);
+  });
+  assert.equal(squareBoxPrice.status, 201, squareBoxPrice.body);
+  assert.equal((await admin.request(`/api/admin/precos/${roundBoxPrice.data.id}`, {
+    method: "PUT", json: { categoria: "box", modelo: "Frontal de Correr F1 Caixa Quadrada", preco_m2_centavos: 160000 },
+  })).status, 409);
+  assert.equal((await admin.request(`/api/admin/precos/${roundBoxPrice.data.id}`, {
+    method: "PUT", json: { categoria: "box", modelo: "Frontal de Correr F1 Caixa Redonda", preco_m2_centavos: 120000 },
+  })).status, 200);
   const independentBoxPrices = (await admin.request("/api/admin/precos")).data.precos;
-  assert.equal(independentBoxPrices.find(({ modelo }) => modelo === "Frontal de Correr F1 Caixa Redonda").preco_m2_centavos, 100000);
+  assert.equal(independentBoxPrices.find(({ modelo }) => modelo === "Frontal de Correr F1 Caixa Redonda").preco_m2_centavos, 120000);
   assert.equal(independentBoxPrices.find(({ modelo }) => modelo === "Frontal de Correr F1 Caixa Quadrada").preco_m2_centavos, 140000);
 
   await customer.register({ email: "orcamento@example.test", telefone: "21999990006" });
