@@ -18,7 +18,7 @@
       "Frontal de Correr F1 Caixa Redonda", "Frontal de Correr F1 Caixa Quadrada",
       "Frontal de Correr F2 Caixa Redonda", "Frontal de Correr F2 Caixa Quadrada",
       "Frontal de Correr F3 Caixa Redonda", "Frontal de Correr F3 Caixa Quadrada",
-      "Box Flex Camarão",
+      "Box Flex Camarão", "Box Elegance",
     ],
     fachada: ["Pele de vidro", "Structural glazing", "Fachada comercial", "Vitrine", "Outro modelo"],
     guarda_corpo: ["Com vidro", "Com alumínio", "Vidro autoportante", "Corrimão", "Outro modelo"],
