@@ -82,9 +82,15 @@
               <label>Modelo exato<select id="price-model" required></select></label>
               <label>Descrição <small>(opcional)</small><input id="price-description" maxlength="300" placeholder="Ex.: linha padrão, sem ferragens especiais"></label>
               <div class="price-selector-grid">
-                <label class="price-color-bar">Cores do alumínio / kits<select id="price-aluminum-select"></select></label>
-                <label class="price-color-bar">Vidros<select id="price-glass-select"></select></label>
-                <small>Escolha uma cor/kit ou um vidro. Os valores abaixo mudam automaticamente.</small>
+                <label class="price-selector-card" id="price-aluminum-card">
+                  <span class="price-selector-title"><b>A</b><span><strong>Alumínio e kits</strong><small>Cores e acabamentos</small></span></span>
+                  <select id="price-aluminum-select"></select>
+                </label>
+                <label class="price-selector-card" id="price-glass-card">
+                  <span class="price-selector-title"><b>V</b><span><strong>Vidros</strong><small>Tipos e acabamentos</small></span></span>
+                  <select id="price-glass-select"></select>
+                </label>
+                <p class="price-selector-help"><strong id="price-selection-label">Editando preço padrão</strong><span>Os campos abaixo pertencem à opção destacada.</span></p>
               </div>
               <div class="money-grid"><label>Preço por m²<input id="price-square" type="number" min="0.01" max="10000000" step="0.01" required placeholder="0,00"></label><label>Valor mínimo<input id="price-minimum" type="number" min="0" max="10000000" step="0.01" value="0"></label><label>Instalação/unidade<input id="price-installation" type="number" min="0" max="10000000" step="0.01" value="0"></label></div>
               <label class="switch"><input id="price-active" type="checkbox" checked><span></span>Disponível para estimativas</label>
@@ -144,6 +150,6 @@
   </div>
   <script src="api.js"></script>
   <script src="propostas.js?v=20261016-tres-categorias"></script>
-  <script src="admin.js?v=20261105-seletores-separados"></script>
+  <script src="admin.js?v=20261105-seletores-independentes"></script>
 </body>
 </html>
