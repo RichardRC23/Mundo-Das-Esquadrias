@@ -585,7 +585,7 @@ test("only administrators manage quotes and real price rules produce customer es
         Branco: { preco_m2_centavos: 110000, preco_minimo_centavos: 85000, instalacao_centavos: 22000 },
         Preto: { preco_m2_centavos: 130000, preco_minimo_centavos: 90000, instalacao_centavos: 25000 },
       }, precos_vidros: {
-        "Fumê": { preco_m2_centavos: 140000, preco_minimo_centavos: 95000, instalacao_centavos: 28000 },
+        Incolor: { preco_m2_centavos: 140000, preco_minimo_centavos: 95000, instalacao_centavos: 28000 },
       }, ativo: true,
     },
   });
@@ -608,7 +608,7 @@ test("only administrators manage quotes and real price rules produce customer es
   }
   const publicRule = publicCatalog.data.precos.find((item) => item.categoria === "janela" && item.modelo === "De correr");
   assert.deepEqual(publicRule.precos_cores.Preto, { preco_m2_centavos: 130000, preco_minimo_centavos: 90000, instalacao_centavos: 25000 });
-  assert.deepEqual(publicRule.precos_vidros["Fumê"], { preco_m2_centavos: 140000, preco_minimo_centavos: 95000, instalacao_centavos: 28000 });
+  assert.deepEqual(publicRule.precos_vidros.Incolor, { preco_m2_centavos: 140000, preco_minimo_centavos: 95000, instalacao_centavos: 28000 });
   assert.equal((await admin.request("/api/admin/precos", {
     method: "POST", json: { categoria: "porta", modelo: "De correr", preco_m2_centavos: 100000, precos_cores: { Azul: 120000 } },
   })).status, 400);
@@ -617,6 +617,9 @@ test("only administrators manage quotes and real price rules produce customer es
   })).status, 201);
   assert.equal((await admin.request("/api/admin/precos", {
     method: "POST", json: { categoria: "box", modelo: "Outro teste", preco_m2_centavos: 100000, precos_vidros: { Azul: 125000 } },
+  })).status, 400);
+  assert.equal((await admin.request("/api/admin/precos", {
+    method: "POST", json: { categoria: "box", modelo: "Outro vidro", preco_m2_centavos: 100000, precos_vidros: { "Fumê": 125000 } },
   })).status, 400);
   const roundBoxPrice = await admin.request("/api/admin/precos", {
     method: "POST", json: { categoria: "box", modelo: "Frontal de Correr F1 Caixa Redonda", preco_m2_centavos: 100000 },
@@ -654,7 +657,7 @@ test("only administrators manage quotes and real price rules produce customer es
       nome: "Cliente Orçamento", telefone: "21999990006", cidade: "Rio de Janeiro", instalacao: true,
       itens: [{
         categoria: "janela", material: "aluminio_vidro", modelo: "De correr",
-        largura_cm: 120, altura_cm: 100, quantidade: 2, cor: "Preto", tipo_vidro: "Fumê", espessura_vidro: "10 mm",
+        largura_cm: 120, altura_cm: 100, quantidade: 2, cor: "Preto", tipo_vidro: "Incolor", espessura_vidro: "10 mm",
       }, {
         categoria: "box", material: "aluminio_vidro", modelo: "Frontal de Correr F1 Caixa Quadrada", tipo_caixa: "Caixa quadrada",
         largura_cm: 100, altura_cm: 200, quantidade: 1,

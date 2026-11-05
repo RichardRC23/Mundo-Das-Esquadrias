@@ -30,7 +30,7 @@
   };
   const standardPriceColors = ["Branco", "Preto", "Bronze", "Cromada", "Dourado"];
   const ceilingBoxPriceColors = [...standardPriceColors, "Inox escovado"];
-  const glassPriceColors = ["Incolor", "Fumê", "Verde", "Bronze", "Extra clear", "Jateado ou fantasia"];
+  const glassPriceColors = ["Incolor"];
   let quotes = [];
   let prices = [];
   let draftColorPrices = {};
