@@ -619,7 +619,7 @@ test("only administrators manage quotes and real price rules produce customer es
     method: "POST", json: { categoria: "box", modelo: "Outro teste", preco_m2_centavos: 100000, precos_vidros: { Azul: 125000 } },
   })).status, 400);
   assert.equal((await admin.request("/api/admin/precos", {
-    method: "POST", json: { categoria: "box", modelo: "Frontal de Correr F1 Caixa Quadrada", preco_m2_centavos: 100000 },
+    method: "POST", json: { categoria: "box", modelo: "Frontal de correr F1", preco_m2_centavos: 100000 },
   })).status, 201);
 
   await customer.register({ email: "orcamento@example.test", telefone: "21999990006" });
