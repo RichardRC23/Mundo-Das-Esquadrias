@@ -168,6 +168,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function visualDescription(item) {
     const details = [
       item.modelo, item.linha_aluminio, item.cor,
+      item.tipo_caixa,
       item.categoria === "porta" && item.numero_folhas && item.numero_folhas !== "A definir" ? `${item.numero_folhas} folhas` : "",
       item.composicao_vidro, item.tipo_vidro, item.espessura_vidro,
       item.categoria === "porta" && item.trilhos && item.trilhos !== "A definir" ? item.trilhos : "",
@@ -219,6 +220,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("item-vidro").value = selected.categoria === "espelho" ? "Espelho" : "Incolor";
     updateMaterialFields();
     updateDoorFields();
+    updateBoxFields();
     renderAccessoryOptions();
     addButton.disabled = false;
     addButton.textContent = "＋ Adicionar este item ao orçamento";
@@ -239,6 +241,10 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("door-specs").hidden = selected?.categoria !== "porta";
   }
 
+  function updateBoxFields() {
+    document.getElementById("box-case-field").hidden = selected?.categoria !== "box" || !/^Frontal de correr F[123]$/.test(modelInput.value);
+  }
+
   function renderAccessoryOptions() {
     const target = document.getElementById("accessory-options");
     const options = accessories[selected?.categoria] || [];
@@ -257,6 +263,10 @@ document.addEventListener("DOMContentLoaded", () => {
       .filter(Boolean);
   }
 
+  function boxSpecifications(item) {
+    return item.categoria === "box" && item.tipo_caixa ? [`Formato: ${item.tipo_caixa}`] : [];
+  }
+
   function value(id) { return document.getElementById(id).value.trim(); }
 
   function currentItem() {
@@ -264,6 +274,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const hasAluminum = ["aluminio_vidro", "aluminio"].includes(material);
     const hasGlass = ["aluminio_vidro", "vidro"].includes(material);
     const isDoor = selected.categoria === "porta";
+    const isBox = selected.categoria === "box";
     return {
       categoria: selected.categoria,
       material,
@@ -284,6 +295,7 @@ document.addEventListener("DOMContentLoaded", () => {
       retirada_existente: isDoor ? value("item-retirada-existente") : "",
       tela_mosquiteira: isDoor ? value("item-tela-mosquiteira") : "",
       automatizacao: isDoor ? value("item-automatizacao") : "",
+      tipo_caixa: isBox ? value("item-tipo-caixa") : "",
       acessorios: [...document.querySelectorAll('input[name="acessorios"]:checked')].map((input) => input.value),
       largura_cm: Number(value("item-largura")),
       altura_cm: Number(value("item-altura")),
@@ -342,6 +354,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <small>${item.largura_cm} × ${item.altura_cm} cm · ${escapeHtml(materialNames[item.material])} · ${item.quantidade} un.</small>
         ${[item.linha_aluminio, item.cor, item.tipo_vidro, item.composicao_vidro, item.espessura_vidro].filter((detail) => detail && detail !== "A definir").length ? `<small>${escapeHtml([item.linha_aluminio, item.cor, item.tipo_vidro, item.composicao_vidro, item.espessura_vidro].filter((detail) => detail && detail !== "A definir").join(" · "))}</small>` : ""}
         ${doorSpecifications(item).length ? `<small>${escapeHtml(doorSpecifications(item).join(" · "))}</small>` : ""}
+        ${boxSpecifications(item).length ? `<small>${escapeHtml(boxSpecifications(item).join(" · "))}</small>` : ""}
         ${accessorySpecifications(item).length ? `<small><strong>Acessórios:</strong> ${escapeHtml(accessorySpecifications(item).join(" · "))}</small>` : ""}
         ${price ? `<small class="item-price">Referência inicial por m²: ${money(price.produto_unitario_centavos * item.quantidade)}</small>` : ""}</p>
         <button type="button" data-remove="${index}" aria-label="Remover ${escapeHtml(categoryNames[item.categoria])}">Remover</button>
@@ -393,6 +406,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <strong>${escapeHtml(categoryNames[item.categoria])} · ${escapeHtml(item.modelo)}</strong>
           <p>${item.largura_cm} × ${item.altura_cm} cm · ${escapeHtml(materialNames[item.material])}${item.linha_aluminio ? ` · ${escapeHtml(item.linha_aluminio)}` : ""}${item.cor ? ` · ${escapeHtml(item.cor)}` : ""}${item.tipo_vidro ? ` · Vidro ${escapeHtml(item.tipo_vidro)}` : ""}${item.composicao_vidro ? ` ${escapeHtml(item.composicao_vidro)}` : ""}${item.espessura_vidro && item.espessura_vidro !== "A definir" ? ` · ${escapeHtml(item.espessura_vidro)}` : ""}</p>
           ${doorSpecifications(item).length ? `<p class="review-specifications">${escapeHtml(doorSpecifications(item).join(" · "))}</p>` : ""}
+          ${boxSpecifications(item).length ? `<p class="review-specifications">${escapeHtml(boxSpecifications(item).join(" · "))}</p>` : ""}
           ${accessorySpecifications(item).length ? `<p class="review-specifications"><strong>Acessórios:</strong> ${escapeHtml(accessorySpecifications(item).join(" · "))}</p>` : ""}
           ${item.ambiente ? `<p>Ambiente: ${escapeHtml(item.ambiente)}</p>` : ""}
           ${partes.length ? `<ul class="review-breakdown">${partes.map((parte) => `<li><span>${escapeHtml(parte.rotulo)}</span><strong>${money(parte.valor_centavos)}</strong></li>`).join("")}</ul>` : ""}
@@ -469,13 +483,14 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll('input[name="acessorios"]').forEach((input) => { input.checked = false; });
     document.getElementById("accessory-options").replaceChildren();
     updateDoorFields();
+    updateBoxFields();
     addButton.disabled = false;
     addButton.textContent = "＋ Adicionar este item ao orçamento";
   }
 
   productCards.forEach((card) => card.addEventListener("click", () => chooseProduct(card)));
   materialInput.addEventListener("change", updateMaterialFields);
-  modelInput.addEventListener("change", updateDoorFields);
+  modelInput.addEventListener("change", () => { updateDoorFields(); updateBoxFields(); });
   addButton.addEventListener("click", addCurrentItem);
   document.getElementById("another-item").addEventListener("click", () => { resetItemForm(); showStep(1); });
 
@@ -552,7 +567,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       document.getElementById("success-pdf-link").href = ContaAPI.url(`/api/orcamentos/${encodeURIComponent(code)}/pdf`);
       const summary = items.map((item, index) => {
-        const specifications = doorSpecifications(item);
+        const specifications = [...doorSpecifications(item), ...boxSpecifications(item)];
         const selectedAccessories = accessorySpecifications(item);
         return `${index + 1}. ${categoryNames[item.categoria]} - ${item.modelo} - ${item.largura_cm}x${item.altura_cm} cm - ${item.quantidade} un.${specifications.length ? ` - ${specifications.join(", ")}` : ""}${selectedAccessories.length ? ` - Acessórios: ${selectedAccessories.join(", ")}` : ""}`;
       }).join("\n");

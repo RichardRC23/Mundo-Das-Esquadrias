@@ -618,6 +618,9 @@ test("only administrators manage quotes and real price rules produce customer es
   assert.equal((await admin.request("/api/admin/precos", {
     method: "POST", json: { categoria: "box", modelo: "Outro teste", preco_m2_centavos: 100000, precos_vidros: { Azul: 125000 } },
   })).status, 400);
+  assert.equal((await admin.request("/api/admin/precos", {
+    method: "POST", json: { categoria: "box", modelo: "Frontal de correr F1", preco_m2_centavos: 100000 },
+  })).status, 201);
 
   await customer.register({ email: "orcamento@example.test", telefone: "21999990006" });
   const created = await customer.request("/api/orcamentos", {
@@ -627,19 +630,24 @@ test("only administrators manage quotes and real price rules produce customer es
       itens: [{
         categoria: "janela", material: "aluminio_vidro", modelo: "De correr",
         largura_cm: 120, altura_cm: 100, quantidade: 2, cor: "Preto", tipo_vidro: "Fumê", espessura_vidro: "10 mm",
+      }, {
+        categoria: "box", material: "aluminio_vidro", modelo: "Frontal de correr F1", tipo_caixa: "Caixa quadrada",
+        largura_cm: 100, altura_cm: 200, quantidade: 1,
       }],
     },
   });
   assert.equal(created.status, 201, created.body);
-  assert.equal(created.data.orcamento.estimativa_centavos, 479360);
+  assert.equal(created.data.orcamento.estimativa_centavos, 679360);
   const own = await customer.request("/api/orcamentos");
-  assert.equal(own.data.orcamentos[0].estimativa_centavos, 479360);
+  assert.equal(own.data.orcamentos[0].estimativa_centavos, 679360);
+  assert.equal(own.data.orcamentos[0].itens[1].tipo_caixa, "Caixa quadrada");
   assert.equal(own.data.orcamentos[0].estimativa_detalhes[0].subtotal_centavos, 479360);
   assert.deepEqual(own.data.orcamentos[0].estimativa_detalhes[0].partes.map((part) => part.valor_centavos), [423360, 56000]);
 
   const adminQuotes = await admin.request("/api/admin/orcamentos");
   assert.equal(adminQuotes.status, 200, adminQuotes.body);
   assert.equal(adminQuotes.data.orcamentos[0].telefone, "21999990006");
+  assert.equal(adminQuotes.data.orcamentos[0].itens[1].tipo_caixa, "Caixa quadrada");
   assert.equal(adminQuotes.data.orcamentos[0].estimativa_detalhes[0].subtotal_centavos, 479360);
   const quoteId = adminQuotes.data.orcamentos[0].id;
   const updated = await admin.request(`/api/admin/orcamentos/${quoteId}/status`, {

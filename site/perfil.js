@@ -67,6 +67,9 @@
       item.tela_mosquiteira && `Tela: ${item.tela_mosquiteira}`, item.automatizacao && `Automatização: ${item.automatizacao}`,
     ].filter((value) => value && !value.endsWith("A definir") && value !== "A definir").join(" · ");
   }
+  function boxSpecs(item) {
+    return item.categoria === "box" && item.tipo_caixa ? `Formato: ${item.tipo_caixa}` : "";
+  }
   function avatar() {
     const initials = (usuario.nome || "Minha conta").trim().split(/\s+/).slice(0, 2).map((s) => s[0] || "").join("").toUpperCase();
     document.querySelectorAll("[data-avatar]").forEach((el) => {
@@ -221,6 +224,7 @@
             .filter((value) => value && value !== "A definir").join(" · ");
           if (technical) breakdown.append(node("p", "quote-specifications", technical));
           if (doorSpecs(item)) breakdown.append(node("p", "quote-specifications", doorSpecs(item)));
+          if (boxSpecs(item)) breakdown.append(node("p", "quote-specifications", boxSpecs(item)));
           if (Array.isArray(item.acessorios) && item.acessorios.length) breakdown.append(node("p", "quote-specifications", `Acessórios: ${item.acessorios.join(" · ")}`));
         });
         info.append(breakdown);

@@ -9,6 +9,7 @@
     item.retirada_existente && `Retirada existente: ${item.retirada_existente}`,
     item.tela_mosquiteira && `Tela: ${item.tela_mosquiteira}`, item.automatizacao && `Automatização: ${item.automatizacao}`,
   ].filter((value) => value && !value.endsWith("A definir") && value !== "A definir").join(" · ") : "";
+  const boxSpecs = (item) => item.categoria === "box" && item.tipo_caixa ? `Formato: ${item.tipo_caixa}` : "";
   const statusLabels = { recebido: "Recebido", em_analise: "Em análise", aguardando_cliente: "Aguardando cliente", aprovado: "Aprovado", concluido: "Concluído", cancelado: "Cancelado" };
   const productModels = {
     porta: ["De correr", "De giro", "Pivotante", "Camarão / articulada", "Porta-balcão", "Outro modelo"],
@@ -118,6 +119,7 @@
           .filter((value) => value && value !== "A definir").join(" · ");
         if (technical) box.append(element("small", "item-specifications", technical));
         if (doorSpecs(item)) box.append(element("small", "item-specifications", doorSpecs(item)));
+        if (boxSpecs(item)) box.append(element("small", "item-specifications", boxSpecs(item)));
         if (Array.isArray(item.acessorios) && item.acessorios.length) box.append(element("small", "item-specifications", `Acessórios: ${item.acessorios.join(" · ")}`));
         const detail = quote.estimativa_detalhes?.[index];
         if (detail) box.append(element("small", "item-estimate", `${detail.metodo === "composicao" ? "Valor por composição" : "Estimativa do item"}: ${money(detail.subtotal_centavos)}`));
