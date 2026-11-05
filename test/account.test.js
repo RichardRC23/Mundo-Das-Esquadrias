@@ -619,7 +619,7 @@ test("only administrators manage quotes and real price rules produce customer es
     method: "POST", json: { categoria: "box", modelo: "Outro teste", preco_m2_centavos: 100000, precos_vidros: { Azul: 125000 } },
   })).status, 400);
   assert.equal((await admin.request("/api/admin/precos", {
-    method: "POST", json: { categoria: "box", modelo: "Frontal de correr F1", preco_m2_centavos: 100000 },
+    method: "POST", json: { categoria: "box", modelo: "Frontal de Correr F1 Caixa Quadrada", preco_m2_centavos: 100000 },
   })).status, 201);
 
   await customer.register({ email: "orcamento@example.test", telefone: "21999990006" });
@@ -631,7 +631,7 @@ test("only administrators manage quotes and real price rules produce customer es
         categoria: "janela", material: "aluminio_vidro", modelo: "De correr",
         largura_cm: 120, altura_cm: 100, quantidade: 2, cor: "Preto", tipo_vidro: "Fumê", espessura_vidro: "10 mm",
       }, {
-        categoria: "box", material: "aluminio_vidro", modelo: "Frontal de correr F1", tipo_caixa: "Caixa quadrada",
+        categoria: "box", material: "aluminio_vidro", modelo: "Frontal de Correr F1 Caixa Quadrada", tipo_caixa: "Caixa quadrada",
         largura_cm: 100, altura_cm: 200, quantidade: 1,
       }],
     },

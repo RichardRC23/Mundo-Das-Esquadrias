@@ -9,12 +9,16 @@
     item.retirada_existente && `Retirada existente: ${item.retirada_existente}`,
     item.tela_mosquiteira && `Tela: ${item.tela_mosquiteira}`, item.automatizacao && `Automatização: ${item.automatizacao}`,
   ].filter((value) => value && !value.endsWith("A definir") && value !== "A definir").join(" · ") : "";
-  const boxSpecs = (item) => item.categoria === "box" && item.tipo_caixa ? `Formato: ${item.tipo_caixa}` : "";
+  const boxSpecs = (item) => item.categoria === "box" && item.tipo_caixa && !/Caixa (Redonda|Quadrada)$/i.test(item.modelo) ? `Formato: ${item.tipo_caixa}` : "";
   const statusLabels = { recebido: "Recebido", em_analise: "Em análise", aguardando_cliente: "Aguardando cliente", aprovado: "Aprovado", concluido: "Concluído", cancelado: "Cancelado" };
   const productModels = {
     porta: ["De correr", "De giro", "Pivotante", "Camarão / articulada", "Porta-balcão", "Outro modelo"],
     janela: ["De correr", "Maxim-ar", "Basculante", "Guilhotina", "Fixa", "Outro modelo"],
-    box: ["Frontal de correr F1", "Frontal de correr F2", "Frontal de correr F3"],
+    box: [
+      "Frontal de Correr F1 Caixa Redonda", "Frontal de Correr F1 Caixa Quadrada",
+      "Frontal de Correr F2 Caixa Redonda", "Frontal de Correr F2 Caixa Quadrada",
+      "Frontal de Correr F3 Caixa Redonda", "Frontal de Correr F3 Caixa Quadrada",
+    ],
     fachada: ["Pele de vidro", "Structural glazing", "Fachada comercial", "Vitrine", "Outro modelo"],
     guarda_corpo: ["Com vidro", "Com alumínio", "Vidro autoportante", "Corrimão", "Outro modelo"],
     fechamento: ["Fechamento de varanda", "Área gourmet", "Divisória", "Cortina de vidro", "Outro modelo"],

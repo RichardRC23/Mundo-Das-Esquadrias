@@ -7,7 +7,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const models = {
     porta: ["De correr", "De giro", "Pivotante", "Camarão / articulada", "Porta-balcão", "Outro modelo"],
     janela: ["De correr", "Maxim-ar", "Basculante", "Guilhotina", "Fixa", "Outro modelo"],
-    box: ["Frontal de correr F1", "Frontal de correr F2", "Frontal de correr F3"],
+    box: [
+      "Frontal de Correr F1 Caixa Redonda", "Frontal de Correr F1 Caixa Quadrada",
+      "Frontal de Correr F2 Caixa Redonda", "Frontal de Correr F2 Caixa Quadrada",
+      "Frontal de Correr F3 Caixa Redonda", "Frontal de Correr F3 Caixa Quadrada",
+    ],
     fachada: ["Pele de vidro", "Structural glazing", "Fachada comercial", "Vitrine", "Outro modelo"],
     guarda_corpo: ["Com vidro", "Com alumínio", "Vidro autoportante", "Corrimão", "Outro modelo"],
     fechamento: ["Fechamento de varanda", "Área gourmet", "Divisória", "Cortina de vidro", "Outro modelo"],
@@ -146,7 +150,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const thickness = Math.min(12, Math.max(4, Number.parseInt(item.espessura_vidro, 10) || 6));
     const ratio = Math.min(2.1, Math.max(.58, Number(item.largura_cm) / Number(item.altura_cm) || 1.15));
     const counts = { janela: /fixa|maxim/i.test(item.modelo) ? 1 : /basculante/i.test(item.modelo) ? 3 : /guilhotina/i.test(item.modelo) ? 2 : 4,
-      box: /F1$/i.test(item.modelo) ? 1 : /F3$/i.test(item.modelo) ? 3 : /abrir|open/i.test(item.modelo) ? 1 : /banheira/i.test(item.modelo) ? 3 : 2, fachada: 8, guarda_corpo: 3,
+      box: /F1\b/i.test(item.modelo) ? 1 : /F3\b/i.test(item.modelo) ? 3 : /abrir|open/i.test(item.modelo) ? 1 : /banheira/i.test(item.modelo) ? 3 : 2, fachada: 8, guarda_corpo: 3,
       fechamento: /divisória/i.test(item.modelo) ? 3 : 5, espelho: 1, cobertura: 3, manutencao: 1, outro: 4 };
     const count = counts[item.categoria] || 2;
     const panes = Array.from({ length: count }, (_, index) => `<span class="model-panel" style="--panel:${index}"><i></i></span>`).join("");
@@ -220,7 +224,6 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("item-vidro").value = selected.categoria === "espelho" ? "Espelho" : "Incolor";
     updateMaterialFields();
     updateDoorFields();
-    updateBoxFields();
     renderAccessoryOptions();
     addButton.disabled = false;
     addButton.textContent = "＋ Adicionar este item ao orçamento";
@@ -239,10 +242,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updateDoorFields() {
     document.getElementById("door-specs").hidden = selected?.categoria !== "porta";
-  }
-
-  function updateBoxFields() {
-    document.getElementById("box-case-field").hidden = selected?.categoria !== "box" || !/^Frontal de correr F[123]$/.test(modelInput.value);
   }
 
   function renderAccessoryOptions() {
@@ -264,7 +263,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function boxSpecifications(item) {
-    return item.categoria === "box" && item.tipo_caixa ? [`Formato: ${item.tipo_caixa}`] : [];
+    return item.categoria === "box" && item.tipo_caixa && !/Caixa (Redonda|Quadrada)$/i.test(item.modelo)
+      ? [`Formato: ${item.tipo_caixa}`] : [];
   }
 
   function value(id) { return document.getElementById(id).value.trim(); }
@@ -295,7 +295,7 @@ document.addEventListener("DOMContentLoaded", () => {
       retirada_existente: isDoor ? value("item-retirada-existente") : "",
       tela_mosquiteira: isDoor ? value("item-tela-mosquiteira") : "",
       automatizacao: isDoor ? value("item-automatizacao") : "",
-      tipo_caixa: isBox ? value("item-tipo-caixa") : "",
+      tipo_caixa: isBox ? (/Caixa Quadrada$/i.test(modelInput.value) ? "Caixa quadrada" : "Caixa redonda") : "",
       acessorios: [...document.querySelectorAll('input[name="acessorios"]:checked')].map((input) => input.value),
       largura_cm: Number(value("item-largura")),
       altura_cm: Number(value("item-altura")),
@@ -483,14 +483,13 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll('input[name="acessorios"]').forEach((input) => { input.checked = false; });
     document.getElementById("accessory-options").replaceChildren();
     updateDoorFields();
-    updateBoxFields();
     addButton.disabled = false;
     addButton.textContent = "＋ Adicionar este item ao orçamento";
   }
 
   productCards.forEach((card) => card.addEventListener("click", () => chooseProduct(card)));
   materialInput.addEventListener("change", updateMaterialFields);
-  modelInput.addEventListener("change", () => { updateDoorFields(); updateBoxFields(); });
+  modelInput.addEventListener("change", updateDoorFields);
   addButton.addEventListener("click", addCurrentItem);
   document.getElementById("another-item").addEventListener("click", () => { resetItemForm(); showStep(1); });
 

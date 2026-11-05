@@ -68,7 +68,7 @@
     ].filter((value) => value && !value.endsWith("A definir") && value !== "A definir").join(" · ");
   }
   function boxSpecs(item) {
-    return item.categoria === "box" && item.tipo_caixa ? `Formato: ${item.tipo_caixa}` : "";
+    return item.categoria === "box" && item.tipo_caixa && !/Caixa (Redonda|Quadrada)$/i.test(item.modelo) ? `Formato: ${item.tipo_caixa}` : "";
   }
   function avatar() {
     const initials = (usuario.nome || "Minha conta").trim().split(/\s+/).slice(0, 2).map((s) => s[0] || "").join("").toUpperCase();
