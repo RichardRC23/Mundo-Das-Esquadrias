@@ -81,8 +81,11 @@
               <label>Categoria<select id="price-category" required><option value="porta">Porta</option><option value="janela">Janela</option><option value="box">Box</option><option value="fachada">Fachada</option><option value="guarda_corpo">Guarda-corpo</option><option value="fechamento">Fechamento</option><option value="espelho">Espelhos e vidros</option><option value="cobertura">Cobertura</option><option value="manutencao">Manutenção</option><option value="outro">Outro</option></select></label>
               <label>Modelo exato<select id="price-model" required></select></label>
               <label>Descrição <small>(opcional)</small><input id="price-description" maxlength="300" placeholder="Ex.: linha padrão, sem ferragens especiais"></label>
-              <label class="price-variation-bar">Tabela de preços<select id="price-variation-type"><option value="aluminio">Cores do alumínio</option><option value="vidro">Cores e acabamentos do vidro</option></select></label>
-              <label class="price-color-bar"><span id="price-color-label">Cor do alumínio</span><select id="price-color-select"></select><small>Ao trocar a cor ou o vidro, os valores abaixo mudam automaticamente.</small></label>
+              <div class="price-selector-grid">
+                <label class="price-color-bar">Cores do alumínio / kits<select id="price-aluminum-select"></select></label>
+                <label class="price-color-bar">Vidros<select id="price-glass-select"></select></label>
+                <small>Escolha uma cor/kit ou um vidro. Os valores abaixo mudam automaticamente.</small>
+              </div>
               <div class="money-grid"><label>Preço por m²<input id="price-square" type="number" min="0.01" max="10000000" step="0.01" required placeholder="0,00"></label><label>Valor mínimo<input id="price-minimum" type="number" min="0" max="10000000" step="0.01" value="0"></label><label>Instalação/unidade<input id="price-installation" type="number" min="0" max="10000000" step="0.01" value="0"></label></div>
               <label class="switch"><input id="price-active" type="checkbox" checked><span></span>Disponível para estimativas</label>
               <div class="form-actions"><button class="button primary" type="submit">Salvar preço</button><button class="button secondary" id="price-cancel" type="button" hidden>Cancelar edição</button></div>
@@ -141,6 +144,6 @@
   </div>
   <script src="api.js"></script>
   <script src="propostas.js?v=20261016-tres-categorias"></script>
-  <script src="admin.js?v=20261105-somente-vidro-incolor"></script>
+  <script src="admin.js?v=20261105-seletores-separados"></script>
 </body>
 </html>
