@@ -635,8 +635,19 @@ test("only administrators manage quotes and real price rules produce customer es
   const independentBoxPrices = (await admin.request("/api/admin/precos")).data.precos;
   assert.equal(independentBoxPrices.find(({ modelo }) => modelo === "Frontal de Correr F1 Caixa Redonda").preco_m2_centavos, 120000);
   assert.equal(independentBoxPrices.find(({ modelo }) => modelo === "Frontal de Correr F1 Caixa Quadrada").preco_m2_centavos, 140000);
+  assert.equal((await admin.request("/api/admin/precos", {
+    method: "POST", json: { categoria: "box", modelo: "Box Flex Camarão", preco_m2_centavos: 80000 },
+  })).status, 201);
 
   await customer.register({ email: "orcamento@example.test", telefone: "21999990006" });
+  const flexPreview = await customer.request("/api/orcamentos/previa", {
+    method: "POST", json: {
+      nome: "Cliente Orçamento", telefone: "21999990006", cidade: "Rio de Janeiro", instalacao: false,
+      itens: [{ categoria: "box", material: "aluminio_vidro", modelo: "Box Flex Camarão", largura_cm: 100, altura_cm: 100, quantidade: 1 }],
+    },
+  });
+  assert.equal(flexPreview.status, 200, flexPreview.body);
+  assert.equal(flexPreview.data.total_centavos, 80000);
   const created = await customer.request("/api/orcamentos", {
     method: "POST",
     json: {
