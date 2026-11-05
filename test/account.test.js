@@ -619,8 +619,14 @@ test("only administrators manage quotes and real price rules produce customer es
     method: "POST", json: { categoria: "box", modelo: "Outro teste", preco_m2_centavos: 100000, precos_vidros: { Azul: 125000 } },
   })).status, 400);
   assert.equal((await admin.request("/api/admin/precos", {
-    method: "POST", json: { categoria: "box", modelo: "Frontal de correr F1", preco_m2_centavos: 100000 },
+    method: "POST", json: { categoria: "box", modelo: "Frontal de Correr F1 Caixa Redonda", preco_m2_centavos: 100000 },
   })).status, 201);
+  assert.equal((await admin.request("/api/admin/precos", {
+    method: "POST", json: { categoria: "box", modelo: "Frontal de Correr F1 Caixa Quadrada", preco_m2_centavos: 140000 },
+  })).status, 201);
+  const independentBoxPrices = (await admin.request("/api/admin/precos")).data.precos;
+  assert.equal(independentBoxPrices.find(({ modelo }) => modelo === "Frontal de Correr F1 Caixa Redonda").preco_m2_centavos, 100000);
+  assert.equal(independentBoxPrices.find(({ modelo }) => modelo === "Frontal de Correr F1 Caixa Quadrada").preco_m2_centavos, 140000);
 
   await customer.register({ email: "orcamento@example.test", telefone: "21999990006" });
   const created = await customer.request("/api/orcamentos", {
@@ -637,9 +643,9 @@ test("only administrators manage quotes and real price rules produce customer es
     },
   });
   assert.equal(created.status, 201, created.body);
-  assert.equal(created.data.orcamento.estimativa_centavos, 679360);
+  assert.equal(created.data.orcamento.estimativa_centavos, 759360);
   const own = await customer.request("/api/orcamentos");
-  assert.equal(own.data.orcamentos[0].estimativa_centavos, 679360);
+  assert.equal(own.data.orcamentos[0].estimativa_centavos, 759360);
   assert.equal(own.data.orcamentos[0].itens[1].tipo_caixa, "Caixa quadrada");
   assert.equal(own.data.orcamentos[0].estimativa_detalhes[0].subtotal_centavos, 479360);
   assert.deepEqual(own.data.orcamentos[0].estimativa_detalhes[0].partes.map((part) => part.valor_centavos), [423360, 56000]);

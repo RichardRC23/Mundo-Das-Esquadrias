@@ -434,10 +434,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function calculateItem(item, installation) {
-    const legacyMatch = item.categoria === "box" ? item.modelo.match(/^Frontal de Correr F([123]) Caixa (?:Redonda|Quadrada)$/i) : null;
-    const legacyModel = legacyMatch ? `Frontal de correr F${legacyMatch[1]}` : "";
-    const rule = catalog.get(`${item.categoria}\u0000${item.modelo}`)
-      || (legacyModel && catalog.get(`${item.categoria}\u0000${legacyModel}`));
+    const rule = catalog.get(`${item.categoria}\u0000${item.modelo}`);
     if (!rule) return null;
     const area = Math.round((item.largura_cm * item.altura_cm / 10000) * 1000) / 1000;
     const rawColorPrice = rule.precos_cores?.[item.cor];
