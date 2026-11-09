@@ -599,8 +599,13 @@ test("only administrators manage quotes and real price rules produce customer es
   })).status, 409);
   const f1RoundChromeFixture = { preco_m2_centavos: 53600, preco_minimo_centavos: 53100, instalacao_centavos: 15000 };
   const f1RoundGoldFixture = { preco_m2_centavos: 82875, preco_minimo_centavos: 82275, instalacao_centavos: 15000 };
+  const f1RoundWhiteBlackFixture = { preco_m2_centavos: 42200, preco_minimo_centavos: 41600, instalacao_centavos: 15000 };
   const f1RoundFixtureCombinations = Object.fromEntries(
-    ["Fumê", "Verde"].map((vidro) => [JSON.stringify(["Dourado", vidro]), f1RoundGoldFixture]),
+    ["Fumê", "Verde"].flatMap((vidro) => [
+      [JSON.stringify(["Dourado", vidro]), f1RoundGoldFixture],
+      [JSON.stringify(["Branco", vidro]), f1RoundWhiteBlackFixture],
+      [JSON.stringify(["Preto", vidro]), f1RoundWhiteBlackFixture],
+    ]),
   );
   await db.run(`INSERT OR IGNORE INTO precos_orcamento
     (categoria,modelo,descricao,precos_cores_json,precos_vidros_json,precos_combinacoes_json,preco_m2_centavos,preco_minimo_centavos,instalacao_centavos)
@@ -652,8 +657,22 @@ test("only administrators manage quotes and real price rules produce customer es
   assert.deepEqual(f1RoundRule.precos_vidros.Verde, f1RoundChrome);
   for (const vidro of ["Fumê", "Verde"]) {
     assert.deepEqual(f1RoundRule.precos_combinacoes[JSON.stringify(["Dourado", vidro])], f1RoundGoldFixture);
+    assert.deepEqual(f1RoundRule.precos_combinacoes[JSON.stringify(["Branco", vidro])], f1RoundWhiteBlackFixture);
+    assert.deepEqual(f1RoundRule.precos_combinacoes[JSON.stringify(["Preto", vidro])], f1RoundWhiteBlackFixture);
   }
   await db.run("DELETE FROM precos_orcamento WHERE categoria='box' AND modelo='Frontal de Correr F1 Caixa Redonda' AND descricao='fixture'");
+  const tetoRule = publicCatalog.data.precos.find(({ categoria, modelo }) => categoria === "box" && modelo === "Até o teto");
+  const tetoKitValores = {
+    Branco: f1RoundWhiteBlackFixture,
+    Preto: f1RoundWhiteBlackFixture,
+    Cromada: f1RoundChromeFixture,
+    Dourado: f1RoundGoldFixture,
+  };
+  for (const vidro of ["Fumê", "Verde"]) {
+    for (const [kit, valor] of Object.entries(tetoKitValores)) {
+      assert.deepEqual(tetoRule.precos_combinacoes[JSON.stringify([kit, vidro])], valor);
+    }
+  }
   const f3RoundRule = publicCatalog.data.precos.find(({ categoria, modelo }) => categoria === "box" && modelo === "Frontal de Correr F3 Caixa Redonda");
   const f3RoundWhiteValue = { preco_m2_centavos: 41525, preco_minimo_centavos: 41025, instalacao_centavos: 25000 };
   const f3RoundBlackValue = { preco_m2_centavos: 45240, preco_minimo_centavos: 44700, instalacao_centavos: 25000 };
@@ -757,6 +776,14 @@ test("only administrators manage quotes and real price rules produce customer es
   });
   assert.equal(f3GoldComboPreview.status, 200, f3GoldComboPreview.body);
   assert.equal(f3GoldComboPreview.data.total_centavos, 116180);
+  const tetoWhiteComboPreview = await customer.request("/api/orcamentos/previa", {
+    method: "POST", json: {
+      nome: "Cliente Orçamento", telefone: "21999990006", cidade: "Rio de Janeiro", instalacao: true,
+      itens: [{ categoria: "box", material: "aluminio_vidro", modelo: "Até o teto", cor: "Branco", tipo_vidro: "Fumê", largura_cm: 100, altura_cm: 100, quantidade: 1 }],
+    },
+  });
+  assert.equal(tetoWhiteComboPreview.status, 200, tetoWhiteComboPreview.body);
+  assert.equal(tetoWhiteComboPreview.data.total_centavos, 57200);
   const f1GoldComboPreview = await customer.request("/api/orcamentos/previa", {
     method: "POST", json: {
       nome: "Cliente Orçamento", telefone: "21999990006", cidade: "Rio de Janeiro", instalacao: true,
