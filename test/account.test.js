@@ -607,11 +607,14 @@ test("only administrators manage quotes and real price rules produce customer es
   assert.ok(!publicCatalog.data.precos.some(({ categoria, modelo }) => categoria === "box" && modelo === "Frontal de correr F2"));
   assert.ok(!publicCatalog.data.precos.some(({ categoria, modelo }) => categoria === "box" && modelo === "Frontal de correr"));
   const f2RoundRule = publicCatalog.data.precos.find(({ categoria, modelo }) => categoria === "box" && modelo === "Frontal de Correr F2 Caixa Redonda");
-  const f2RoundValue = { preco_m2_centavos: 42300, preco_minimo_centavos: 41800, instalacao_centavos: 15000 };
-  assert.deepEqual(f2RoundRule.precos_cores.Branco, f2RoundValue);
-  assert.deepEqual(f2RoundRule.precos_cores.Preto, f2RoundValue);
-  assert.deepEqual(f2RoundRule.precos_vidros["Fumê"], f2RoundValue);
-  assert.deepEqual(f2RoundRule.precos_vidros.Verde, f2RoundValue);
+  const f2RoundWhiteBlack = { preco_m2_centavos: 42300, preco_minimo_centavos: 41800, instalacao_centavos: 15000 };
+  const f2RoundChromeBronze = { preco_m2_centavos: 47300, preco_minimo_centavos: 46800, instalacao_centavos: 15000 };
+  assert.deepEqual(f2RoundRule.precos_cores.Branco, f2RoundWhiteBlack);
+  assert.deepEqual(f2RoundRule.precos_cores.Preto, f2RoundWhiteBlack);
+  assert.deepEqual(f2RoundRule.precos_cores.Cromada, f2RoundChromeBronze);
+  assert.deepEqual(f2RoundRule.precos_cores.Bronze, f2RoundChromeBronze);
+  assert.deepEqual(f2RoundRule.precos_vidros["Fumê"], f2RoundChromeBronze);
+  assert.deepEqual(f2RoundRule.precos_vidros.Verde, f2RoundChromeBronze);
   for (const modelo of ["Espelho lapidado", "Espelho orgânico", "Espelho de camarim / LED", "Espelho com moldura", "Espelho sob medida"]) {
     assert.ok(publicCatalog.data.precos.some((preco) => preco.categoria === "espelho" && preco.modelo === modelo), modelo);
   }
