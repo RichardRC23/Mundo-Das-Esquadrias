@@ -612,10 +612,12 @@ test("only administrators manage quotes and real price rules produce customer es
   ]);
   const f3RoundFixtureValue = { preco_m2_centavos: 41525, preco_minimo_centavos: 41025, instalacao_centavos: 25000 };
   const f3BlackFixtureValue = { preco_m2_centavos: 45240, preco_minimo_centavos: 44700, instalacao_centavos: 25000 };
+  const f3ChromeFixtureValue = { preco_m2_centavos: 49420, preco_minimo_centavos: 48920, instalacao_centavos: 25000 };
   const f3RoundFixtureCombinations = Object.fromEntries(
     ["Fumê", "Verde"].flatMap((vidro) => [
       [JSON.stringify(["Branco", vidro]), f3RoundFixtureValue],
       [JSON.stringify(["Preto", vidro]), f3BlackFixtureValue],
+      [JSON.stringify(["Cromada", vidro]), f3ChromeFixtureValue],
     ]),
   );
   await db.run(`INSERT OR IGNORE INTO precos_orcamento
@@ -653,9 +655,11 @@ test("only administrators manage quotes and real price rules produce customer es
   const f3RoundRule = publicCatalog.data.precos.find(({ categoria, modelo }) => categoria === "box" && modelo === "Frontal de Correr F3 Caixa Redonda");
   const f3RoundWhiteValue = { preco_m2_centavos: 41525, preco_minimo_centavos: 41025, instalacao_centavos: 25000 };
   const f3RoundBlackValue = { preco_m2_centavos: 45240, preco_minimo_centavos: 44700, instalacao_centavos: 25000 };
+  const f3RoundChromeValue = { preco_m2_centavos: 49420, preco_minimo_centavos: 48920, instalacao_centavos: 25000 };
   for (const vidro of ["Fumê", "Verde"]) {
     assert.deepEqual(f3RoundRule.precos_combinacoes[JSON.stringify(["Branco", vidro])], f3RoundWhiteValue);
     assert.deepEqual(f3RoundRule.precos_combinacoes[JSON.stringify(["Preto", vidro])], f3RoundBlackValue);
+    assert.deepEqual(f3RoundRule.precos_combinacoes[JSON.stringify(["Cromada", vidro])], f3RoundChromeValue);
   }
   for (const modelo of ["Espelho lapidado", "Espelho orgânico", "Espelho de camarim / LED", "Espelho com moldura", "Espelho sob medida"]) {
     assert.ok(publicCatalog.data.precos.some((preco) => preco.categoria === "espelho" && preco.modelo === modelo), modelo);
@@ -733,14 +737,14 @@ test("only administrators manage quotes and real price rules produce customer es
   });
   assert.equal(f3BlackComboPreview.status, 200, f3BlackComboPreview.body);
   assert.equal(f3BlackComboPreview.data.total_centavos, 70240);
-  const f3OtherKitPreview = await customer.request("/api/orcamentos/previa", {
+  const f3ChromeComboPreview = await customer.request("/api/orcamentos/previa", {
     method: "POST", json: {
       nome: "Cliente Orçamento", telefone: "21999990006", cidade: "Rio de Janeiro", instalacao: true,
       itens: [{ categoria: "box", material: "aluminio_vidro", modelo: "Frontal de Correr F3 Caixa Redonda", cor: "Cromada", tipo_vidro: "Fumê", largura_cm: 100, altura_cm: 100, quantidade: 1 }],
     },
   });
-  assert.equal(f3OtherKitPreview.status, 200, f3OtherKitPreview.body);
-  assert.equal(f3OtherKitPreview.data.total_centavos, null);
+  assert.equal(f3ChromeComboPreview.status, 200, f3ChromeComboPreview.body);
+  assert.equal(f3ChromeComboPreview.data.total_centavos, 74420);
   const f1GoldComboPreview = await customer.request("/api/orcamentos/previa", {
     method: "POST", json: {
       nome: "Cliente Orçamento", telefone: "21999990006", cidade: "Rio de Janeiro", instalacao: true,
