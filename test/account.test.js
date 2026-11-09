@@ -598,11 +598,16 @@ test("only administrators manage quotes and real price rules produce customer es
     json: { categoria: "janela", modelo: "De correr", preco_m2_centavos: 100000 },
   })).status, 409);
   const f1RoundChromeFixture = { preco_m2_centavos: 53600, preco_minimo_centavos: 53100, instalacao_centavos: 15000 };
+  const f1RoundGoldFixture = { preco_m2_centavos: 82875, preco_minimo_centavos: 82275, instalacao_centavos: 15000 };
+  const f1RoundFixtureCombinations = Object.fromEntries(
+    ["Fumê", "Verde"].map((vidro) => [JSON.stringify(["Dourado", vidro]), f1RoundGoldFixture]),
+  );
   await db.run(`INSERT OR IGNORE INTO precos_orcamento
-    (categoria,modelo,descricao,precos_cores_json,precos_vidros_json,preco_m2_centavos,preco_minimo_centavos,instalacao_centavos)
-    VALUES ('box','Frontal de Correr F1 Caixa Redonda','fixture',?,?,?,?,?)`, [
+    (categoria,modelo,descricao,precos_cores_json,precos_vidros_json,precos_combinacoes_json,preco_m2_centavos,preco_minimo_centavos,instalacao_centavos)
+    VALUES ('box','Frontal de Correr F1 Caixa Redonda','fixture',?,?,?,?,?,?)`, [
     JSON.stringify({ Cromada: f1RoundChromeFixture }),
     JSON.stringify({ "Fumê": f1RoundChromeFixture, Verde: f1RoundChromeFixture }),
+    JSON.stringify(f1RoundFixtureCombinations),
     100, 0, 0,
   ]);
   const f3RoundFixtureValue = { preco_m2_centavos: 41525, preco_minimo_centavos: 41025, instalacao_centavos: 20000 };
@@ -637,6 +642,9 @@ test("only administrators manage quotes and real price rules produce customer es
   assert.deepEqual(f1RoundRule.precos_cores.Cromada, f1RoundChrome);
   assert.deepEqual(f1RoundRule.precos_vidros["Fumê"], f1RoundChrome);
   assert.deepEqual(f1RoundRule.precos_vidros.Verde, f1RoundChrome);
+  for (const vidro of ["Fumê", "Verde"]) {
+    assert.deepEqual(f1RoundRule.precos_combinacoes[JSON.stringify(["Dourado", vidro])], f1RoundGoldFixture);
+  }
   await db.run("DELETE FROM precos_orcamento WHERE categoria='box' AND modelo='Frontal de Correr F1 Caixa Redonda' AND descricao='fixture'");
   const f3RoundRule = publicCatalog.data.precos.find(({ categoria, modelo }) => categoria === "box" && modelo === "Frontal de Correr F3 Caixa Redonda");
   const f3RoundValue = { preco_m2_centavos: 41525, preco_minimo_centavos: 41025, instalacao_centavos: 20000 };
@@ -683,6 +691,7 @@ test("only administrators manage quotes and real price rules produce customer es
   const independentBoxPrices = (await admin.request("/api/admin/precos")).data.precos;
   assert.equal(independentBoxPrices.find(({ modelo }) => modelo === "Frontal de Correr F1 Caixa Redonda").preco_m2_centavos, 120000);
   assert.equal(independentBoxPrices.find(({ modelo }) => modelo === "Frontal de Correr F1 Caixa Quadrada").preco_m2_centavos, 140000);
+  await db.run("UPDATE precos_orcamento SET precos_combinacoes_json=? WHERE categoria='box' AND modelo='Frontal de Correr F1 Caixa Redonda'", [JSON.stringify(f1RoundFixtureCombinations)]);
   assert.equal((await admin.request("/api/admin/precos", {
     method: "POST", json: { categoria: "box", modelo: "Box Flex Camarão", preco_m2_centavos: 80000 },
   })).status, 201);
@@ -720,6 +729,14 @@ test("only administrators manage quotes and real price rules produce customer es
   });
   assert.equal(f3OtherKitPreview.status, 200, f3OtherKitPreview.body);
   assert.equal(f3OtherKitPreview.data.total_centavos, null);
+  const f1GoldComboPreview = await customer.request("/api/orcamentos/previa", {
+    method: "POST", json: {
+      nome: "Cliente Orçamento", telefone: "21999990006", cidade: "Rio de Janeiro", instalacao: true,
+      itens: [{ categoria: "box", material: "aluminio_vidro", modelo: "Frontal de Correr F1 Caixa Redonda", cor: "Dourado", tipo_vidro: "Verde", largura_cm: 100, altura_cm: 100, quantidade: 1 }],
+    },
+  });
+  assert.equal(f1GoldComboPreview.status, 200, f1GoldComboPreview.body);
+  assert.equal(f1GoldComboPreview.data.total_centavos, 97875);
   const flexPreview = await customer.request("/api/orcamentos/previa", {
     method: "POST", json: {
       nome: "Cliente Orçamento", telefone: "21999990006", cidade: "Rio de Janeiro", instalacao: false,
