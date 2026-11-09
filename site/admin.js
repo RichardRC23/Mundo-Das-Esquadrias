@@ -269,7 +269,8 @@
   function storeVisiblePrice() {
     const values = readVisiblePrice();
     const variations = activePriceVariation === "vidro" ? draftGlassPrices : draftColorPrices;
-    if (activePriceColor) variations[activePriceColor] = values;
+    if (activePriceColor && values.preco_m2_centavos > 0) variations[activePriceColor] = values;
+    else if (activePriceColor) delete variations[activePriceColor];
     else draftDefaultPrice = values;
   }
   function refreshPriceColorOptions(preserveCurrent = true) {
@@ -301,7 +302,10 @@
     $("price-selection-label").textContent = isGlass
       ? `Editando vidro: ${selectedGlassColor || "selecione uma opção"}`
       : `Editando alumínio/kit: ${selectedAluminumColor || "preço padrão"}`;
-    showPriceValues(activePriceColor ? variations[activePriceColor] : draftDefaultPrice);
+    const visiblePrice = activePriceColor && Object.hasOwn(variations, activePriceColor)
+      ? variations[activePriceColor]
+      : activePriceColor ? {} : draftDefaultPrice;
+    showPriceValues(visiblePrice);
     renderPrices();
   }
   function normalizeColorPrice(value, fallback) {

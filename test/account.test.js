@@ -586,6 +586,9 @@ test("only administrators manage quotes and real price rules produce customer es
         Preto: { preco_m2_centavos: 130000, preco_minimo_centavos: 90000, instalacao_centavos: 25000 },
       }, precos_vidros: {
         Incolor: { preco_m2_centavos: 140000, preco_minimo_centavos: 95000, instalacao_centavos: 28000 },
+        "Fumê": { preco_m2_centavos: 150000, preco_minimo_centavos: 96000, instalacao_centavos: 29000 },
+        Verde: { preco_m2_centavos: 160000, preco_minimo_centavos: 97000, instalacao_centavos: 30000 },
+        Bronze: { preco_m2_centavos: 170000, preco_minimo_centavos: 98000, instalacao_centavos: 31000 },
       }, ativo: true,
     },
   });
@@ -609,6 +612,9 @@ test("only administrators manage quotes and real price rules produce customer es
   const publicRule = publicCatalog.data.precos.find((item) => item.categoria === "janela" && item.modelo === "De correr");
   assert.deepEqual(publicRule.precos_cores.Preto, { preco_m2_centavos: 130000, preco_minimo_centavos: 90000, instalacao_centavos: 25000 });
   assert.deepEqual(publicRule.precos_vidros.Incolor, { preco_m2_centavos: 140000, preco_minimo_centavos: 95000, instalacao_centavos: 28000 });
+  assert.deepEqual(publicRule.precos_vidros["Fumê"], { preco_m2_centavos: 150000, preco_minimo_centavos: 96000, instalacao_centavos: 29000 });
+  assert.deepEqual(publicRule.precos_vidros.Verde, { preco_m2_centavos: 160000, preco_minimo_centavos: 97000, instalacao_centavos: 30000 });
+  assert.deepEqual(publicRule.precos_vidros.Bronze, { preco_m2_centavos: 170000, preco_minimo_centavos: 98000, instalacao_centavos: 31000 });
   assert.equal((await admin.request("/api/admin/precos", {
     method: "POST", json: { categoria: "porta", modelo: "De correr", preco_m2_centavos: 100000, precos_cores: { Azul: 120000 } },
   })).status, 400);
@@ -620,7 +626,7 @@ test("only administrators manage quotes and real price rules produce customer es
   })).status, 400);
   assert.equal((await admin.request("/api/admin/precos", {
     method: "POST", json: { categoria: "box", modelo: "Outro vidro", preco_m2_centavos: 100000, precos_vidros: { "Fumê": 125000 } },
-  })).status, 400);
+  })).status, 201);
   const roundBoxPrice = await admin.request("/api/admin/precos", {
     method: "POST", json: { categoria: "box", modelo: "Frontal de Correr F1 Caixa Redonda", preco_m2_centavos: 100000 },
   });
