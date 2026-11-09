@@ -692,6 +692,14 @@ test("only administrators manage quotes and real price rules produce customer es
       assert.deepEqual(tetoRule.precos_combinacoes[JSON.stringify([kit, vidro])], valor);
     }
   }
+  const f1SquareRule = publicCatalog.data.precos.find(({ categoria, modelo }) => categoria === "box" && modelo === "Frontal de Correr F1 Caixa Quadrada");
+  const f1SquareWhiteBlack = { preco_m2_centavos: 39829, preco_minimo_centavos: 39329, instalacao_centavos: 15000 };
+  for (const kit of ["Branco", "Preto"]) {
+    for (const vidro of ["Fumê", "Verde"]) {
+      assert.deepEqual(f1SquareRule.precos_combinacoes[JSON.stringify([kit, vidro])], f1SquareWhiteBlack);
+    }
+  }
+  assert.equal(f1SquareRule.precos_combinacoes[JSON.stringify(["Branco", "Incolor"])], undefined);
   const f3RoundRule = publicCatalog.data.precos.find(({ categoria, modelo }) => categoria === "box" && modelo === "Frontal de Correr F3 Caixa Redonda");
   const f3RoundWhiteValue = { preco_m2_centavos: 41525, preco_minimo_centavos: 41025, instalacao_centavos: 25000 };
   const f3RoundBlackValue = { preco_m2_centavos: 45240, preco_minimo_centavos: 44700, instalacao_centavos: 25000 };
@@ -728,10 +736,12 @@ test("only administrators manage quotes and real price rules produce customer es
     method: "POST", json: { categoria: "box", modelo: "Frontal de Correr F1 Caixa Redonda", preco_m2_centavos: 100000 },
   });
   assert.equal(roundBoxPrice.status, 201, roundBoxPrice.body);
-  const squareBoxPrice = await admin.request("/api/admin/precos", {
-    method: "POST", json: { categoria: "box", modelo: "Frontal de Correr F1 Caixa Quadrada", preco_m2_centavos: 140000 },
+  const existingSquareBoxPrice = (await admin.request("/api/admin/precos")).data.precos
+    .find(({ modelo }) => modelo === "Frontal de Correr F1 Caixa Quadrada");
+  const squareBoxPrice = await admin.request(`/api/admin/precos/${existingSquareBoxPrice.id}`, {
+    method: "PUT", json: { categoria: "box", modelo: "Frontal de Correr F1 Caixa Quadrada", preco_m2_centavos: 140000 },
   });
-  assert.equal(squareBoxPrice.status, 201, squareBoxPrice.body);
+  assert.equal(squareBoxPrice.status, 200, squareBoxPrice.body);
   assert.equal((await admin.request(`/api/admin/precos/${roundBoxPrice.data.id}`, {
     method: "PUT", json: { categoria: "box", modelo: "Frontal de Correr F1 Caixa Quadrada", preco_m2_centavos: 160000 },
   })).status, 409);
@@ -811,6 +821,14 @@ test("only administrators manage quotes and real price rules produce customer es
   });
   assert.equal(f1GoldComboPreview.status, 200, f1GoldComboPreview.body);
   assert.equal(f1GoldComboPreview.data.total_centavos, 97875);
+  const f1SquareComboPreview = await customer.request("/api/orcamentos/previa", {
+    method: "POST", json: {
+      nome: "Cliente Orçamento", telefone: "21999990006", cidade: "Rio de Janeiro", instalacao: true,
+      itens: [{ categoria: "box", material: "aluminio_vidro", modelo: "Frontal de Correr F1 Caixa Quadrada", tipo_caixa: "Caixa quadrada", cor: "Branco", tipo_vidro: "Fumê", largura_cm: 100, altura_cm: 100, quantidade: 1 }],
+    },
+  });
+  assert.equal(f1SquareComboPreview.status, 200, f1SquareComboPreview.body);
+  assert.equal(f1SquareComboPreview.data.total_centavos, 54829);
   const flexPreview = await customer.request("/api/orcamentos/previa", {
     method: "POST", json: {
       nome: "Cliente Orçamento", telefone: "21999990006", cidade: "Rio de Janeiro", instalacao: false,
