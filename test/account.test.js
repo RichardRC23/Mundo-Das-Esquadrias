@@ -617,6 +617,11 @@ test("only administrators manage quotes and real price rules produce customer es
   assert.deepEqual(f2RoundRule.precos_cores.Dourado, f2RoundGold);
   assert.deepEqual(f2RoundRule.precos_vidros["Fumê"], f2RoundGold);
   assert.deepEqual(f2RoundRule.precos_vidros.Verde, f2RoundGold);
+  const f1RoundRule = publicCatalog.data.precos.find(({ categoria, modelo }) => categoria === "box" && modelo === "Frontal de Correr F1 Caixa Redonda");
+  const f1RoundChrome = { preco_m2_centavos: 53600, preco_minimo_centavos: 53100, instalacao_centavos: 15000 };
+  assert.deepEqual(f1RoundRule.precos_cores.Cromada, f1RoundChrome);
+  assert.deepEqual(f1RoundRule.precos_vidros["Fumê"], f1RoundChrome);
+  assert.deepEqual(f1RoundRule.precos_vidros.Verde, f1RoundChrome);
   for (const modelo of ["Espelho lapidado", "Espelho orgânico", "Espelho de camarim / LED", "Espelho com moldura", "Espelho sob medida"]) {
     assert.ok(publicCatalog.data.precos.some((preco) => preco.categoria === "espelho" && preco.modelo === modelo), modelo);
   }
