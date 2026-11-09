@@ -597,6 +597,21 @@ test("only administrators manage quotes and real price rules produce customer es
     method: "POST",
     json: { categoria: "janela", modelo: "De correr", preco_m2_centavos: 100000 },
   })).status, 409);
+  const f1RoundChromeFixture = { preco_m2_centavos: 53600, preco_minimo_centavos: 53100, instalacao_centavos: 15000 };
+  await db.run(`INSERT OR IGNORE INTO precos_orcamento
+    (categoria,modelo,descricao,precos_cores_json,precos_vidros_json,preco_m2_centavos,preco_minimo_centavos,instalacao_centavos)
+    VALUES ('box','Frontal de Correr F1 Caixa Redonda','fixture',?,?,?,?,?)`, [
+    JSON.stringify({ Cromada: f1RoundChromeFixture }),
+    JSON.stringify({ "Fumê": f1RoundChromeFixture, Verde: f1RoundChromeFixture }),
+    100, 0, 0,
+  ]);
+  const f3RoundFixtureValue = { preco_m2_centavos: 41525, preco_minimo_centavos: 41025, instalacao_centavos: 20000 };
+  const f3RoundFixtureCombinations = Object.fromEntries(
+    ["Branco", "Preto"].flatMap((kit) => ["Fumê", "Verde"].map((vidro) => [JSON.stringify([kit, vidro]), f3RoundFixtureValue])),
+  );
+  await db.run(`INSERT OR IGNORE INTO precos_orcamento
+    (categoria,modelo,descricao,precos_combinacoes_json,preco_m2_centavos,preco_minimo_centavos,instalacao_centavos)
+    VALUES ('box','Frontal de Correr F3 Caixa Redonda','fixture',?,?,0,0)`, [JSON.stringify(f3RoundFixtureCombinations), 1]);
   const publicCatalog = await client().request("/api/catalogo/precos");
   assert.equal(publicCatalog.status, 200, publicCatalog.body);
   assert.ok(publicCatalog.data.precos.length >= 50);
@@ -622,6 +637,14 @@ test("only administrators manage quotes and real price rules produce customer es
   assert.deepEqual(f1RoundRule.precos_cores.Cromada, f1RoundChrome);
   assert.deepEqual(f1RoundRule.precos_vidros["Fumê"], f1RoundChrome);
   assert.deepEqual(f1RoundRule.precos_vidros.Verde, f1RoundChrome);
+  await db.run("DELETE FROM precos_orcamento WHERE categoria='box' AND modelo='Frontal de Correr F1 Caixa Redonda' AND descricao='fixture'");
+  const f3RoundRule = publicCatalog.data.precos.find(({ categoria, modelo }) => categoria === "box" && modelo === "Frontal de Correr F3 Caixa Redonda");
+  const f3RoundValue = { preco_m2_centavos: 41525, preco_minimo_centavos: 41025, instalacao_centavos: 20000 };
+  for (const kit of ["Branco", "Preto"]) {
+    for (const vidro of ["Fumê", "Verde"]) {
+      assert.deepEqual(f3RoundRule.precos_combinacoes[JSON.stringify([kit, vidro])], f3RoundValue);
+    }
+  }
   for (const modelo of ["Espelho lapidado", "Espelho orgânico", "Espelho de camarim / LED", "Espelho com moldura", "Espelho sob medida"]) {
     assert.ok(publicCatalog.data.precos.some((preco) => preco.categoria === "espelho" && preco.modelo === modelo), modelo);
   }
@@ -681,6 +704,22 @@ test("only administrators manage quotes and real price rules produce customer es
   });
   assert.equal(ownGlassPreview.status, 200, ownGlassPreview.body);
   assert.equal(ownGlassPreview.data.total_centavos, 125000);
+  const f3ComboPreview = await customer.request("/api/orcamentos/previa", {
+    method: "POST", json: {
+      nome: "Cliente Orçamento", telefone: "21999990006", cidade: "Rio de Janeiro", instalacao: true,
+      itens: [{ categoria: "box", material: "aluminio_vidro", modelo: "Frontal de Correr F3 Caixa Redonda", cor: "Branco", tipo_vidro: "Fumê", largura_cm: 100, altura_cm: 100, quantidade: 1 }],
+    },
+  });
+  assert.equal(f3ComboPreview.status, 200, f3ComboPreview.body);
+  assert.equal(f3ComboPreview.data.total_centavos, 61525);
+  const f3OtherKitPreview = await customer.request("/api/orcamentos/previa", {
+    method: "POST", json: {
+      nome: "Cliente Orçamento", telefone: "21999990006", cidade: "Rio de Janeiro", instalacao: true,
+      itens: [{ categoria: "box", material: "aluminio_vidro", modelo: "Frontal de Correr F3 Caixa Redonda", cor: "Cromada", tipo_vidro: "Fumê", largura_cm: 100, altura_cm: 100, quantidade: 1 }],
+    },
+  });
+  assert.equal(f3OtherKitPreview.status, 200, f3OtherKitPreview.body);
+  assert.equal(f3OtherKitPreview.data.total_centavos, null);
   const flexPreview = await customer.request("/api/orcamentos/previa", {
     method: "POST", json: {
       nome: "Cliente Orçamento", telefone: "21999990006", cidade: "Rio de Janeiro", instalacao: false,
