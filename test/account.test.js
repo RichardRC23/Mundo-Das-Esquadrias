@@ -610,7 +610,7 @@ test("only administrators manage quotes and real price rules produce customer es
     JSON.stringify(f1RoundFixtureCombinations),
     100, 0, 0,
   ]);
-  const f3RoundFixtureValue = { preco_m2_centavos: 41525, preco_minimo_centavos: 41025, instalacao_centavos: 20000 };
+  const f3RoundFixtureValue = { preco_m2_centavos: 41525, preco_minimo_centavos: 41025, instalacao_centavos: 25000 };
   const f3RoundFixtureCombinations = Object.fromEntries(
     ["Branco", "Preto"].flatMap((kit) => ["Fumê", "Verde"].map((vidro) => [JSON.stringify([kit, vidro]), f3RoundFixtureValue])),
   );
@@ -647,7 +647,7 @@ test("only administrators manage quotes and real price rules produce customer es
   }
   await db.run("DELETE FROM precos_orcamento WHERE categoria='box' AND modelo='Frontal de Correr F1 Caixa Redonda' AND descricao='fixture'");
   const f3RoundRule = publicCatalog.data.precos.find(({ categoria, modelo }) => categoria === "box" && modelo === "Frontal de Correr F3 Caixa Redonda");
-  const f3RoundValue = { preco_m2_centavos: 41525, preco_minimo_centavos: 41025, instalacao_centavos: 20000 };
+  const f3RoundValue = { preco_m2_centavos: 41525, preco_minimo_centavos: 41025, instalacao_centavos: 25000 };
   for (const kit of ["Branco", "Preto"]) {
     for (const vidro of ["Fumê", "Verde"]) {
       assert.deepEqual(f3RoundRule.precos_combinacoes[JSON.stringify([kit, vidro])], f3RoundValue);
@@ -720,7 +720,7 @@ test("only administrators manage quotes and real price rules produce customer es
     },
   });
   assert.equal(f3ComboPreview.status, 200, f3ComboPreview.body);
-  assert.equal(f3ComboPreview.data.total_centavos, 61525);
+  assert.equal(f3ComboPreview.data.total_centavos, 66525);
   const f3OtherKitPreview = await customer.request("/api/orcamentos/previa", {
     method: "POST", json: {
       nome: "Cliente Orçamento", telefone: "21999990006", cidade: "Rio de Janeiro", instalacao: true,
