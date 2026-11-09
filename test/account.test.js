@@ -655,6 +655,9 @@ test("only administrators manage quotes and real price rules produce customer es
   assert.equal(publicCatalog.data.referencia.data, "2026-10-08");
   assert.equal(publicCatalog.data.ajustes.espessura_vidro["10 mm"], 12000);
   assert.ok(publicCatalog.data.precos.some(({ categoria, modelo }) => categoria === "box" && modelo === "Box Open"));
+  assert.ok(publicCatalog.data.precos.some(({ categoria, modelo }) => categoria === "box" && modelo === "Box até o teto Caixa Redonda"));
+  assert.ok(publicCatalog.data.precos.some(({ categoria, modelo }) => categoria === "box" && modelo === "Box até o teto Caixa Quadrada"));
+  assert.ok(!publicCatalog.data.precos.some(({ categoria, modelo }) => categoria === "box" && modelo === "Até o teto"));
   assert.ok(!publicCatalog.data.precos.some(({ categoria, modelo }) => categoria === "box" && modelo === "De abrir"));
   assert.ok(!publicCatalog.data.precos.some(({ categoria, modelo }) => categoria === "box" && modelo === "Frontal de correr F2"));
   assert.ok(!publicCatalog.data.precos.some(({ categoria, modelo }) => categoria === "box" && modelo === "Frontal de correr"));
@@ -680,7 +683,7 @@ test("only administrators manage quotes and real price rules produce customer es
     assert.deepEqual(f1RoundRule.precos_combinacoes[JSON.stringify(["Preto", vidro])], f1RoundWhiteBlackFixture);
   }
   await db.run("DELETE FROM precos_orcamento WHERE categoria='box' AND modelo='Frontal de Correr F1 Caixa Redonda' AND descricao='fixture'");
-  const tetoRule = publicCatalog.data.precos.find(({ categoria, modelo }) => categoria === "box" && modelo === "Até o teto");
+  const tetoRule = publicCatalog.data.precos.find(({ categoria, modelo }) => categoria === "box" && modelo === "Box até o teto Caixa Redonda");
   const tetoKitValores = {
     Branco: f1RoundWhiteBlackFixture,
     Preto: f1RoundWhiteBlackFixture,
@@ -694,12 +697,41 @@ test("only administrators manage quotes and real price rules produce customer es
   }
   const f1SquareRule = publicCatalog.data.precos.find(({ categoria, modelo }) => categoria === "box" && modelo === "Frontal de Correr F1 Caixa Quadrada");
   const f1SquareWhiteBlack = { preco_m2_centavos: 39829, preco_minimo_centavos: 39329, instalacao_centavos: 15000 };
-  for (const kit of ["Branco", "Preto"]) {
+  const f1SquareChromeBronze = { preco_m2_centavos: 49470, preco_minimo_centavos: 48970, instalacao_centavos: 15000 };
+  const f1SquareGold = { preco_m2_centavos: 75085, preco_minimo_centavos: 74580, instalacao_centavos: 15000 };
+  const f1SquareValues = { Branco: f1SquareWhiteBlack, Preto: f1SquareWhiteBlack, Cromada: f1SquareChromeBronze, Bronze: f1SquareChromeBronze, Dourado: f1SquareGold };
+  for (const [kit, valor] of Object.entries(f1SquareValues)) {
     for (const vidro of ["Fumê", "Verde"]) {
-      assert.deepEqual(f1SquareRule.precos_combinacoes[JSON.stringify([kit, vidro])], f1SquareWhiteBlack);
+      assert.deepEqual(f1SquareRule.precos_combinacoes[JSON.stringify([kit, vidro])], valor);
     }
   }
   assert.equal(f1SquareRule.precos_combinacoes[JSON.stringify(["Branco", "Incolor"])], undefined);
+  const tetoSquareRule = publicCatalog.data.precos.find(({ categoria, modelo }) => categoria === "box" && modelo === "Box até o teto Caixa Quadrada");
+  assert.deepEqual(tetoSquareRule.precos_combinacoes, f1SquareRule.precos_combinacoes);
+  assert.equal(tetoSquareRule.preco_m2_centavos, f1SquareRule.preco_m2_centavos);
+  assert.equal(tetoSquareRule.preco_minimo_centavos, f1SquareRule.preco_minimo_centavos);
+  assert.equal(tetoSquareRule.instalacao_centavos, f1SquareRule.instalacao_centavos);
+  const f2SquareRule = publicCatalog.data.precos.find(({ categoria, modelo }) => categoria === "box" && modelo === "Frontal de Correr F2 Caixa Quadrada");
+  const f2SquareValues = {
+    Branco: { preco_m2_centavos: 46022, preco_minimo_centavos: 45517, instalacao_centavos: 20000 },
+    Preto: { preco_m2_centavos: 46022, preco_minimo_centavos: 45517, instalacao_centavos: 20000 },
+    Cromada: { preco_m2_centavos: 56200, preco_minimo_centavos: 55700, instalacao_centavos: 20000 },
+    Bronze: { preco_m2_centavos: 56200, preco_minimo_centavos: 55700, instalacao_centavos: 20000 },
+    Dourado: { preco_m2_centavos: 95790, preco_minimo_centavos: 95285, instalacao_centavos: 20000 },
+  };
+  const f3SquareRule = publicCatalog.data.precos.find(({ categoria, modelo }) => categoria === "box" && modelo === "Frontal de Correr F3 Caixa Quadrada");
+  const f3SquareValues = {
+    Branco: { preco_m2_centavos: 45580, preco_minimo_centavos: 45075, instalacao_centavos: 25000 },
+    Preto: { preco_m2_centavos: 49800, preco_minimo_centavos: 49100, instalacao_centavos: 25000 },
+    Cromada: { preco_m2_centavos: 57400, preco_minimo_centavos: 56900, instalacao_centavos: 25000 },
+    Bronze: { preco_m2_centavos: 57400, preco_minimo_centavos: 56900, instalacao_centavos: 25000 },
+    Dourado: { preco_m2_centavos: 97940, preco_minimo_centavos: 97235, instalacao_centavos: 25000 },
+  };
+  for (const [regra, valores] of [[f2SquareRule, f2SquareValues], [f3SquareRule, f3SquareValues]]) {
+    for (const [kit, valor] of Object.entries(valores)) {
+      for (const vidro of ["Fumê", "Verde"]) assert.deepEqual(regra.precos_combinacoes[JSON.stringify([kit, vidro])], valor);
+    }
+  }
   const f3RoundRule = publicCatalog.data.precos.find(({ categoria, modelo }) => categoria === "box" && modelo === "Frontal de Correr F3 Caixa Redonda");
   const f3RoundWhiteValue = { preco_m2_centavos: 41525, preco_minimo_centavos: 41025, instalacao_centavos: 25000 };
   const f3RoundBlackValue = { preco_m2_centavos: 45240, preco_minimo_centavos: 44700, instalacao_centavos: 25000 };
@@ -724,7 +756,7 @@ test("only administrators manage quotes and real price rules produce customer es
     method: "POST", json: { categoria: "porta", modelo: "De correr", preco_m2_centavos: 100000, precos_cores: { Azul: 120000 } },
   })).status, 400);
   assert.equal((await admin.request("/api/admin/precos", {
-    method: "POST", json: { categoria: "box", modelo: "Até o teto", preco_m2_centavos: 100000, precos_cores: { Cromada: 125000, Dourado: 145000 } },
+    method: "POST", json: { categoria: "box", modelo: "Box até o teto Caixa Redonda", preco_m2_centavos: 100000, precos_cores: { Cromada: 125000, Dourado: 145000 } },
   })).status, 201);
   assert.equal((await admin.request("/api/admin/precos", {
     method: "POST", json: { categoria: "box", modelo: "Outro teste", preco_m2_centavos: 100000, precos_vidros: { Azul: 125000 } },
@@ -808,7 +840,7 @@ test("only administrators manage quotes and real price rules produce customer es
   const tetoWhiteComboPreview = await customer.request("/api/orcamentos/previa", {
     method: "POST", json: {
       nome: "Cliente Orçamento", telefone: "21999990006", cidade: "Rio de Janeiro", instalacao: true,
-      itens: [{ categoria: "box", material: "aluminio_vidro", modelo: "Até o teto", cor: "Branco", tipo_vidro: "Fumê", largura_cm: 100, altura_cm: 100, quantidade: 1 }],
+      itens: [{ categoria: "box", material: "aluminio_vidro", modelo: "Box até o teto Caixa Redonda", tipo_caixa: "Caixa redonda", cor: "Branco", tipo_vidro: "Fumê", largura_cm: 100, altura_cm: 100, quantidade: 1 }],
     },
   });
   assert.equal(tetoWhiteComboPreview.status, 200, tetoWhiteComboPreview.body);
@@ -829,6 +861,14 @@ test("only administrators manage quotes and real price rules produce customer es
   });
   assert.equal(f1SquareComboPreview.status, 200, f1SquareComboPreview.body);
   assert.equal(f1SquareComboPreview.data.total_centavos, 54829);
+  const tetoSquareComboPreview = await customer.request("/api/orcamentos/previa", {
+    method: "POST", json: {
+      nome: "Cliente Orçamento", telefone: "21999990006", cidade: "Rio de Janeiro", instalacao: true,
+      itens: [{ categoria: "box", material: "aluminio_vidro", modelo: "Box até o teto Caixa Quadrada", tipo_caixa: "Caixa quadrada", cor: "Dourado", tipo_vidro: "Verde", largura_cm: 100, altura_cm: 100, quantidade: 1 }],
+    },
+  });
+  assert.equal(tetoSquareComboPreview.status, 200, tetoSquareComboPreview.body);
+  assert.equal(tetoSquareComboPreview.data.total_centavos, 90085);
   const flexPreview = await customer.request("/api/orcamentos/previa", {
     method: "POST", json: {
       nome: "Cliente Orçamento", telefone: "21999990006", cidade: "Rio de Janeiro", instalacao: false,

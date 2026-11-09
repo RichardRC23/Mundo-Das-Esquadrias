@@ -18,6 +18,7 @@
       "Frontal de Correr F1 Caixa Redonda", "Frontal de Correr F1 Caixa Quadrada",
       "Frontal de Correr F2 Caixa Redonda", "Frontal de Correr F2 Caixa Quadrada",
       "Frontal de Correr F3 Caixa Redonda", "Frontal de Correr F3 Caixa Quadrada",
+      "Box até o teto Caixa Redonda", "Box até o teto Caixa Quadrada",
       "Box Flex Camarão", "Box Elegance",
     ],
     fachada: ["Pele de vidro", "Structural glazing", "Fachada comercial", "Vitrine", "Outro modelo"],
@@ -278,7 +279,7 @@
   }
   function refreshPriceColorOptions(preserveCurrent = true) {
     if (preserveCurrent) storeVisiblePrice();
-    const isCeilingBox = $("price-category").value === "box" && $("price-model").value.trim() === "Até o teto";
+    const isCeilingBox = $("price-category").value === "box" && /^Box até o teto Caixa (?:Redonda|Quadrada)$/i.test($("price-model").value.trim());
     const isGlass = activePriceVariation === "vidro";
     const aluminumColors = isCeilingBox ? ceilingBoxPriceColors : standardPriceColors;
     selectedAluminumColor = aluminumColors.includes(selectedAluminumColor) ? selectedAluminumColor : "";
