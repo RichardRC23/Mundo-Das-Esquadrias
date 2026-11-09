@@ -86,6 +86,7 @@ class Client {
         email: "cliente@example.test",
         telefone: "21999990001",
         senha: PASSWORD,
+        aceita_termos: true,
         ...overrides,
       },
     });
@@ -121,6 +122,17 @@ test("home page exposes the company site name and crawlable brand icons", async 
   assert.match(home.body, /"@type":"WebSite"/);
   assert.match(home.body, /"name":"Mundo das Esquadrias"/);
   assert.match(home.body, /"alternateName":"Mundo das Esquadrias RJ"/);
+
+  const privacy = await visitor.request("/politica-de-privacidade.html");
+  assert.equal(privacy.status, 200, privacy.body);
+  assert.match(privacy.body, /Política de Privacidade/);
+  const terms = await visitor.request("/termos-de-uso.html");
+  assert.equal(terms.status, 200, terms.body);
+  assert.match(terms.body, /Termos de Uso/);
+  const sitemap = await visitor.request("/sitemap.xml");
+  assert.equal(sitemap.status, 200, sitemap.body);
+  assert.match(sitemap.body, /\/politica-de-privacidade\.html/);
+  assert.match(sitemap.body, /\/termos-de-uso\.html/);
 
   for (const [route, expectedType] of [["/favicon-48.png", "image/png"], ["/favicon-192.png", "image/png"], ["/site.webmanifest", "application/manifest+json"]]) {
     const asset = await visitor.request(route);
@@ -207,7 +219,14 @@ test("registration and login rotate sessions, hash passwords, and logout revokes
   const user = client();
   await user.csrf();
   const anonymousCookie = user.cookie;
+  const noTerms = await user.request("/api/cadastro", {
+    method: "POST", json: { nome: "Sem aceite", email: "sem-aceite@example.test", senha: PASSWORD },
+  });
+  assert.equal(noTerms.status, 400, noTerms.body);
   await user.register();
+  const acceptedTerms = await db.get("SELECT termos_aceitos_versao,termos_aceitos_em FROM usuarios WHERE email='cliente@example.test'");
+  assert.equal(acceptedTerms.termos_aceitos_versao, "2026-11-09");
+  assert.ok(acceptedTerms.termos_aceitos_em);
   assert.notEqual(user.cookie, anonymousCookie);
   const staleAnonymous = client();
   staleAnonymous.cookie = anonymousCookie;
@@ -242,7 +261,7 @@ test("malformed registration and login data return validation errors without cra
   const { client } = await fixture(t);
   const user = client();
   await user.csrf();
-  const valid = { nome: "Teste", email: "teste@example.test", senha: PASSWORD };
+  const valid = { nome: "Teste", email: "teste@example.test", senha: PASSWORD, aceita_termos: true };
   const invalid = [
     { ...valid, nome: {} },
     { ...valid, email: ["teste@example.test"] },

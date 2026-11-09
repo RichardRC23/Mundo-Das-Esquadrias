@@ -10,6 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="legal.css">
     <link rel="stylesheet" href="acessibilidade.css">
     <script src="acessibilidade.js" defer></script>
     <link rel="stylesheet" href="atendimento.css">
@@ -125,12 +126,17 @@
                             </span>
                         </label>
 
+                        <label class="auth-consent" for="aceita-termos">
+                            <input id="aceita-termos" type="checkbox" required>
+                            <span>Li e aceito os <a href="termos-de-uso.html" target="_blank" rel="noopener">Termos de Uso</a> e estou ciente da <a href="politica-de-privacidade.html" target="_blank" rel="noopener">Política de Privacidade</a>.</span>
+                        </label>
+
                         <button class="btn auth-submit" type="submit">Criar minha conta <span aria-hidden="true">→</span></button>
                         <p class="auth-alternative">Já possui cadastro? <button type="button" data-open-tab="login">Entre na sua conta</button></p>
                     </form>
                 </div>
 
-                <p class="auth-privacy">Ao continuar, seus dados serão usados somente para sua conta e atendimento dos projetos.</p>
+                <p class="auth-privacy">Usamos seus dados para manter sua conta, preparar orçamentos e prestar atendimento, conforme nossa <a href="politica-de-privacidade.html">Política de Privacidade</a>.</p>
             </div>
         </section>
     </main>

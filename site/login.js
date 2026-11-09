@@ -106,6 +106,7 @@ document.getElementById("form-cadastro").addEventListener("submit", async (event
       email: document.getElementById("email").value,
       telefone: document.getElementById("telefone").value,
       senha: document.getElementById("senha-cadastro").value,
+      aceita_termos: document.getElementById("aceita-termos").checked,
     });
 
     mostrarMensagem("Cadastro realizado com sucesso!", "sucesso");

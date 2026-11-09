@@ -33,8 +33,13 @@ const seoPages = new Map([
     description: "Veja soluções para fachadas, varandas, portas, janelas e box de vidro feitas sob medida para cada ambiente." }],
   ["/contato.html", { file: "contato.html", path: "/contato.html", title: "Contato | Mundo das Esquadrias",
     description: "Fale com a Mundo das Esquadrias para solicitar atendimento e orçamento de serviços em alumínio e vidro no Rio de Janeiro." }],
+  ["/politica-de-privacidade.html", { file: "politica-de-privacidade.html", path: "/politica-de-privacidade.html", title: "Política de Privacidade | Mundo das Esquadrias",
+    description: "Saiba como a Mundo das Esquadrias coleta, usa, protege e compartilha dados pessoais no site e nos orçamentos." }],
+  ["/termos-de-uso.html", { file: "termos-de-uso.html", path: "/termos-de-uso.html", title: "Termos de Uso | Mundo das Esquadrias",
+    description: "Consulte as condições de uso do site, criação de conta, solicitação de orçamentos e pagamentos." }],
 ]);
 const htmlAttribute = (value) => String(value).replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;");
+const VERSAO_TERMOS = "2026-11-09";
 
 function dadosPerfil(body = {}) {
   if (!body || typeof body !== "object" || Array.isArray(body) ||
@@ -87,7 +92,7 @@ async function createApp(options = {}) {
     telefone TEXT UNIQUE, senha_hash TEXT NOT NULL, criado_em TEXT DEFAULT CURRENT_TIMESTAMP
   )`);
   const columns = await db.all("PRAGMA table_info(usuarios)");
-  for (const [name, type] of [["foto_blob", "BLOB"], ["foto_versao", "TEXT"], ["preferencia_pagamento", "TEXT"], ["papel", "TEXT NOT NULL DEFAULT 'cliente'"]]) {
+  for (const [name, type] of [["foto_blob", "BLOB"], ["foto_versao", "TEXT"], ["preferencia_pagamento", "TEXT"], ["papel", "TEXT NOT NULL DEFAULT 'cliente'"], ["termos_aceitos_versao", "TEXT"], ["termos_aceitos_em", "TEXT"]]) {
     if (!columns.some((column) => column.name === name)) await db.run(`ALTER TABLE usuarios ADD COLUMN ${name} ${type}`);
   }
 
@@ -240,10 +245,11 @@ async function createApp(options = {}) {
     await saveSession(req);
   }
   app.post("/api/cadastro", authLimit, async (req, res) => {
+    if (req.body?.aceita_termos !== true) throw fail(400, "Para criar sua conta, aceite os Termos de Uso e confirme que leu a Política de Privacidade.");
     const { nome, email, telefone } = dadosPerfil(req.body);
     validarSenha(req.body.senha);
     const hash = await bcrypt.hash(req.body.senha, 12);
-    const result = await db.run("INSERT INTO usuarios (nome,email,telefone,senha_hash) VALUES (?,?,?,?)", [nome, email, telefone, hash]);
+    const result = await db.run("INSERT INTO usuarios (nome,email,telefone,senha_hash,termos_aceitos_versao,termos_aceitos_em) VALUES (?,?,?,?,?,CURRENT_TIMESTAMP)", [nome, email, telefone, hash, VERSAO_TERMOS]);
     await iniciarSessao(req, { id: result.lastID, nome });
     res.status(201).json({ mensagem: "Conta criada com sucesso.", usuario: req.session.usuario });
   });
