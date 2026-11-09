@@ -649,6 +649,22 @@ test("only administrators manage quotes and real price rules produce customer es
   })).status, 201);
 
   await customer.register({ email: "orcamento@example.test", telefone: "21999990006" });
+  const missingGlassPreview = await customer.request("/api/orcamentos/previa", {
+    method: "POST", json: {
+      nome: "Cliente Orçamento", telefone: "21999990006", cidade: "Rio de Janeiro", instalacao: false,
+      itens: [{ categoria: "box", material: "vidro", modelo: "Outro vidro", tipo_vidro: "Verde", largura_cm: 100, altura_cm: 100, quantidade: 1 }],
+    },
+  });
+  assert.equal(missingGlassPreview.status, 200, missingGlassPreview.body);
+  assert.equal(missingGlassPreview.data.total_centavos, null);
+  const ownGlassPreview = await customer.request("/api/orcamentos/previa", {
+    method: "POST", json: {
+      nome: "Cliente Orçamento", telefone: "21999990006", cidade: "Rio de Janeiro", instalacao: false,
+      itens: [{ categoria: "box", material: "vidro", modelo: "Outro vidro", tipo_vidro: "Fumê", largura_cm: 100, altura_cm: 100, quantidade: 1 }],
+    },
+  });
+  assert.equal(ownGlassPreview.status, 200, ownGlassPreview.body);
+  assert.equal(ownGlassPreview.data.total_centavos, 125000);
   const flexPreview = await customer.request("/api/orcamentos/previa", {
     method: "POST", json: {
       nome: "Cliente Orçamento", telefone: "21999990006", cidade: "Rio de Janeiro", instalacao: false,

@@ -443,6 +443,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const rawGlassPrice = rule.precos_vidros?.[item.tipo_vidro];
     const colorPrice = typeof rawColorPrice === "number" ? { preco_m2_centavos: rawColorPrice } : rawColorPrice;
     const glassPrice = typeof rawGlassPrice === "number" ? { preco_m2_centavos: rawGlassPrice } : rawGlassPrice;
+    if (item.tipo_vidro && Object.keys(rule.precos_vidros || {}).length && !glassPrice) return null;
     const appliedPrice = glassPrice || colorPrice;
     const productBase = Math.max(Math.round(area * (appliedPrice?.preco_m2_centavos || rule.preco_m2_centavos)), appliedPrice?.preco_minimo_centavos ?? rule.preco_minimo_centavos);
     let product = productBase;

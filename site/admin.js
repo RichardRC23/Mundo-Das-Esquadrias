@@ -188,7 +188,10 @@
       const variations = activePriceVariation === "vidro" ? price.precos_vidros : price.precos_cores;
       const selectedPrice = activePriceColor ? variations?.[activePriceColor] : null;
       const displayedCents = typeof selectedPrice === "number" ? selectedPrice : selectedPrice?.preco_m2_centavos;
-      row.append(info, element("strong", "", `${money(displayedCents ?? price.preco_m2_centavos)}/m²`), edit); target.append(row);
+      const displayedPrice = activePriceColor
+        ? displayedCents == null ? "Não cadastrado" : `${money(displayedCents)}/m²`
+        : `${money(price.preco_m2_centavos)}/m²`;
+      row.append(info, element("strong", "", displayedPrice), edit); target.append(row);
     });
   }
   function stars(note) {
@@ -323,7 +326,7 @@
     draftGlassPrices = Object.fromEntries(Object.entries(price.precos_vidros || {}).map(([color, value]) => [color, normalizeColorPrice(value, draftDefaultPrice)]));
     activePriceVariation = "aluminio";
     selectedAluminumColor = "";
-    selectedGlassColor = Object.hasOwn(draftGlassPrices, "Incolor") ? "Incolor" : "";
+    selectedGlassColor = "";
     activePriceColor = ""; refreshPriceColorOptions(false);
     $("price-active").checked = price.ativo;
     $("price-form-title").textContent = "Editar preço";
