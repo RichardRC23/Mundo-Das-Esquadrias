@@ -18,20 +18,22 @@
         <button class="menu-btn" id="menu-btn" type="button" aria-label="Abrir menu" aria-controls="menu" aria-expanded="false"><span></span><span></span><span></span></button>
         <nav id="menu" class="site-nav" aria-label="Menu principal">
             <a class="nav-link" href="servicos.html"><span class="nav-link-copy"><strong>Serviços</strong><small>Conheça nossas soluções</small></span></a>
-            <a class="nav-link" href="galeria.html" aria-current="page"><span class="nav-link-copy"><strong>Projetos</strong><small>Veja trabalhos realizados</small></span></a>
+            <a class="nav-link" href="galeria.html" aria-current="page"><span class="nav-link-copy"><strong>Projetos</strong><small>Veja referências visuais</small></span></a>
             <a class="nav-link" href="contato.html"><span class="nav-link-copy"><strong>Contato</strong><small>Fale com nossa equipe</small></span></a>
             <a class="nav-orcamento" data-orcamento-link href="login.html?next=orcamento">Pedir orçamento <span aria-hidden="true">↗</span></a><a id="link-conta" class="link-conta" href="login.html">Logar/Cadastrar</a>
         </nav>
     </div></header>
     <main class="info-page">
-        <section class="info-hero"><span class="info-eyebrow">Inspiração para seu projeto</span><h2>Veja possibilidades para transformar seu espaço.</h2><p>Conheça alguns tipos de trabalhos que realizamos com alumínio e vidro. Cada projeto é planejado conforme o ambiente e a necessidade do cliente.</p></section>
+        <section class="info-hero"><span class="info-eyebrow">Inspiração para seu projeto</span><h2>Visualize materiais, proporções e possibilidades.</h2><p>Explore referências de portas, fachadas, fechamentos e box. Use as imagens para comunicar sua ideia; o resultado final será definido pelas medidas e especificações aprovadas.</p></section>
         <section class="info-content" aria-label="Galeria de projetos">
-            <div class="info-grid">
-                <article class="info-card project-card"><div class="projeto-foto-pendente"><span>＋</span><strong>Adicione uma foto real</strong><small>Fachadas comerciais</small></div><div class="project-card-copy"><h3>Fachadas comerciais</h3><p>Este espaço receberá uma foto verdadeira de um trabalho da empresa.</p></div></article>
-                <article class="info-card project-card"><div class="projeto-foto-pendente"><span>＋</span><strong>Adicione uma foto real</strong><small>Varandas envidraçadas</small></div><div class="project-card-copy"><h3>Varandas envidraçadas</h3><p>Este espaço receberá uma foto verdadeira de um trabalho da empresa.</p></div></article>
-                <article class="info-card project-card"><div class="projeto-foto-pendente"><span>＋</span><strong>Adicione uma foto real</strong><small>Portas e janelas</small></div><div class="project-card-copy"><h3>Portas e janelas</h3><p>Este espaço receberá uma foto verdadeira de um trabalho da empresa.</p></div></article>
-                <article class="info-card project-card"><div class="projeto-foto-pendente"><span>＋</span><strong>Adicione uma foto real</strong><small>Box de vidro</small></div><div class="project-card-copy"><h3>Box de vidro</h3><p>Este espaço receberá uma foto verdadeira de um trabalho da empresa.</p></div></article>
+            <div class="gallery-toolbar" aria-label="Filtrar referências"><button class="active" type="button" data-gallery-filter="todos">Todas</button><button type="button" data-gallery-filter="residencial">Residencial</button><button type="button" data-gallery-filter="comercial">Comercial</button><button type="button" data-gallery-filter="vidro">Vidros</button></div>
+            <div class="info-grid gallery-reference-grid">
+                <article class="info-card project-card" data-gallery-category="comercial vidro"><button class="project-image-button" type="button" data-gallery-open><img src="img/trabalhos/fachada-comercial.webp" alt="Fachada comercial com grandes painéis de vidro e perfis grafite" loading="lazy"><span>Ampliar referência</span></button><div class="project-card-copy"><span class="project-tag">Comercial · Fachada</span><h3>Fachadas comerciais</h3><p>Grandes panos de vidro, perfis marcados e entrada integrada para criar uma presença contemporânea.</p><ul><li>Alumínio grafite</li><li>Vidro transparente</li><li>Entrada de giro</li></ul></div></article>
+                <article class="info-card project-card" data-gallery-category="residencial vidro"><button class="project-image-button" type="button" data-gallery-open><img src="img/trabalhos/varanda-envidracada.webp" alt="Varanda residencial com fechamento panorâmico em vidro" loading="lazy"><span>Ampliar referência</span></button><div class="project-card-copy"><span class="project-tag">Residencial · Fechamento</span><h3>Varandas envidraçadas</h3><p>Transparência e visão ampla para proteger a varanda mantendo a entrada de luz natural.</p><ul><li>Painéis transparentes</li><li>Perfil discreto</li><li>Visão panorâmica</li></ul></div></article>
+                <article class="info-card project-card" data-gallery-category="residencial"><button class="project-image-button" type="button" data-gallery-open><img src="img/trabalhos/porta-aluminio.webp" alt="Entrada residencial com porta e esquadrias de alumínio grafite" loading="lazy"><span>Ampliar referência</span></button><div class="project-card-copy"><span class="project-tag">Residencial · Esquadrias</span><h3>Portas e janelas</h3><p>Perfis escuros, vidro e uma porta de destaque formando um conjunto equilibrado para a entrada.</p><ul><li>Acabamento grafite</li><li>Puxador alongado</li><li>Composição sob medida</li></ul></div></article>
+                <article class="info-card project-card" data-gallery-category="residencial vidro"><button class="project-image-button" type="button" data-gallery-open><img src="img/trabalhos/box-vidro.webp" alt="Banheiro contemporâneo com box de vidro transparente" loading="lazy"><span>Ampliar referência</span></button><div class="project-card-copy"><span class="project-tag">Residencial · Banheiro</span><h3>Box de vidro</h3><p>Vidro transparente e ferragens discretas para organizar a área de banho sem pesar no ambiente.</p><ul><li>Vidro incolor</li><li>Ferragens metálicas</li><li>Visual leve</li></ul></div></article>
             </div>
+            <div class="visual-reference-note"><strong>Referências ilustrativas</strong><span>Estas imagens não representam promessa de resultado idêntico. Cores, proporções, ferragens e acabamentos variam conforme o projeto, a tela e a iluminação.</span></div>
             <div class="info-cta"><div><h3>Gostou de alguma solução?</h3><p>Monte seu pedido e receba uma análise para o seu ambiente.</p></div><a class="btn" data-orcamento-link href="login.html?next=orcamento">Começar meu orçamento</a></div>
         </section>
     </main>
@@ -43,6 +45,7 @@
         </div>
         <div class="footer-base"><p>© 2026 Mundo das Esquadrias. Todos os direitos reservados.</p><span>Feito com cuidado para nossos clientes.</span></div>
     </footer>
-    <script src="api.js"></script><script src="script.js"></script>
+    <dialog class="gallery-lightbox" id="gallery-lightbox" aria-labelledby="gallery-lightbox-title"><button type="button" id="gallery-lightbox-close" aria-label="Fechar imagem">×</button><img id="gallery-lightbox-image" alt=""><div><span>REFERÊNCIA VISUAL</span><h2 id="gallery-lightbox-title"></h2><p id="gallery-lightbox-description"></p></div></dialog>
+    <script src="api.js"></script><script src="script.js"></script><script src="galeria.js?v=20261110-apresentacao"></script>
 </body>
 </html>

@@ -40,7 +40,9 @@ document.addEventListener("DOMContentLoaded", () => {
   };
   const frameFinishes = {
     Branco: ["#f7f7f2", "#c9ced0"], Preto: ["#1d2328", "#080b0d"], Bronze: ["#76543e", "#3f2b20"],
-    "Natural fosco": ["#c2c9cc", "#7f898e"], Amadeirado: ["#9a6034", "#4d2c18"], "A definir": ["#aeb8bd", "#68757c"],
+    Cromada: ["#e5eaed", "#7d8a91"], Dourado: ["#c8a44d", "#6f5320"],
+    "Natural fosco": ["#c2c9cc", "#7f898e"], Amadeirado: ["#9a6034", "#4d2c18"],
+    "Inox escovado": ["#cbd1d3", "#6f7b80"], "A definir": ["#aeb8bd", "#68757c"],
   };
   const glassFinishes = {
     Incolor: ["rgba(198,235,247,.48)", "rgba(102,176,207,.22)"], Fumê: ["rgba(75,91,101,.64)", "rgba(25,37,45,.42)"],
@@ -188,12 +190,14 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function animatedVisual(item, compact = false) {
+    const configured = item.categoria === "porta" ? configuredDoorVisual(item) : configuredArchitecturalVisual(item);
     return `<figure class="quote-visual${compact ? " compact" : ""}">
       <div class="quote-visual-stage configured-stage">
-        <img class="realistic-visual" src="${realisticImages[item.categoria]}" alt="" loading="lazy" decoding="async">
+        <img class="realistic-backdrop" src="${realisticImages[item.categoria]}" alt="" loading="lazy" decoding="async">
+        <div class="configured-model-layer">${configured}</div>
         <button type="button" class="visual-open" aria-label="Ampliar ${escapeHtml(categoryNames[item.categoria])} · ${escapeHtml(item.modelo)}" aria-haspopup="dialog">⤢ Ampliar</button>
       </div>
-      <figcaption><strong>${escapeHtml(categoryNames[item.categoria])} · Visualização animada</strong><span>${escapeHtml(visualDescription(item))}</span><small>Imagem ilustrativa de referência do produto</small></figcaption>
+      <figcaption><strong>${escapeHtml(categoryNames[item.categoria])} · Visualização animada</strong><span>${escapeHtml(visualDescription(item))}</span><small>Representação 3D ilustrativa conforme as opções selecionadas</small></figcaption>
     </figure>`;
   }
 

@@ -200,17 +200,18 @@ main { padding: 0 20px 72px; }
 .visual-open { position: absolute; inset: 0; z-index: 10; display: flex; align-items: flex-end; justify-content: center; padding: 5px; border: 0; border-radius: inherit; background: linear-gradient(transparent 70%, #e2f1f8); color: var(--navy); font: inherit; font-size: .75rem; font-weight: 700; cursor: zoom-in; }
 .visual-open:focus-visible { outline: 3px solid var(--blue); outline-offset: -3px; }
 .viewer-is-open { overflow: hidden; }
-.viewer-is-open .quote-visual-stage > .configured-door-wrap, .viewer-is-open .quote-visual-stage > .configured-product-wrap { animation-play-state: paused; }
+.viewer-is-open .quote-visual-stage .configured-door-wrap, .viewer-is-open .quote-visual-stage .configured-product-wrap { animation-play-state: paused; }
 .visual-viewer { width: min(960px, calc(100% - 24px)); max-width: none; max-height: calc(100dvh - 24px); padding: 22px; border: 1px solid var(--line); border-radius: 20px; background: #fbfdff; color: var(--text); overflow: auto; overscroll-behavior: contain; }
 .visual-viewer::backdrop { background: rgba(5, 24, 38, .76); }
 .viewer-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .viewer-header h2 { font-size: 1.3rem; margin: 0; color: var(--navy); }
 #viewer-description { font-size: .85rem; color: var(--muted); margin: 12px 0; }
-.viewer-viewport { position: relative; height: clamp(230px, 48dvh, 520px); display: grid; place-items: center; overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: radial-gradient(ellipse at 50% 76%, #add3e466, transparent 45%), linear-gradient(155deg, #fff, #e2f1f8 58%, #f7fbfd); touch-action: none; cursor: grab; user-select: none; }
+.viewer-viewport { position: relative; isolation:isolate; height: clamp(280px, 54dvh, 560px); display: grid; place-items: center; overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: radial-gradient(ellipse at 50% 76%, #add3e466, transparent 45%), linear-gradient(155deg, #fff, #e2f1f8 58%, #f7fbfd); touch-action: none; cursor: grab; user-select: none; transition:background .3s; }
+.viewer-viewport::before{content:"";position:absolute;inset:0;z-index:-2;background-image:linear-gradient(#edf8fbe8,#edf8fbe8),var(--viewer-backdrop);background-position:center;background-size:cover;filter:saturate(.75);transition:filter .3s,background-image .3s}.viewer-viewport::after{content:"";position:absolute;left:12%;right:12%;bottom:7%;height:13%;z-index:-1;border-radius:50%;background:#0b344c35;filter:blur(18px)}.viewer-viewport.warm-light::before{background-image:linear-gradient(#fff1d8d9,#fff1d8d9),var(--viewer-backdrop);filter:saturate(.9) sepia(.12)}
 .viewer-viewport:active { cursor: grabbing; }
 .viewer-viewport:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
-.viewer-scene { width: min(90%, 380px); height: 88%; max-height: 340px; display: grid; place-items: center; perspective: 1000px; transform-origin: center; }
-.viewer-scene .viewer-photo { width: 100%; height: 100%; display: block; object-fit: contain; border-radius: 12px; box-shadow: 0 18px 40px rgba(5, 35, 53, .2); }
+.viewer-scene { width: min(88%, 540px); height: 90%; max-height: 440px; display: grid; place-items: center; perspective: 1300px; transform-origin: center; transition:transform .12s ease-out; }
+.viewer-scene .viewer-model{width:94%;height:92%;filter:drop-shadow(0 26px 18px rgba(5,35,53,.24))}
 .viewer-controls { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
 .viewer-controls .button { min-width: 44px; padding: 9px 12px; font-size: .85rem; }
 .viewer-zoom { display: flex; align-items: center; gap: 8px; font-size: .8rem; }
@@ -224,13 +225,7 @@ main { padding: 0 20px 72px; }
 .quote-visual-stage { width: min(230px, 100%); aspect-ratio: 1.16; margin: 0 auto; display: grid; place-items: center; perspective: 900px; border-radius: 22px; background: radial-gradient(circle at 50% 68%, rgba(73, 166, 213, .22), rgba(229, 244, 252, .72) 48%, rgba(255,255,255,.95) 72%); overflow: hidden; }
 .quote-visual-stage .material-visual { width: 91%; height: 91%; transform-style: preserve-3d; filter: drop-shadow(0 14px 11px rgba(8, 45, 70, .24)); animation: productTurn 6s ease-in-out infinite; }
 .quote-visual-stage.configured-stage { background: radial-gradient(ellipse at 50% 76%, rgba(33, 125, 172, .2), transparent 39%), linear-gradient(155deg, #fbfeff 5%, #e2f1f8 58%, #f7fbfd); }
-.realistic-visual { width: 100%; height: 100%; min-height: 0; display: block; object-fit: cover; border-radius: inherit; transform-origin: center; animation: realisticTurn 12s ease-in-out infinite; }
-.viewer-is-open .quote-visual-stage .realistic-visual { animation-play-state: paused; }
-@keyframes realisticTurn {
-  0%, 50%, 100% { transform: rotateY(0deg) rotateX(0deg); }
-  25% { transform: rotateY(24deg) rotateX(3deg); }
-  75% { transform: rotateY(-24deg) rotateX(-3deg); }
-}
+.realistic-backdrop{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:blur(1px) saturate(.72);opacity:.38;transform:scale(1.04)}.configured-model-layer{position:absolute;inset:7%;z-index:2;display:grid;place-items:center;perspective:1000px}.configured-model-layer::before{content:"";position:absolute;inset:5%;border-radius:50%;background:radial-gradient(circle,#f9fdffe8 0 35%,transparent 70%);filter:blur(7px)}.configured-model-layer>.configured-door-wrap,.configured-model-layer>.configured-product-wrap{z-index:1}
 .configured-door-wrap { position: relative; width: 94%; height: 90%; display: grid; place-items: center; transform-style: preserve-3d; animation: configuredDoorTurn 16s linear infinite; }
 .configured-door { --profile: 4px; position: relative; height: 76%; max-width: 93%; aspect-ratio: var(--door-ratio); padding: var(--profile); transform-style: preserve-3d; border: 2px solid var(--frame-shadow); border-radius: 2px; background: linear-gradient(135deg, #fff8, transparent 30%), var(--frame); box-shadow: inset 0 0 0 1px #fff8, 0 13px 18px rgba(10,48,70,.23), 5px 0 0 var(--frame-shadow); }
 .configured-door.line-suprema { --profile: 5px; box-shadow: inset 0 0 0 1px #fff9, 0 13px 18px rgba(10,48,70,.23), 6px 0 0 var(--frame-shadow); }
