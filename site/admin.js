@@ -171,8 +171,9 @@
   }
   function renderPrices() {
     const target = $("prices-list"); target.replaceChildren();
-    const variationLabel = activePriceVariation === "vidro" ? "Vidro" : activePriceVariation === "linha" ? "Linha" : "Alumínio";
-    $("prices-view-label").textContent = activePriceColor ? `Exibindo: ${variationLabel} · ${activePriceColor}` : "Exibindo preço padrão";
+    const variationLabel = activePriceVariation === "combinacao" ? "Kit + vidro" : activePriceVariation === "vidro" ? "Vidro" : activePriceVariation === "linha" ? "Linha" : "Alumínio";
+    const variationValue = activePriceVariation === "combinacao" ? `${selectedAluminumColor} + ${selectedGlassColor}` : activePriceColor;
+    $("prices-view-label").textContent = variationValue ? `Exibindo: ${variationLabel} · ${variationValue}` : "Exibindo preço padrão";
     if (!prices.length) {
       $("prices-count").textContent = "Nenhuma regra cadastrada.";
       return target.append(element("div", "empty", "Cadastre o primeiro preço para ativar estimativas no formulário."));
@@ -217,7 +218,7 @@
       if (linePrices.length) info.append(element("p", "price-lines", `Linhas: ${linePrices.map(([line, value]) => `${line}: ${priceSummary(value)}`).join(" · ")}`));
       const edit = element("button", "", "Editar"); edit.type = "button";
       edit.addEventListener("click", () => editPrice(price));
-      const variations = activePriceVariation === "vidro" ? price.precos_vidros : activePriceVariation === "linha" ? price.precos_linhas : price.precos_cores;
+      const variations = activePriceVariation === "combinacao" ? price.precos_combinacoes : activePriceVariation === "vidro" ? price.precos_vidros : activePriceVariation === "linha" ? price.precos_linhas : price.precos_cores;
       const selectedPrice = activePriceColor ? variations?.[activePriceColor] : null;
       const displayedCents = typeof selectedPrice === "number" ? selectedPrice : selectedPrice?.preco_m2_centavos;
       const displayedPrice = activePriceColor
@@ -330,7 +331,7 @@
   }
   function storeVisiblePrice() {
     const values = readVisiblePrice();
-    const variations = activePriceVariation === "vidro" ? draftGlassPrices : activePriceVariation === "linha" ? draftLinePrices : draftColorPrices;
+    const variations = activePriceVariation === "combinacao" ? draftCombinationPrices : activePriceVariation === "vidro" ? draftGlassPrices : activePriceVariation === "linha" ? draftLinePrices : draftColorPrices;
     if (activePriceColor && values.preco_m2_centavos > 0) variations[activePriceColor] = values;
     else if (activePriceColor) delete variations[activePriceColor];
     else draftDefaultPrice = values;
@@ -339,12 +340,16 @@
     if (preserveCurrent) storeVisiblePrice();
     const isCeilingBox = $("price-category").value === "box" && /^Box até o teto Caixa (?:Redonda|Quadrada)$/i.test($("price-model").value.trim());
     const isLinePrice = activePriceVariation === "linha";
-    const isGlass = activePriceVariation === "vidro";
     const aluminumColors = isCeilingBox ? ceilingBoxPriceColors : standardPriceColors;
     selectedAluminumColor = (isLinePrice ? aluminumLines : aluminumColors).includes(selectedAluminumColor) ? selectedAluminumColor : "";
     selectedGlassColor = glassPriceColors.includes(selectedGlassColor) ? selectedGlassColor : "";
-    activePriceColor = isGlass ? selectedGlassColor : selectedAluminumColor;
-    const variations = isGlass ? draftGlassPrices : isLinePrice ? draftLinePrices : draftColorPrices;
+    const combinationKey = $("price-category").value === "box" && selectedAluminumColor && selectedGlassColor
+      ? JSON.stringify([selectedAluminumColor, selectedGlassColor]) : "";
+    if (combinationKey) activePriceVariation = "combinacao";
+    const isCombination = activePriceVariation === "combinacao" && Boolean(combinationKey);
+    const isGlass = activePriceVariation === "vidro";
+    activePriceColor = isCombination ? combinationKey : isGlass ? selectedGlassColor : selectedAluminumColor;
+    const variations = isCombination ? draftCombinationPrices : isGlass ? draftGlassPrices : isLinePrice ? draftLinePrices : draftColorPrices;
     $("price-line-select").replaceChildren(...[{ value: "", label: "Selecione a linha" }, ...aluminumLines.map((line) => ({ value: line, label: line }))].map(({ value, label }) => {
       const option = document.createElement("option"); option.value = value; option.textContent = label; return option;
     }));
@@ -365,10 +370,12 @@
     );
     $("price-aluminum-select").value = selectedAluminumColor || "__default";
     $("price-glass-select").value = selectedGlassColor;
-    $("price-aluminum-card").classList.toggle("active", !isGlass && !isLinePrice);
-    $("price-glass-card").classList.toggle("active", isGlass);
+    $("price-aluminum-card").classList.toggle("active", isCombination || (!isGlass && !isLinePrice));
+    $("price-glass-card").classList.toggle("active", isCombination || isGlass);
     $("price-line-card").classList.toggle("active", isLinePrice);
-    $("price-selection-label").textContent = isGlass
+    $("price-selection-label").textContent = isCombination
+      ? `Editando combinação: ${selectedAluminumColor} + ${selectedGlassColor}`
+      : isGlass
       ? `Editando vidro: ${selectedGlassColor || "selecione uma opção"}`
       : isLinePrice ? `Editando linha: ${selectedAluminumColor || "selecione uma opção"}`
         : `Editando alumínio/kit: ${selectedAluminumColor || "preço padrão"}`;
@@ -673,15 +680,15 @@
   $("price-form").addEventListener("change", markPriceFormDirty);
   $("price-aluminum-select").addEventListener("change", () => {
     storeVisiblePrice();
-    activePriceVariation = "aluminio";
     selectedAluminumColor = $("price-aluminum-select").value === "__default" ? "" : $("price-aluminum-select").value;
+    activePriceVariation = selectedAluminumColor && selectedGlassColor ? "combinacao" : "aluminio";
     activePriceColor = selectedAluminumColor;
     refreshPriceColorOptions(false);
   });
   $("price-glass-select").addEventListener("change", () => {
     storeVisiblePrice();
-    activePriceVariation = "vidro";
     selectedGlassColor = $("price-glass-select").value;
+    activePriceVariation = selectedAluminumColor && selectedGlassColor ? "combinacao" : "vidro";
     activePriceColor = selectedGlassColor;
     refreshPriceColorOptions(false);
   });
@@ -698,7 +705,7 @@
     event.preventDefault();
     storeVisiblePrice();
     if (!draftDefaultPrice.preco_m2_centavos && activePriceColor) {
-      const variations = activePriceVariation === "vidro" ? draftGlassPrices : activePriceVariation === "linha" ? draftLinePrices : draftColorPrices;
+      const variations = activePriceVariation === "combinacao" ? draftCombinationPrices : activePriceVariation === "vidro" ? draftGlassPrices : activePriceVariation === "linha" ? draftLinePrices : draftColorPrices;
       draftDefaultPrice = { ...variations[activePriceColor] };
     }
     const id = $("price-id").value;
