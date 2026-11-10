@@ -8,6 +8,7 @@
   <meta name="application-name" content="Mundo das Esquadrias"><meta name="theme-color" content="#0d3045"><link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png"><link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest">
   <link rel="stylesheet" href="admin.css?v=20261027-salvar-fixo">
   <link rel="stylesheet" href="propostas.css?v=20261110-contratos">
+  <link rel="stylesheet" href="operacao.css?v=20261110-rotina">
 </head>
 <body>
   <aside class="admin-sidebar">
@@ -19,6 +20,7 @@
       <button type="button" data-view="feedbacks"><span>★</span>Feedbacks</button>
       <button type="button" data-view="precos"><span>R$</span>Tabela de preços</button>
       <button type="button" data-view="custos"><span>∑</span>Custos reais</button>
+      <button type="button" data-view="operacao"><span>✓</span>Rotina do negócio</button>
     </nav>
     <div class="sidebar-footer">
       <a href="perfil.html">← Minha conta</a>
@@ -184,12 +186,54 @@
             <div class="form-actions"><button class="button primary" type="submit">Adicionar componente</button></div>
           </form>
         </section>
+
+        <section data-panel="operacao" hidden>
+          <div class="page-title operation-page-title"><div><span class="eyebrow">OPERAÇÃO DO NEGÓCIO</span><h1>Rotina clara, atendimento em dia.</h1><p>Defina responsáveis, acompanhe pendências e registre as revisões importantes da empresa.</p></div><span class="operation-live"><i></i> ACOMPANHAMENTO ATIVO</span></div>
+          <div class="operation-metrics" aria-label="Resumo operacional">
+            <article class="operation-metric featured"><span>Orçamentos atrasados</span><strong id="operation-overdue">—</strong><small>fora do prazo configurado</small></article>
+            <article class="operation-metric"><span>Propostas pendentes</span><strong id="operation-proposals">—</strong><small>aguardando cliente</small></article>
+            <article class="operation-metric"><span>Pagamentos com atenção</span><strong id="operation-payments">—</strong><small>pendentes, recusados ou contestados</small></article>
+            <article class="operation-metric"><span>Privacidade pendente</span><strong id="operation-privacy">—</strong><small>solicitações em análise</small></article>
+          </div>
+
+          <div class="operation-layout">
+            <form id="operation-settings-form" class="admin-panel operation-settings">
+              <div class="panel-heading"><div><h2>Responsável e prazos</h2><p>Essas definições alimentam os alertas do painel.</p></div><span class="operation-icon">01</span></div>
+              <label>Quem responde pelos orçamentos<input id="operation-responsible" maxlength="120" required placeholder="Nome ou equipe responsável"></label>
+              <label>Contato interno <small>(opcional)</small><input id="operation-contact" maxlength="160" placeholder="Telefone ou e-mail interno"></label>
+              <div class="operation-fields"><label>Prazo máximo de resposta<select id="operation-deadline"><option value="4">4 horas</option><option value="8">8 horas</option><option value="24">1 dia</option><option value="48">2 dias</option><option value="72">3 dias</option><option value="168">7 dias</option></select></label><label>Revisar preços a cada<input id="operation-price-frequency" type="number" min="1" max="365" required><span>dias</span></label><label>Revisar conteúdo a cada<input id="operation-content-frequency" type="number" min="1" max="365" required><span>dias</span></label></div>
+              <button class="button primary" type="submit">Salvar rotina</button>
+            </form>
+
+            <section class="admin-panel operation-checklist">
+              <div class="panel-heading"><div><h2>Rotinas recorrentes</h2><p>Registre cada revisão para manter o painel atualizado.</p></div><span class="operation-icon">02</span></div>
+              <article id="routine-prices" class="routine-card"><span class="routine-status"></span><div><strong>Atualizar preços</strong><small class="routine-date">Ainda não revisado</small></div><button type="button" class="button secondary" data-review="precos">Marcar revisado</button></article>
+              <article id="routine-content" class="routine-card"><span class="routine-status"></span><div><strong>Fotos, serviços e conteúdo</strong><small class="routine-date">Ainda não revisado</small></div><button type="button" class="button secondary" data-review="conteudo">Marcar revisado</button></article>
+              <article id="routine-backup" class="routine-card"><span class="routine-status"></span><div><strong>Backup do banco</strong><small class="routine-date">Verificando…</small></div><button type="button" class="button secondary" id="operation-backup">Criar e baixar</button></article>
+              <p class="operation-note">O sistema cria um backup automático por dia e mantém os 7 mais recentes no disco persistente do Render. Faça também downloads periódicos e guarde-os em local protegido.</p>
+            </section>
+          </div>
+
+          <div class="operation-layout operation-monitoring">
+            <section class="admin-panel">
+              <div class="panel-heading"><div><h2>Pagamentos e propostas</h2><p>Visão rápida para não deixar nenhuma etapa sem acompanhamento.</p></div><div class="operation-heading-actions"><button type="button" class="text-button" data-go="orcamentos">Orçamentos →</button><button type="button" class="text-button" data-go="contratos">Contratos →</button><span class="operation-icon">03</span></div></div>
+              <div class="operation-commerce-summary"><div><span>Pagamentos aprovados</span><strong id="operation-paid">—</strong></div><div><span>Total recebido</span><strong id="operation-revenue">—</strong></div><div><span>Propostas aceitas</span><strong id="operation-accepted">—</strong></div><div><span>Pedidos de ajustes</span><strong id="operation-adjustments">—</strong></div></div>
+              <div id="operation-recent-payments" class="operation-payment-list"></div>
+            </section>
+            <section class="admin-panel privacy-operations">
+              <div class="panel-heading"><div><h2>Solicitações de privacidade</h2><p>Analise, conclua ou cancele cada solicitação registrada.</p></div><span class="operation-icon">04</span></div>
+              <div id="operation-privacy-list" class="operation-privacy-list"></div>
+            </section>
+          </div>
+          <p id="operation-message" class="operation-message" role="status" hidden></p>
+        </section>
       </div>
     </main>
   </div>
   <script src="api.js"></script>
   <script src="propostas.js?v=20261110-contratos"></script>
   <script src="contratos-admin.js?v=20261110-contratos"></script>
+  <script src="operacao-admin.js?v=20261110-rotina"></script>
   <script src="admin.js?v=20261110-precos-combinados"></script>
 </body>
 </html>

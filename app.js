@@ -20,6 +20,7 @@ const { initContratos } = require("./lib/contratos");
 const { initOrcamentoPdf } = require("./lib/orcamento-pdf");
 const { initAtendimento } = require("./lib/atendimento");
 const { initFeedback } = require("./lib/feedback");
+const { initOperacao } = require("./lib/operacao");
 
 const fail = (status, message) => Object.assign(new Error(message), { status });
 const text = (value) => typeof value === "string" ? value.trim() : "";
@@ -86,6 +87,7 @@ async function createApp(options = {}) {
     run: (sql, params = []) => new Promise((resolve, reject) => raw.run(sql, params, function (error) {
       if (error) reject(error); else resolve({ lastID: this.lastID, changes: this.changes });
     })),
+    backup: (destination) => new Promise((resolve, reject) => raw.run("VACUUM INTO ?", [destination], (error) => error ? reject(error) : resolve())),
   };
   await db.run("PRAGMA foreign_keys = ON");
   await db.run(`CREATE TABLE IF NOT EXISTS usuarios (
@@ -428,6 +430,7 @@ async function createApp(options = {}) {
   await initOrcamentoPdf({ app, db, exigirLogin, logoPath: path.join(__dirname, "img", "Mundo das Esquadrias 2.jpg") });
   await initFeedback({ app, db, exigirLogin, exigirAdmin, changesLimit });
   await initAdmin({ app, db, exigirAdmin, changesLimit });
+  const operacao = await initOperacao({ app, db, exigirAdmin, changesLimit, dataDir });
   app.post("/api/sair", async (req, res) => {
     await new Promise((resolve, reject) => req.session.destroy((error) => error ? reject(error) : resolve()));
     res.clearCookie("connect.sid", { httpOnly: true, sameSite: "lax", secure: production, path: "/" });
@@ -445,6 +448,7 @@ async function createApp(options = {}) {
     res.status(status).json({ erro: message });
   });
   return { app, db, close: async () => {
+    operacao.close();
     await new Promise((resolve, reject) => store.close((error) => error ? reject(error) : resolve()));
     await new Promise((resolve, reject) => raw.close((error) => error ? reject(error) : resolve()));
   } };

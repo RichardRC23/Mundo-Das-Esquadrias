@@ -642,6 +642,7 @@
       refreshPriceFilters(); renderRecent(); renderQuotes(); renderPrices(); renderFeedbackSummary(); renderFeedbacks(); modelSuggestions();
       fillCostSettings(); renderMaterials(); renderRecipes(); populateCostSelects(); recipeSuggestions();
       await window.ContratosAdmin?.init(quotes);
+      await window.OperacaoAdmin?.init();
       $("admin-loading").hidden = true; $("admin-content").hidden = false;
     } catch (error) { handleError(error); $("admin-loading").hidden = true; }
   }
