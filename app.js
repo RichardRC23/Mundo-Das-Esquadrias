@@ -39,7 +39,7 @@ const seoPages = new Map([
     description: "Consulte as condições de uso do site, criação de conta, solicitação de orçamentos e pagamentos." }],
 ]);
 const htmlAttribute = (value) => String(value).replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;");
-const VERSAO_TERMOS = "2026-11-09";
+const VERSAO_TERMOS = "2026-11-10";
 
 function dadosPerfil(body = {}) {
   if (!body || typeof body !== "object" || Array.isArray(body) ||

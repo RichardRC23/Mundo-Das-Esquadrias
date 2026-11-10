@@ -6,7 +6,7 @@
   <meta name="description" content="Solicite seu orçamento personalizado de esquadrias de alumínio, vidros, box e fachadas.">
     <title>Solicitar orçamento | Mundo das Esquadrias</title>
     <meta name="application-name" content="Mundo das Esquadrias"><meta name="theme-color" content="#0d3045"><link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png"><link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest">
-  <link rel="stylesheet" href="orcamento.css?v=20261016-acessorios">
+  <link rel="stylesheet" href="orcamento.css?v=20261110-avisos-cliente">
   <link rel="stylesheet" href="acessibilidade.css">
   <script src="acessibilidade.js" defer></script>
   <link rel="stylesheet" href="atendimento.css">
@@ -310,7 +310,39 @@
           </div>
           <div id="review-content" class="review-content"></div>
           <div class="price-notice" id="price-notice"><span>i</span><p><strong>Por que o valor não aparece agora?</strong> Cada projeto é feito sob medida. A equipe confirmará perfil, tipo de vidro, ferragens, acesso e instalação antes de informar o preço final.</p></div>
-          <label class="consent"><input type="checkbox" id="quote-consent" required><span>Confirmo que os dados estão corretos e autorizo o contato da Mundo das Esquadrias sobre este orçamento.</span></label>
+          <section class="customer-notices" aria-labelledby="customer-notices-title">
+            <header><span aria-hidden="true">✓</span><div><h3 id="customer-notices-title">Antes de enviar, saiba como funciona</h3><p>Transparência em cada etapa: orçamento, fabricação, instalação e atendimento.</p></div></header>
+            <div class="customer-notice-groups">
+              <details open><summary><span>01</span><div><strong>Orçamento e valores</strong><small>O que está incluído no cálculo</small></div></summary><ol>
+                <li><strong>Orçamento sem compromisso.</strong> Você pode solicitar a estimativa sem obrigação de contratar.</li>
+                <li><strong>Valor inicialmente estimado.</strong> O cálculo usa as informações e os preços cadastrados no momento da solicitação.</li>
+                <li><strong>Confirmação técnica.</strong> Medidas, especificações e condições do local serão conferidas antes da execução.</li>
+                <li><strong>Medidas informadas.</strong> Diferenças nas medidas podem alterar materiais, fabricação e valor final.</li>
+                <li><strong>Valor mínimo.</strong> Quando o cálculo por m² ficar abaixo do mínimo cadastrado, será aplicado o valor mínimo do item.</li>
+                <li><strong>Valores separados.</strong> Materiais, fabricação/mão de obra e instalação aparecem separados quando a ficha técnica estiver completa.</li>
+                <li><strong>Instalação conforme sua escolha.</strong> O resumo informa se você solicitou instalação ou somente o fornecimento.</li>
+              </ol></details>
+              <details><summary><span>02</span><div><strong>Produto e execução</strong><small>Acabamentos, acessórios e condições do local</small></div></summary><ol start="8">
+                <li><strong>Acessórios selecionados.</strong> Somente os acessórios exibidos no orçamento estão considerados.</li>
+                <li><strong>Imagens ilustrativas.</strong> A visualização 3D ajuda na compreensão, mas não substitui projeto, amostra ou desenho técnico aprovado.</li>
+                <li><strong>Variação de cores.</strong> Tela, iluminação, acabamento e lote podem causar diferenças na aparência de alumínios e vidros.</li>
+                <li><strong>Condições do local.</strong> Acesso, retirada de peças, andaimes, içamento e adaptações podem alterar escopo e preço.</li>
+                <li><strong>Serviços não incluídos.</strong> Alvenaria, pintura, elétrica e serviços complementares só estão incluídos quando descritos expressamente.</li>
+              </ol></details>
+              <details><summary><span>03</span><div><strong>Prazos, pagamento e garantia</strong><small>Condições confirmadas na proposta</small></div></summary><ol start="13">
+                <li><strong>Validade do orçamento.</strong> A proposta formal informará sua validade; preços podem ser revistos após esse período.</li>
+                <li><strong>Produção e instalação.</strong> O prazo começa conforme as condições indicadas na proposta, após confirmação técnica e comercial.</li>
+                <li><strong>Pagamento protegido.</strong> Pagamentos online são processados pelo Mercado Pago e só valem após confirmação do sistema.</li>
+                <li><strong>Cancelamento e reembolso.</strong> Seguem a proposta, o estágio do serviço e os direitos previstos na legislação aplicável.</li>
+                <li><strong>Garantia.</strong> Prazo, cobertura e exclusões serão informados na proposta ou contrato, sem afastar garantias legais.</li>
+              </ol></details>
+              <details><summary><span>04</span><div><strong>Privacidade e atendimento</strong><small>Seus dados e os canais de suporte</small></div></summary><ol start="18">
+                <li><strong>Privacidade e termos.</strong> Seus dados são tratados conforme a <a href="politica-de-privacidade.html" target="_blank" rel="noopener">Política de Privacidade</a> e os <a href="termos-de-uso.html" target="_blank" rel="noopener">Termos de Uso</a>.</li>
+                <li><strong>Canal para dúvidas.</strong> Solicite correções e confirmações pelo <a href="https://wa.me/5521964070134" target="_blank" rel="noopener">WhatsApp (21) 96407-0134</a>.</li>
+              </ol></details>
+            </div>
+          </section>
+          <label class="consent"><input type="checkbox" id="quote-consent" required><span>Confirmo que revisei os dados e avisos acima, autorizo o contato sobre este orçamento e estou ciente dos <a href="termos-de-uso.html" target="_blank" rel="noopener">Termos de Uso</a> e da <a href="politica-de-privacidade.html" target="_blank" rel="noopener">Política de Privacidade</a>.</span></label>
           <p class="field-error" id="submit-error" role="alert"></p>
           <div class="step-actions"><button type="button" class="button ghost" data-back>← Corrigir dados</button><button type="submit" class="button primary submit-button" id="submit-quote">Enviar solicitação <span>→</span></button></div>
         </div>
@@ -333,7 +365,7 @@
     </section>
   </main>
 
-  <footer class="quote-footer"><p>© 2026 Mundo das Esquadrias · Rio de Janeiro</p><a href="index.html#contato">Precisa de ajuda?</a></footer>
+  <footer class="quote-footer"><p>© 2026 Mundo das Esquadrias · Rio de Janeiro</p><nav aria-label="Informações e atendimento"><a href="termos-de-uso.html">Termos</a><a href="politica-de-privacidade.html">Privacidade</a><a href="index.html#contato">Precisa de ajuda?</a></nav></footer>
   <dialog id="visual-viewer" class="visual-viewer" aria-labelledby="viewer-title" aria-describedby="viewer-help">
     <header class="viewer-header"><h2 id="viewer-title">Visualização ampliada</h2><button type="button" id="viewer-close" class="button ghost" autofocus>Fechar ×</button></header>
     <p id="viewer-description"></p>
