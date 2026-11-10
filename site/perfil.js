@@ -17,7 +17,7 @@
   };
   const methods = { pix: "Pix", boleto: "boleto", cartao: "cartão" };
   const paymentLabels = { reembolsado: "Reembolsado", contestado: "Em contestação", recusado: "Recusado" };
-  const labels = { recebido: "Recebido", em_analise: "Em análise", aguardando_cliente: "Aguardando você", aprovado: "Aprovado", pendente: "Pendente", pago: "Pago", paid: "Pago", open: "Em aberto", active: "Ativa", trialing: "Período de teste", canceled: "Cancelada", incomplete: "Incompleta", incomplete_expired: "Expirada", paused: "Pausada", past_due: "Pagamento pendente", unpaid: "Não paga", uncollectible: "Não recebida", void: "Anulada", assinado: "Assinado", aguardando_assinatura: "Aguardando assinatura", concluido: "Concluído", em_andamento: "Em andamento", cancelado: "Cancelado" };
+  const labels = { recebido: "Recebido", em_analise: "Em análise", aguardando_cliente: "Aguardando você", aprovado: "Aprovado", pendente: "Pendente", rascunho: "Em preparação", enviado: "Enviado para assinatura", pago: "Pago", paid: "Pago", open: "Em aberto", active: "Ativa", trialing: "Período de teste", canceled: "Cancelada", incomplete: "Incompleta", incomplete_expired: "Expirada", paused: "Pausada", past_due: "Pagamento pendente", unpaid: "Não paga", uncollectible: "Não recebida", void: "Anulada", assinado: "Assinado", aguardando_assinatura: "Aguardando assinatura", concluido: "Concluído", em_andamento: "Em andamento", cancelado: "Cancelado" };
   function node(tag, className, content) {
     const el = document.createElement(tag);
     if (className) el.className = className;
@@ -152,11 +152,14 @@
       const row = node("article", "record");
       const box = node("span", "icon-box"); box.append(icon(meta[0]));
       const info = node("div", "record-info");
-      info.append(node("h3", "", item.titulo || "Registro de serviço"));
+      info.append(node("h3", "", type === "contratos" && item.codigo ? `${item.codigo} · ${item.titulo}` : item.titulo || "Registro de serviço"));
       if (item.descricao) info.append(node("p", "", item.descricao));
       const dates = [];
       if (data(item.criado_em)) dates.push(`Registrado em ${data(item.criado_em)}`);
       if (data(item.assinado_em)) dates.push(`Assinado em ${data(item.assinado_em)}`);
+      if (type === "contratos" && data(item.validade_em)) dates.push(`Assinar até ${data(item.validade_em)}`);
+      if (type === "contratos" && data(item.inicio_em)) dates.push(`Início previsto ${data(item.inicio_em)}`);
+      if (type === "contratos" && data(item.conclusao_em)) dates.push(`Concluído em ${data(item.conclusao_em)}`);
       if (data(item.proxima_cobranca)) dates.push(`Próximo ciclo: ${data(item.proxima_cobranca)}`);
       if (item.cancelamento_agendado) dates.push("Cancelamento agendado");
       info.append(node("p", "date", dates.join(" · ")));

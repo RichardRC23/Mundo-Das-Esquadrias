@@ -16,6 +16,7 @@ const { initPayments } = require("./lib/payments");
 const { initOrcamentos } = require("./lib/orcamentos");
 const { initAdmin } = require("./lib/admin");
 const { initPropostas } = require("./lib/propostas");
+const { initContratos } = require("./lib/contratos");
 const { initOrcamentoPdf } = require("./lib/orcamento-pdf");
 const { initAtendimento } = require("./lib/atendimento");
 const { initFeedback } = require("./lib/feedback");
@@ -423,6 +424,7 @@ async function createApp(options = {}) {
     comprasOrcamentoConfiguradas: payments.comprasOrcamentoConfiguradas,
     aceitarCreditosMPTeste: payments.aceitarCreditosMPTeste });
   await initPropostas({ app, db, exigirLogin, exigirAdmin, changesLimit });
+  await initContratos({ app, db, exigirAdmin, changesLimit, dataDir });
   await initOrcamentoPdf({ app, db, exigirLogin, logoPath: path.join(__dirname, "img", "Mundo das Esquadrias 2.jpg") });
   await initFeedback({ app, db, exigirLogin, exigirAdmin, changesLimit });
   await initAdmin({ app, db, exigirAdmin, changesLimit });
@@ -435,7 +437,7 @@ async function createApp(options = {}) {
   app.use(express.static(siteDir, { dotfiles: "deny" }));
   app.use("/img", express.static(path.join(__dirname, "img"), { dotfiles: "deny", index: false }));
   app.use((error, _req, res, _next) => {
-    if (error instanceof multer.MulterError) return res.status(400).json({ erro: "Envie apenas uma foto de até 2 MB." });
+    if (error instanceof multer.MulterError) return res.status(400).json({ erro: error.field === "documento" ? "Envie apenas um PDF de até 5 MB." : "Envie apenas uma foto de até 2 MB." });
     if (error.code === "SQLITE_CONSTRAINT") return res.status(409).json({ erro: "Este e-mail ou telefone já está cadastrado." });
     const status = error.status >= 400 && error.status < 600 ? error.status : 500;
     const message = status === 500 ? "Não foi possível concluir. Tente novamente." : error.message;

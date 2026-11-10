@@ -11,8 +11,9 @@
   const cents = (input) => Math.round(Number(input.value) * 100);
   function detail(p) {
     const box = el("div", null, "proposal-detail");
-    box.append(el("strong", `Proposta ${p.numero} · ${money(p.valor_centavos)}`),
+    box.append(el("strong", `${p.codigo || `Proposta ${p.numero}`} · ${money(p.valor_centavos)}`),
       el("p", states[p.situacao]), el("p", `Prazo: ${p.prazo}`));
+    if (p.valida_ate) box.append(el("p", `Válida até ${new Date(p.valida_ate).toLocaleDateString("pt-BR")}`));
     if (p.partes_valor_centavos) {
       const list = el("dl", null, "proposal-parts");
       Object.entries(categories).forEach(([key, label]) => {
@@ -23,7 +24,16 @@
       });
       box.append(list);
     }
-    if (p.observacoes) box.append(el("p", p.observacoes));
+    const commercial = [
+      ["Escopo", p.escopo], ["Inclui", p.inclusos], ["Não inclui", p.excluidos],
+      ["Pagamento", p.condicoes_pagamento], ["Garantia", p.garantia],
+      ["Medição e visita técnica", p.visita_tecnica], ["Observações", p.observacoes],
+    ].filter(([, value]) => value);
+    if (commercial.length) {
+      const terms = el("div", null, "proposal-terms");
+      commercial.forEach(([label, value]) => { const item = el("p"); item.append(el("b", `${label}: `), document.createTextNode(value)); terms.append(item); });
+      box.append(terms);
+    }
     box.append(el("small", `Enviada em ${new Date(p.enviada_em).toLocaleString("pt-BR")}`));
     if (p.respondida_em) box.append(el("p", `Resposta em ${new Date(p.respondida_em).toLocaleString("pt-BR")}${p.resposta ? `: ${p.resposta}` : ""}`));
     return box;
@@ -55,7 +65,7 @@
     }
     if (!(admin ? editable : current?.situacao === "pendente" && quote.status === "aguardando_cliente")) return panel;
     const form = el("form", null, "proposal-form");
-    let amount, deadline, notes, agree, partInputs;
+    let amount, deadline, notes, agree, partInputs, validity, scope, included, excluded, payment, warranty, visit;
     if (admin) {
       amount = field(form, "Valor final total (R$)", "input", { type: "number", min: "0.01", max: "10000000", step: "0.01", required: true, value: current ? (current.valor_centavos / 100).toFixed(2) : "" });
       const partsTitle = el("p", "Separe o valor final em materiais, mão de obra e instalação. A soma deve ser igual ao total acima.");
@@ -70,7 +80,16 @@
       }));
       form.append(partsBox);
       deadline = field(form, "Prazo e a partir de quando começa a contar", "input", { maxLength: 300, required: true, placeholder: "Ex.: 15 dias úteis após a medição técnica", value: current?.prazo || "" });
-      notes = field(form, "Observações e condições da proposta", "textarea", { maxLength: 2000, rows: 4, value: current?.observacoes || "", placeholder: "Informe materiais, instalação e condições de pagamento incluídos no valor." });
+      validity = field(form, "Validade da proposta (dias)", "input", { type: "number", min: "1", max: "180", required: true, value: current?.validade_dias || "15" });
+      scope = field(form, "Escopo do serviço", "textarea", { maxLength: 3000, rows: 4, required: true, value: current?.escopo || "", placeholder: "Descreva exatamente o que será fabricado, fornecido e instalado." });
+      const termsGrid = el("div", null, "proposal-commercial-grid");
+      included = field(termsGrid, "O que está incluído", "textarea", { maxLength: 2000, rows: 3, value: current?.inclusos || "", placeholder: "Materiais, acessórios, transporte interno, instalação…" });
+      excluded = field(termsGrid, "O que não está incluído", "textarea", { maxLength: 2000, rows: 3, value: current?.excluidos || "", placeholder: "Alvenaria, pintura, elétrica ou outros serviços não contratados." });
+      payment = field(termsGrid, "Condições de pagamento", "textarea", { maxLength: 1200, rows: 3, required: true, value: current?.condicoes_pagamento || "", placeholder: "Ex.: entrada na aprovação e saldo conforme as etapas do serviço." });
+      warranty = field(termsGrid, "Garantia", "textarea", { maxLength: 800, rows: 3, required: true, value: current?.garantia || "", placeholder: "Informe prazo, cobertura e condições, preservando a garantia legal." });
+      visit = field(termsGrid, "Visita técnica e medição", "textarea", { maxLength: 800, rows: 3, required: true, value: current?.visita_tecnica || "", placeholder: "Explique quando haverá conferência de medidas e condições do local." });
+      form.append(termsGrid);
+      notes = field(form, "Observações adicionais", "textarea", { maxLength: 2000, rows: 4, value: current?.observacoes || "", placeholder: "Registre ressalvas e condições específicas deste projeto." });
       form.append(el("p", "A proposta ficará disponível em Minha Conta. O envio não dispara mensagem pelo WhatsApp."));
     } else {
       notes = field(form, "O que deseja ajustar?", "textarea", { maxLength: 2000, rows: 3, placeholder: "Descreva aqui as alterações desejadas." });
@@ -101,7 +120,10 @@
       actions.querySelectorAll("button").forEach((b) => { b.disabled = true; });
       status.textContent = "Enviando…";
       try {
-        const body = admin ? { versao: quote.proposta_versao, valor_centavos: cents(amount), partes_valor_centavos: parts, prazo: deadline.value, observacoes: notes.value }
+        const body = admin ? { versao: quote.proposta_versao, valor_centavos: cents(amount), partes_valor_centavos: parts,
+          prazo: deadline.value, validade_dias: Number(validity.value), escopo: scope.value, inclusos: included.value,
+          excluidos: excluded.value, condicoes_pagamento: payment.value, garantia: warranty.value,
+          visita_tecnica: visit.value, observacoes: notes.value }
           : { versao: quote.proposta_versao, acao: action, mensagem: action === "ajustes" ? notes.value : "" };
         const result = await ContaAPI.request(admin ? `/api/admin/orcamentos/${quote.id}/proposta` : `/api/orcamentos/${encodeURIComponent(quote.codigo)}/resposta`, { method: "POST", body });
         status.textContent = result.mensagem;

@@ -7,7 +7,7 @@
   <title>Painel administrativo | Mundo das Esquadrias</title>
   <meta name="application-name" content="Mundo das Esquadrias"><meta name="theme-color" content="#0d3045"><link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png"><link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest">
   <link rel="stylesheet" href="admin.css?v=20261027-salvar-fixo">
-  <link rel="stylesheet" href="propostas.css?v=20261016-tres-categorias">
+  <link rel="stylesheet" href="propostas.css?v=20261110-contratos">
 </head>
 <body>
   <aside class="admin-sidebar">
@@ -15,6 +15,7 @@
     <nav aria-label="Painel administrativo">
       <button type="button" data-view="inicio" class="active"><span>⌂</span>Visão geral</button>
       <button type="button" data-view="orcamentos"><span>▤</span>Orçamentos</button>
+      <button type="button" data-view="contratos"><span>✎</span>Contratos</button>
       <button type="button" data-view="feedbacks"><span>★</span>Feedbacks</button>
       <button type="button" data-view="precos"><span>R$</span>Tabela de preços</button>
       <button type="button" data-view="custos"><span>∑</span>Custos reais</button>
@@ -51,6 +52,22 @@
         <section data-panel="orcamentos" hidden>
           <div class="page-title"><div><span class="eyebrow">ATENDIMENTO</span><h1>Orçamentos recebidos</h1><p>Consulte medidas, contato e andamento de cada solicitação.</p></div><label class="filter">Situação<select id="quote-filter"><option value="">Todas</option><option value="recebido">Recebido</option><option value="em_analise">Em análise</option><option value="aguardando_cliente">Aguardando cliente</option><option value="aprovado">Aprovado</option><option value="concluido">Concluído</option><option value="cancelado">Cancelado</option></select></label></div>
           <div id="admin-quotes" class="quote-list"></div>
+        </section>
+
+        <section data-panel="contratos" hidden>
+          <div class="page-title"><div><span class="eyebrow">PROPOSTAS APROVADAS</span><h1>Contratos e documentos</h1><p>Crie o contrato a partir da proposta aceita, anexe o PDF final e acompanhe cada etapa.</p></div><span class="contract-safety">DOCUMENTOS PROTEGIDOS</span></div>
+          <div class="contract-layout">
+            <form id="contract-form" class="admin-panel contract-form">
+              <div class="panel-heading"><div><h2>Novo contrato</h2><p>Os valores vêm da proposta aceita e não são recalculados aqui.</p></div></div>
+              <label>Orçamento aprovado<select id="contract-quote" required><option value="">Selecione uma proposta aceita</option></select></label>
+              <label>Título do contrato<input id="contract-title" maxlength="160" required placeholder="Ex.: Contrato de fornecimento e instalação"></label>
+              <label>Objeto e escopo<textarea id="contract-description" maxlength="3000" rows="6" required placeholder="Descreva o serviço contratado conforme a proposta aceita."></textarea></label>
+              <div class="contract-dates"><label>Validade para assinatura<input id="contract-validity" type="date"></label><label>Início previsto<input id="contract-start" type="date"></label></div>
+              <p class="contract-note">Este cadastro organiza o documento, mas não substitui assinatura eletrônica certificada nem revisão jurídica.</p>
+              <button class="button primary" type="submit">Criar contrato em rascunho</button>
+            </form>
+            <section class="admin-panel contract-list-panel"><div class="panel-heading"><div><h2>Contratos cadastrados</h2><p>Filtre, anexe o documento e atualize a situação.</p></div><label class="filter">Situação<select id="contract-filter"><option value="">Todas</option><option value="rascunho">Rascunho</option><option value="enviado">Enviado</option><option value="assinado">Assinado</option><option value="concluido">Concluído</option><option value="cancelado">Cancelado</option></select></label></div><div id="admin-contracts" class="contract-list"></div></section>
+          </div>
         </section>
 
         <section data-panel="feedbacks" hidden>
@@ -171,7 +188,8 @@
     </main>
   </div>
   <script src="api.js"></script>
-  <script src="propostas.js?v=20261016-tres-categorias"></script>
+  <script src="propostas.js?v=20261110-contratos"></script>
+  <script src="contratos-admin.js?v=20261110-contratos"></script>
   <script src="admin.js?v=20261110-precos-combinados"></script>
 </body>
 </html>
