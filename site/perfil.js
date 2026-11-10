@@ -7,6 +7,7 @@
   const pages = {
     inicio: ["Tudo sobre seus projetos.", "Seu perfil, serviços e pagamentos, em um só lugar."],
     perfil: ["Seu perfil, do seu jeito.", "Um espaço para manter seus dados sempre atualizados."],
+    privacidade: ["Privacidade e segurança.", "Controle seus dados, acessos e preferências em um só lugar."],
     orcamentos: ["Seus projetos começam aqui.", "Acompanhe cada solicitação de orçamento enviada."],
     compras: ["Cada projeto tem uma história.", "Consulte seus pedidos e acompanhe as faturas disponíveis."],
     contratos: ["Tudo no seu lugar.", "Seus contratos, documentos e informações importantes."],
@@ -93,6 +94,20 @@
     const since = data(usuario.criado_em);
     $("data-cadastro").textContent = since ? `Cliente desde ${since}` : "";
     $("admin-link").hidden = usuario.papel !== "admin";
+    const contato = usuario.preferencia_contato || "whatsapp";
+    document.querySelectorAll('input[name="contato_preferido"]').forEach((input) => { input.checked = input.value === contato; });
+    $("consent-version").textContent = usuario.termos_aceitos_versao || "Não registrado";
+    $("consent-date").textContent = data(usuario.termos_aceitos_em) || "Não registrada";
+    $("active-sessions").textContent = String(usuario.sessoes_ativas || 1);
+    const request = usuario.solicitacao_exclusao;
+    $("exclusion-status").hidden = !request;
+    if (request) {
+      $("exclusion-status").textContent = `Solicitação ${request.status === "em_analise" ? "em análise" : "recebida"} em ${data(request.solicitado_em) || "data registrada"}.`;
+      $("exclusao-fields").disabled = true;
+    } else {
+      $("exclusion-status").textContent = "";
+      $("exclusao-fields").disabled = false;
+    }
     avatar();
   }
   function showPage() {
@@ -359,6 +374,74 @@
       usuario = result.usuario; renderProfile(); mensagem(result.mensagem, true);
     } catch (error) { erro(error); }
     finally { $("perfil-fields").disabled = false; $("senha-atual").value = ""; }
+  });
+  $("form-contato-preferido").addEventListener("submit", async (event) => {
+    event.preventDefault(); mensagem("");
+    const escolhido = document.querySelector('input[name="contato_preferido"]:checked');
+    if (!escolhido) return mensagem("Escolha como prefere receber contato.");
+    $("contato-preferido-fields").disabled = true;
+    try {
+      const result = await ContaAPI.request("/api/privacidade/preferencia-contato", { method: "PUT", body: { preferencia: escolhido.value } });
+      usuario.preferencia_contato = result.preferencia;
+      mensagem(result.mensagem, true);
+    } catch (error) { erro(error); }
+    finally { $("contato-preferido-fields").disabled = false; }
+  });
+  $("form-senha").addEventListener("submit", async (event) => {
+    event.preventDefault(); mensagem("");
+    $("senha-fields").disabled = true;
+    try {
+      const result = await ContaAPI.request("/api/seguranca/senha", { method: "POST", body: {
+        senha_atual: $("seguranca-senha-atual").value,
+        nova_senha: $("nova-senha").value,
+        confirmar_senha: $("confirmar-nova-senha").value,
+      } });
+      event.currentTarget.reset();
+      usuario.sessoes_ativas = 1;
+      renderProfile();
+      mensagem(result.mensagem, true);
+    } catch (error) { erro(error); }
+    finally { $("senha-fields").disabled = false; }
+  });
+  $("form-sessoes").addEventListener("submit", async (event) => {
+    event.preventDefault(); mensagem("");
+    $("sessoes-fields").disabled = true;
+    try {
+      const result = await ContaAPI.request("/api/seguranca/sessoes/encerrar-outras", { method: "POST", body: { senha_atual: $("sessoes-senha-atual").value } });
+      event.currentTarget.reset();
+      usuario.sessoes_ativas = 1;
+      renderProfile();
+      mensagem(result.mensagem, true);
+    } catch (error) { erro(error); }
+    finally { $("sessoes-fields").disabled = false; }
+  });
+  $("exportar-dados").addEventListener("click", async () => {
+    mensagem(""); $("exportar-dados").disabled = true;
+    try {
+      const blob = await ContaAPI.requestBlob("/api/privacidade/exportar");
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `dados-mundo-das-esquadrias-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.append(link); link.click(); link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      mensagem("Cópia dos seus dados preparada com sucesso.", true);
+    } catch (error) { erro(error); }
+    finally { $("exportar-dados").disabled = false; }
+  });
+  $("form-exclusao").addEventListener("submit", async (event) => {
+    event.preventDefault(); mensagem("");
+    $("exclusao-fields").disabled = true;
+    try {
+      const result = await ContaAPI.request("/api/privacidade/exclusao", { method: "POST", body: {
+        senha_atual: $("exclusao-senha").value,
+        confirmacao: $("exclusao-confirmacao").value,
+      } });
+      event.currentTarget.reset();
+      usuario.solicitacao_exclusao = result.solicitacao;
+      renderProfile();
+      mensagem(result.mensagem, true);
+    } catch (error) { erro(error); $("exclusao-fields").disabled = false; }
   });
   const cropCanvas = $("crop-canvas");
   const cropContext = cropCanvas.getContext("2d", { alpha: false });

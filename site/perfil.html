@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -6,7 +7,7 @@
   <meta name="color-scheme" content="light">
   <title>Minha conta | Mundo das Esquadrias</title>
   <meta name="application-name" content="Mundo das Esquadrias"><meta name="theme-color" content="#0d3045"><link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png"><link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest">
-  <link rel="stylesheet" href="conta.css?v=20261016-custos-separados">
+  <link rel="stylesheet" href="conta.css?v=20261110-privacidade-seguranca">
   <link rel="stylesheet" href="propostas.css?v=20261016-tres-categorias">
   <link rel="stylesheet" href="acessibilidade.css">
   <script src="api.js" defer></script>
@@ -14,7 +15,7 @@
   <link rel="stylesheet" href="atendimento.css">
   <script src="atendimento.js" defer></script>
   <script src="propostas.js?v=20261016-tres-categorias" defer></script>
-  <script src="perfil.js?v=20261105-modelos-caixa-box" defer></script>
+  <script src="perfil.js?v=20261110-privacidade-seguranca" defer></script>
 </head>
 <body>
   <svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -29,6 +30,7 @@
     <symbol id="i-help" viewBox="0 0 24 24"><path d="M21 11a9 9 0 0 1-9 9H4l-2 2V11a10 10 0 0 1 19 0Z M8 10h.01M12 10h.01M16 10h.01"/></symbol>
     <symbol id="i-feedback" viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/></symbol>
     <symbol id="i-exit" viewBox="0 0 24 24"><path d="M9 3H3v18h6M10 12h12m-4-4 4 4-4 4"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 4 6v5c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10V6l-8-3Z"/><path d="m9 12 2 2 4-5"/></symbol>
   </svg>
   <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
   <aside class="sidebar">
@@ -40,6 +42,7 @@
     <nav class="account-nav" aria-label="Área do cliente">
       <a href="#inicio" data-page="inicio" aria-current="page"><svg><use href="#i-grid"/></svg>Visão geral</a>
       <a href="#perfil" data-page="perfil"><svg><use href="#i-user"/></svg>Meu perfil</a>
+      <a href="#privacidade" data-page="privacidade"><svg><use href="#i-shield"/></svg>Privacidade e segurança</a>
       <a href="#orcamentos" data-page="orcamentos"><svg><use href="#i-quote"/></svg>Orçamentos</a>
       <a href="#compras" data-page="compras"><svg><use href="#i-bag"/></svg>Minhas compras</a>
       <a href="#contratos" data-page="contratos"><svg><use href="#i-file"/></svg>Meus contratos</a>
@@ -78,6 +81,7 @@
           <div class="section-heading"><div><h2>Uma conta, tudo conectado.</h2><p>Acesse o que você precisa com facilidade.</p></div></div>
           <div class="quick-grid">
             <a href="#perfil" class="quick-card"><svg class="quick-icon"><use href="#i-user"/></svg><h3>Seu perfil, do seu jeito</h3><p>Atualize seus dados e adicione uma foto à sua conta.</p><span>Editar perfil <svg><use href="#i-arrow"/></svg></span></a>
+            <a href="#privacidade" class="quick-card"><svg class="quick-icon"><use href="#i-shield"/></svg><h3>Privacidade sob controle</h3><p>Cuide da senha, sessões, consentimentos e dos seus dados.</p><span>Ver privacidade <svg><use href="#i-arrow"/></svg></span></a>
             <a href="#pagamentos" class="quick-card"><svg class="quick-icon"><use href="#i-card"/></svg><h3>Preferências de pagamento</h3><p id="resumo-pagamento">Escolha como prefere pagar seus próximos projetos.</p><span>Ver pagamentos <svg><use href="#i-arrow"/></svg></span></a>
             <a href="#contratos" class="quick-card"><svg class="quick-icon"><use href="#i-file"/></svg><h3>Documentos à mão</h3><p>Consulte seus contratos e os documentos disponibilizados.</p><span>Ver contratos <svg><use href="#i-arrow"/></svg></span></a>
             <a href="#feedback" class="quick-card feedback-quick-card"><svg class="quick-icon"><use href="#i-feedback"/></svg><h3>Sua opinião importa</h3><p>Conte como foi sua experiência com nossos serviços ou com o site.</p><span>Enviar feedback <svg><use href="#i-arrow"/></svg></span></a>
@@ -89,6 +93,63 @@
             <div class="panel photo-panel"><span class="avatar large" data-avatar>ME</span><h2 data-full-name>Sua conta</h2><p>Deixe seu perfil com a sua cara.</p><label class="button secondary file-label" for="foto">Alterar foto</label><input id="foto" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" class="file-input sr-only"><button id="remover-foto" class="text-button" type="button" hidden>Remover foto</button><p class="hint">JPG, PNG, WebP ou HEIC · até 2 MB<br>Você poderá ajustar o enquadramento antes de salvar.</p><p id="status-foto" class="hint" role="status"></p></div>
             <form id="form-perfil" class="panel"><h2>Seus dados</h2><p class="panel-description">Mantenha suas informações de contato atualizadas.</p><fieldset id="perfil-fields"><div class="field"><label for="perfil-nome">Nome completo</label><input id="perfil-nome" name="nome" autocomplete="name" maxlength="120" required></div><div class="field"><label for="perfil-email">E-mail</label><input id="perfil-email" name="email" type="email" autocomplete="email" maxlength="254"></div><div class="field"><label for="perfil-telefone">Telefone com DDD</label><input id="perfil-telefone" name="telefone" type="tel" autocomplete="tel" maxlength="20" placeholder="(21) 99999-9999"></div><div class="field"><label for="senha-atual">Senha atual <span class="optional">ao mudar e-mail ou telefone</span></label><input id="senha-atual" name="senha_atual" type="password" autocomplete="current-password" aria-describedby="contact-hint"></div><p class="hint" id="contact-hint">Informe pelo menos e-mail ou telefone. Para alterar seu contato, confirme sua senha.</p><div class="form-footer"><button class="button primary" type="submit">Salvar alterações</button></div></fieldset></form>
           </div>
+        </section>
+        <section id="painel-privacidade" data-panel="privacidade" aria-label="Privacidade e segurança" hidden>
+          <div class="privacy-hero">
+            <div><span class="privacy-kicker">CONTA E PRIVACIDADE</span><h2>Seus dados, suas escolhas.</h2><p>Veja o que guardamos, proteja sua conta e exerça seus direitos em um só lugar.</p></div>
+            <span class="privacy-hero-icon" aria-hidden="true"><svg><use href="#i-shield"/></svg></span>
+          </div>
+
+          <div class="privacy-purpose-grid" aria-label="Como seus dados são utilizados">
+            <article><span>01</span><h3>Identificação</h3><p>Nome e contato mantêm sua conta e permitem responder aos pedidos.</p></article>
+            <article><span>02</span><h3>Orçamentos</h3><p>Medidas, escolhas e endereço aproximado organizam suas solicitações.</p></article>
+            <article><span>03</span><h3>Pagamentos</h3><p>O site registra situação e referência; dados completos do cartão ficam com o provedor.</p></article>
+            <article><span>04</span><h3>Segurança</h3><p>Sessões e registros técnicos ajudam a proteger a conta e prevenir abusos.</p></article>
+          </div>
+
+          <div class="privacy-grid">
+            <form id="form-contato-preferido" class="panel privacy-panel">
+              <div class="privacy-panel-heading"><span class="icon-box"><svg><use href="#i-user"/></svg></span><div><h2>Como prefere receber contato?</h2><p>Usaremos este canal como primeira opção nos retornos sobre seus projetos.</p></div></div>
+              <fieldset id="contato-preferido-fields" class="contact-preferences">
+                <label><input type="radio" name="contato_preferido" value="whatsapp"><span><strong>WhatsApp</strong><small>Mensagens e atualizações</small></span></label>
+                <label><input type="radio" name="contato_preferido" value="telefone"><span><strong>Telefone</strong><small>Ligação da equipe</small></span></label>
+                <label><input type="radio" name="contato_preferido" value="email"><span><strong>E-mail</strong><small>Registros por escrito</small></span></label>
+                <div class="form-footer"><button class="button primary" type="submit">Salvar preferência</button></div>
+              </fieldset>
+            </form>
+
+            <article class="panel privacy-panel consent-history">
+              <div class="privacy-panel-heading"><span class="icon-box mint"><svg><use href="#i-file"/></svg></span><div><h2>Consentimentos e documentos</h2><p>Consulte o registro associado à criação da sua conta.</p></div></div>
+              <dl><div><dt>Versão aceita</dt><dd id="consent-version">—</dd></div><div><dt>Data do aceite</dt><dd id="consent-date">—</dd></div></dl>
+              <div class="privacy-links"><a href="termos-de-uso.html" target="_blank" rel="noopener">Termos de Uso ↗</a><a href="politica-de-privacidade.html" target="_blank" rel="noopener">Política de Privacidade ↗</a></div>
+            </article>
+          </div>
+
+          <div class="security-heading"><span>PROTEÇÃO DA CONTA</span><h2>Segurança que você controla</h2><p>Operações sensíveis exigem sua senha atual.</p></div>
+          <div class="privacy-grid">
+            <form id="form-senha" class="panel privacy-panel">
+              <div class="privacy-panel-heading"><span class="icon-box"><svg><use href="#i-shield"/></svg></span><div><h2>Alterar senha</h2><p>Use pelo menos 8 caracteres e evite repetir senhas de outros sites.</p></div></div>
+              <fieldset id="senha-fields"><div class="field"><label for="seguranca-senha-atual">Senha atual</label><input id="seguranca-senha-atual" type="password" autocomplete="current-password" required maxlength="72"></div><div class="field"><label for="nova-senha">Nova senha</label><input id="nova-senha" type="password" autocomplete="new-password" required minlength="8" maxlength="72"></div><div class="field"><label for="confirmar-nova-senha">Confirmar nova senha</label><input id="confirmar-nova-senha" type="password" autocomplete="new-password" required minlength="8" maxlength="72"></div><div class="form-footer"><button class="button primary" type="submit">Atualizar senha</button></div></fieldset>
+            </form>
+            <form id="form-sessoes" class="panel privacy-panel">
+              <div class="privacy-panel-heading"><span class="icon-box sand"><svg><use href="#i-exit"/></svg></span><div><h2>Sessões conectadas</h2><p><strong id="active-sessions">—</strong> sessão(ões) ativa(s). Encerre acessos feitos em outros aparelhos.</p></div></div>
+              <fieldset id="sessoes-fields"><div class="field"><label for="sessoes-senha-atual">Confirme sua senha atual</label><input id="sessoes-senha-atual" type="password" autocomplete="current-password" required maxlength="72"></div><p class="hint">Este aparelho continuará conectado.</p><div class="form-footer"><button class="button secondary" type="submit">Sair dos outros aparelhos</button></div></fieldset>
+            </form>
+          </div>
+
+          <div class="data-controls">
+            <article class="panel data-control-card"><span class="data-control-number">01</span><div><h2>Baixe uma cópia dos seus dados</h2><p>Receba um arquivo JSON com cadastro, orçamentos, compras, contratos, créditos e feedbacks. Senha, foto e dados completos de cartão não são incluídos.</p><button class="button secondary" id="exportar-dados" type="button">Baixar meus dados ↓</button></div></article>
+            <article class="panel data-control-card support-card"><span class="data-control-number">02</span><div><h2>Fale sobre seus dados</h2><p>Peça correção, esclarecimento ou ajuda pelo canal de privacidade.</p><a class="button secondary" href="https://wa.me/5521964070134?text=Solicita%C3%A7%C3%A3o%20sobre%20privacidade%20e%20dados%20pessoais" target="_blank" rel="noopener">Conversar no WhatsApp ↗</a></div></article>
+          </div>
+
+          <details class="danger-zone" id="danger-zone">
+            <summary><span><strong>Solicitar exclusão da conta</strong><small>Entenda o processo antes de confirmar</small></span></summary>
+            <form id="form-exclusao" class="danger-content">
+              <div id="exclusion-status" class="exclusion-status" hidden></div>
+              <p>A solicitação será analisada pela equipe. Dados necessários para cumprir obrigações legais, prevenir fraude ou preservar registros contratuais poderão ser conservados pelo prazo aplicável.</p>
+              <fieldset id="exclusao-fields"><div class="danger-fields"><div class="field"><label for="exclusao-senha">Senha atual</label><input id="exclusao-senha" type="password" autocomplete="current-password" required maxlength="72"></div><div class="field"><label for="exclusao-confirmacao">Digite EXCLUIR</label><input id="exclusao-confirmacao" type="text" autocomplete="off" required pattern="EXCLUIR"></div></div><label class="danger-check"><input id="exclusao-ciente" type="checkbox" required><span>Entendo que esta é uma solicitação formal e que a equipe poderá entrar em contato para confirmar minha identidade.</span></label><button class="button danger" type="submit">Enviar solicitação de exclusão</button></fieldset>
+            </form>
+          </details>
         </section>
         <div id="erro-conta" class="error-panel" hidden><p>Não foi possível consultar compras e pagamentos.</p><button type="button" class="button secondary" id="retry-conta">Tentar novamente</button></div>
         <section id="painel-orcamentos" data-panel="orcamentos" aria-label="Meus orçamentos" hidden><div class="panel"><div class="section-heading"><div><h2>Solicitações de orçamento</h2><p>Acompanhe os pedidos enviados e a situação da análise.</p></div><a class="button primary" href="orcamento.html">Novo orçamento</a></div><div id="lista-orcamentos" class="record-list"></div></div></section>

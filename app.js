@@ -92,9 +92,19 @@ async function createApp(options = {}) {
     telefone TEXT UNIQUE, senha_hash TEXT NOT NULL, criado_em TEXT DEFAULT CURRENT_TIMESTAMP
   )`);
   const columns = await db.all("PRAGMA table_info(usuarios)");
-  for (const [name, type] of [["foto_blob", "BLOB"], ["foto_versao", "TEXT"], ["preferencia_pagamento", "TEXT"], ["papel", "TEXT NOT NULL DEFAULT 'cliente'"], ["termos_aceitos_versao", "TEXT"], ["termos_aceitos_em", "TEXT"]]) {
+  for (const [name, type] of [["foto_blob", "BLOB"], ["foto_versao", "TEXT"], ["preferencia_pagamento", "TEXT"], ["preferencia_contato", "TEXT NOT NULL DEFAULT 'whatsapp'"], ["papel", "TEXT NOT NULL DEFAULT 'cliente'"], ["termos_aceitos_versao", "TEXT"], ["termos_aceitos_em", "TEXT"]]) {
     if (!columns.some((column) => column.name === name)) await db.run(`ALTER TABLE usuarios ADD COLUMN ${name} ${type}`);
   }
+  await db.run(`CREATE TABLE IF NOT EXISTS solicitacoes_privacidade (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    tipo TEXT NOT NULL CHECK(tipo IN ('exclusao')),
+    status TEXT NOT NULL DEFAULT 'recebida' CHECK(status IN ('recebida','em_analise','concluida','cancelada')),
+    solicitado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TEXT
+  )`);
+  await db.run(`CREATE UNIQUE INDEX IF NOT EXISTS solicitacao_privacidade_ativa_idx
+    ON solicitacoes_privacidade(usuario_id, tipo) WHERE status IN ('recebida','em_analise')`);
 
   const app = express();
   app.disable("x-powered-by");
@@ -232,8 +242,11 @@ async function createApp(options = {}) {
     next();
   };
   const perfil = async (id) => {
-    const user = await db.get("SELECT id,nome,email,telefone,criado_em,foto_versao,preferencia_pagamento,papel FROM usuarios WHERE id = ?", [id]);
+    const user = await db.get(`SELECT id,nome,email,telefone,criado_em,foto_versao,preferencia_pagamento,
+      preferencia_contato,papel,termos_aceitos_versao,termos_aceitos_em FROM usuarios WHERE id = ?`, [id]);
     if (!user) throw fail(401, "Faça login para acessar sua conta.");
+    user.solicitacao_exclusao = await db.get(`SELECT status,solicitado_em,atualizado_em FROM solicitacoes_privacidade
+      WHERE usuario_id=? AND tipo='exclusao' AND status IN ('recebida','em_analise') ORDER BY id DESC LIMIT 1`, [id]) || null;
     user.foto_url = user.foto_versao ? `/api/perfil/foto?v=${encodeURIComponent(user.foto_versao)}` : null;
     delete user.foto_versao;
     return user;
@@ -244,6 +257,15 @@ async function createApp(options = {}) {
     req.session.csrf = crypto.randomBytes(32).toString("hex");
     await saveSession(req);
   }
+  const confirmarSenha = async (usuarioId, senha, mensagem = "Senha atual incorreta.") => {
+    if (typeof senha !== "string" || !senha || Buffer.byteLength(senha, "utf8") > 72) throw fail(400, mensagem);
+    const user = await db.get("SELECT senha_hash FROM usuarios WHERE id=?", [usuarioId]);
+    if (!user || !await bcrypt.compare(senha, user.senha_hash)) throw fail(403, mensagem);
+  };
+  const sessoesDoUsuario = (usuarioId) => new Promise((resolve, reject) => store.userSessionIds(usuarioId,
+    (error, ids) => error ? reject(error) : resolve(ids)));
+  const encerrarOutrasSessoes = (usuarioId, sessaoAtual) => new Promise((resolve, reject) =>
+    store.destroyUserSessions(usuarioId, sessaoAtual, (error, total) => error ? reject(error) : resolve(total)));
   app.post("/api/cadastro", authLimit, async (req, res) => {
     if (req.body?.aceita_termos !== true) throw fail(400, "Para criar sua conta, aceite os Termos de Uso e confirme que leu a Política de Privacidade.");
     const { nome, email, telefone } = dadosPerfil(req.body);
@@ -271,7 +293,11 @@ async function createApp(options = {}) {
     const user = await perfil(req.session.usuario.id);
     res.json({ usuario: { id: user.id, nome: user.nome, foto_url: user.foto_url, papel: user.papel } });
   });
-  app.get("/api/perfil", exigirLogin, async (req, res) => res.json({ usuario: await perfil(req.session.usuario.id) }));
+  app.get("/api/perfil", exigirLogin, async (req, res) => {
+    const usuario = await perfil(req.session.usuario.id);
+    usuario.sessoes_ativas = (await sessoesDoUsuario(usuario.id)).length;
+    res.json({ usuario });
+  });
   app.put("/api/perfil", exigirLogin, changesLimit, async (req, res) => {
     const { nome, email, telefone } = dadosPerfil(req.body);
     const user = await db.get("SELECT email,telefone,senha_hash FROM usuarios WHERE id = ?", [req.session.usuario.id]);
@@ -284,7 +310,72 @@ async function createApp(options = {}) {
     await db.run("UPDATE usuarios SET nome = ?,email = ?,telefone = ? WHERE id = ?", [nome, email, telefone, req.session.usuario.id]);
     req.session.usuario.nome = nome;
     await saveSession(req);
-    res.json({ mensagem: "Perfil atualizado com sucesso.", usuario: await perfil(req.session.usuario.id) });
+    const usuario = await perfil(req.session.usuario.id);
+    usuario.sessoes_ativas = (await sessoesDoUsuario(usuario.id)).length;
+    res.json({ mensagem: "Perfil atualizado com sucesso.", usuario });
+  });
+
+  app.put("/api/privacidade/preferencia-contato", exigirLogin, changesLimit, async (req, res) => {
+    const preferencia = text(req.body?.preferencia).toLowerCase();
+    if (!new Set(["whatsapp", "telefone", "email"]).has(preferencia)) throw fail(400, "Escolha WhatsApp, telefone ou e-mail.");
+    const user = await db.get("SELECT email,telefone FROM usuarios WHERE id=?", [req.session.usuario.id]);
+    if (preferencia === "email" && !user.email) throw fail(400, "Cadastre um e-mail antes de escolhê-lo como canal preferido.");
+    if (["whatsapp", "telefone"].includes(preferencia) && !user.telefone) throw fail(400, "Cadastre um telefone antes de escolhê-lo como canal preferido.");
+    await db.run("UPDATE usuarios SET preferencia_contato=? WHERE id=?", [preferencia, req.session.usuario.id]);
+    res.json({ mensagem: "Preferência de contato atualizada.", preferencia });
+  });
+
+  app.post("/api/seguranca/senha", exigirLogin, authLimit, async (req, res) => {
+    await confirmarSenha(req.session.usuario.id, req.body?.senha_atual);
+    validarSenha(req.body?.nova_senha);
+    if (req.body.nova_senha !== req.body?.confirmar_senha) throw fail(400, "A confirmação da nova senha não corresponde.");
+    const current = await db.get("SELECT senha_hash FROM usuarios WHERE id=?", [req.session.usuario.id]);
+    if (await bcrypt.compare(req.body.nova_senha, current.senha_hash)) throw fail(400, "Escolha uma senha diferente da atual.");
+    const hash = await bcrypt.hash(req.body.nova_senha, 12);
+    await db.run("UPDATE usuarios SET senha_hash=? WHERE id=?", [hash, req.session.usuario.id]);
+    const encerradas = await encerrarOutrasSessoes(req.session.usuario.id, req.sessionID);
+    res.json({ mensagem: `Senha alterada. ${encerradas ? `${encerradas} outra(s) sessão(ões) foram encerradas.` : "Esta é a única sessão ativa."}` });
+  });
+
+  app.post("/api/seguranca/sessoes/encerrar-outras", exigirLogin, authLimit, async (req, res) => {
+    await confirmarSenha(req.session.usuario.id, req.body?.senha_atual);
+    const encerradas = await encerrarOutrasSessoes(req.session.usuario.id, req.sessionID);
+    res.json({ mensagem: encerradas ? `${encerradas} outra(s) sessão(ões) encerrada(s).` : "Não havia outras sessões ativas.", encerradas });
+  });
+
+  app.get("/api/privacidade/exportar", exigirLogin, async (req, res) => {
+    const usuarioId = req.session.usuario.id;
+    const [usuario, orcamentos, compras, contratos, creditos, feedbacks] = await Promise.all([
+      db.get(`SELECT nome,email,telefone,criado_em,preferencia_pagamento,preferencia_contato,
+        termos_aceitos_versao,termos_aceitos_em,CASE WHEN foto_blob IS NULL THEN 0 ELSE 1 END AS foto_cadastrada
+        FROM usuarios WHERE id=?`, [usuarioId]),
+      db.all(`SELECT codigo,nome,email,telefone,cidade,bairro,itens_json,instalacao,observacoes,status,
+        estimativa_centavos,tipo_calculo,criado_em,atualizado_em FROM orcamentos WHERE usuario_id=? ORDER BY id`, [usuarioId]),
+      db.all("SELECT titulo,descricao,status,valor_centavos,moeda,criado_em FROM compras WHERE usuario_id=? ORDER BY id", [usuarioId]),
+      db.all("SELECT titulo,descricao,status,valor_centavos,moeda,criado_em,assinado_em FROM contratos WHERE usuario_id=? ORDER BY id", [usuarioId]),
+      db.all("SELECT tipo,quantidade,valor_centavos,criado_em,revogado FROM creditos_orcamento WHERE usuario_id=? ORDER BY id", [usuarioId]),
+      db.all("SELECT tipo,nota,mensagem,criado_em FROM feedbacks WHERE usuario_id=? ORDER BY id", [usuarioId]),
+    ]);
+    const parseJson = (value) => { try { return JSON.parse(value); } catch { return value; } };
+    const exportacao = {
+      gerado_em: new Date().toISOString(), conta: usuario,
+      orcamentos: orcamentos.map((item) => ({ ...item, itens: parseJson(item.itens_json), itens_json: undefined })),
+      compras, contratos, creditos_de_orcamento: creditos, feedbacks,
+      observacao: "A foto de perfil e credenciais de segurança não são incluídas neste arquivo.",
+    };
+    res.set("Content-Disposition", `attachment; filename="dados-mundo-das-esquadrias-${new Date().toISOString().slice(0, 10)}.json"`);
+    res.type("application/json").send(`${JSON.stringify(exportacao, null, 2)}\n`);
+  });
+
+  app.post("/api/privacidade/exclusao", exigirLogin, authLimit, async (req, res) => {
+    if (req.body?.confirmacao !== "EXCLUIR") throw fail(400, "Digite EXCLUIR para confirmar a solicitação.");
+    await confirmarSenha(req.session.usuario.id, req.body?.senha_atual);
+    const existing = await db.get(`SELECT id,status,solicitado_em FROM solicitacoes_privacidade
+      WHERE usuario_id=? AND tipo='exclusao' AND status IN ('recebida','em_analise')`, [req.session.usuario.id]);
+    if (existing) return res.json({ mensagem: "Sua solicitação de exclusão já está em análise.", solicitacao: existing });
+    const result = await db.run("INSERT INTO solicitacoes_privacidade (usuario_id,tipo) VALUES (?,'exclusao')", [req.session.usuario.id]);
+    const solicitacao = await db.get("SELECT status,solicitado_em FROM solicitacoes_privacidade WHERE id=?", [result.lastID]);
+    res.status(201).json({ mensagem: "Solicitação recebida. A equipe analisará os dados que podem ser excluídos ou precisam ser conservados por obrigação legal.", solicitacao });
   });
 
   const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024, files: 1, fields: 0, parts: 2 } });
