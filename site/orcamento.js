@@ -442,14 +442,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const area = Math.round((item.largura_cm * item.altura_cm / 10000) * 1000) / 1000;
     const rawColorPrice = rule.precos_cores?.[item.cor];
     const rawGlassPrice = rule.precos_vidros?.[item.tipo_vidro];
+    const linePrice = ["porta", "janela"].includes(item.categoria) ? rule.precos_linhas?.[item.linha_aluminio] : null;
     const colorPrice = typeof rawColorPrice === "number" ? { preco_m2_centavos: rawColorPrice } : rawColorPrice;
     const glassPrice = typeof rawGlassPrice === "number" ? { preco_m2_centavos: rawGlassPrice } : rawGlassPrice;
-    if (item.tipo_vidro && Object.keys(rule.precos_vidros || {}).length && !glassPrice) return null;
-    const appliedPrice = glassPrice || colorPrice;
+    if (item.tipo_vidro && Object.keys(rule.precos_vidros || {}).length && !glassPrice && !linePrice) return null;
+    const appliedPrice = linePrice || glassPrice || colorPrice;
     const productBase = Math.max(Math.round(area * (appliedPrice?.preco_m2_centavos || rule.preco_m2_centavos)), appliedPrice?.preco_minimo_centavos ?? rule.preco_minimo_centavos);
     let product = productBase;
     Object.entries(priceAdjustments).forEach(([field, factors]) => {
-      const factor = (field === "cor" && colorPrice && !glassPrice) || (field === "tipo_vidro" && glassPrice) ? null : factors[item[field]];
+      const factor = field === "linha_aluminio" && linePrice ? null
+        : (field === "cor" && colorPrice && !linePrice && !glassPrice) || (field === "tipo_vidro" && glassPrice && !linePrice) ? null : factors[item[field]];
       if (factor) product = Math.round(product * factor / 10000);
     });
     const installationUnit = installation ? (appliedPrice?.instalacao_centavos ?? rule.instalacao_centavos) : 0;
