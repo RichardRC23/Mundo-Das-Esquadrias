@@ -170,9 +170,22 @@
     const target = $("prices-list"); target.replaceChildren();
     const variationLabel = activePriceVariation === "vidro" ? "Vidro" : activePriceVariation === "linha" ? "Linha" : "Alumínio";
     $("prices-view-label").textContent = activePriceColor ? `Exibindo: ${variationLabel} · ${activePriceColor}` : "Exibindo preço padrão";
-    $("prices-count").textContent = `${prices.length} ${prices.length === 1 ? "regra cadastrada" : "regras cadastradas"}.`;
-    if (!prices.length) return target.append(element("div", "empty", "Cadastre o primeiro preço para ativar estimativas no formulário."));
-    prices.forEach((price) => {
+    if (!prices.length) {
+      $("prices-count").textContent = "Nenhuma regra cadastrada.";
+      return target.append(element("div", "empty", "Cadastre o primeiro preço para ativar estimativas no formulário."));
+    }
+    const query = $("prices-search").value.trim().toLocaleLowerCase("pt-BR");
+    const visiblePrices = prices.filter((price) => {
+      const searchable = [categories[price.categoria], price.modelo, price.descricao,
+        ...Object.keys(price.precos_linhas || {}), ...Object.keys(price.precos_cores || {}), ...Object.keys(price.precos_vidros || {})]
+        .filter(Boolean).join(" ").toLocaleLowerCase("pt-BR");
+      return searchable.includes(query);
+    });
+    $("prices-count").textContent = query
+      ? `${visiblePrices.length} de ${prices.length} ${prices.length === 1 ? "regra encontrada" : "regras encontradas"}.`
+      : `${prices.length} ${prices.length === 1 ? "regra cadastrada" : "regras cadastradas"}.`;
+    if (!visiblePrices.length) return target.append(element("div", "empty", "Nenhum preço encontrado. Tente outro termo."));
+    visiblePrices.forEach((price) => {
       const row = element("article", "price-row");
       const info = element("div"); info.append(element("h3", "", `${categories[price.categoria]} · ${price.modelo}`));
       info.append(element("p", "", `${price.ativo ? "Ativo" : "Inativo"} · Mínimo ${money(price.preco_minimo_centavos)} · Instalação ${money(price.instalacao_centavos)}`));
@@ -517,6 +530,7 @@
   });
   $("price-category").addEventListener("change", () => { modelSuggestions(); loadSelectedPrice(); });
   $("price-model").addEventListener("change", loadSelectedPrice);
+  $("prices-search").addEventListener("input", renderPrices);
   $("price-aluminum-select").addEventListener("change", () => {
     storeVisiblePrice();
     activePriceVariation = "aluminio";
