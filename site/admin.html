@@ -73,7 +73,7 @@
         </section>
 
         <section data-panel="precos" hidden>
-          <div class="page-title"><div><span class="eyebrow">TABELA COMERCIAL</span><h1>Preços para estimativas</h1><p>Cadastre somente valores reais. Eles serão usados no formulário público.</p></div></div>
+          <div class="page-title"><div><span class="eyebrow">TABELA COMERCIAL</span><h1>Preços para estimativas</h1><p>Cadastre somente valores reais. Eles serão usados no formulário público.</p></div><a class="button secondary" href="orcamento.html" target="_blank" rel="noopener">Ver como cliente ↗</a></div>
           <div class="pricing-layout">
             <form id="price-form" class="admin-panel price-form">
               <div class="panel-heading price-form-heading"><div><h2 id="price-form-title">Novo preço</h2><p>Escolha a cor e preencha os valores correspondentes.</p></div><button class="button primary" type="submit">Salvar</button></div>
@@ -100,7 +100,25 @@
               <label class="switch"><input id="price-active" type="checkbox" checked><span></span>Disponível para estimativas</label>
               <div class="form-actions"><button class="button primary" type="submit">Salvar preço</button><button class="button secondary" id="price-cancel" type="button" hidden>Cancelar edição</button></div>
             </form>
-            <section class="admin-panel"><div class="panel-heading"><div><h2>Preços cadastrados</h2><p id="prices-count">Nenhuma regra cadastrada.</p><p id="prices-view-label" class="prices-view-label">Exibindo preço padrão</p></div></div><label class="price-search-label" for="prices-search">Buscar preço<input id="prices-search" type="search" placeholder="Categoria, modelo, linha, cor ou vidro"></label><div id="prices-list" class="price-list"></div></section>
+            <section class="admin-panel">
+              <div class="panel-heading"><div><h2>Preços cadastrados</h2><p id="prices-count">Nenhuma regra cadastrada.</p><p id="prices-view-label" class="prices-view-label">Exibindo preço padrão</p></div></div>
+              <div class="price-tools">
+                <label class="price-search-label" for="prices-search">Buscar preço<input id="prices-search" type="search" placeholder="Linha, cor ou vidro"></label>
+                <label class="filter">Categoria<select id="prices-category-filter"><option value="">Todas</option></select></label>
+                <label class="filter">Modelo<select id="prices-model-filter"><option value="">Todos</option></select></label>
+                <label class="filter">Cadastro<select id="prices-completeness-filter"><option value="">Todos</option><option value="completo">Completo</option><option value="incompleto">Incompleto</option></select></label>
+              </div>
+              <div class="price-data-actions"><button type="button" class="button secondary" id="prices-export">Exportar CSV</button><button type="button" class="button secondary" id="prices-import-trigger">Importar CSV</button><input id="prices-import-file" type="file" accept=".csv,text/csv" hidden></div>
+              <div class="price-bulk-tools">
+                <strong>Edição em lote <small id="prices-selected-count">0 selecionados</small></strong>
+                <label>Preço padrão/m²<input id="bulk-price-square" type="number" min="0.01" step="0.01" placeholder="R$"></label>
+                <label>Valor mínimo<input id="bulk-price-minimum" type="number" min="0" step="0.01" placeholder="R$"></label>
+                <label>Instalação<input id="bulk-price-installation" type="number" min="0" step="0.01" placeholder="R$"></label>
+                <button type="button" class="button primary" id="prices-bulk-save">Aplicar nos selecionados</button>
+              </div>
+              <div id="prices-list" class="price-list"></div>
+              <details class="price-history"><summary>Histórico recente de alterações</summary><div id="prices-history-list"><p>Carregue o histórico para consultar as últimas alterações.</p></div><button type="button" id="prices-history-refresh" class="button secondary">Atualizar histórico</button></details>
+            </section>
           </div>
         </section>
 

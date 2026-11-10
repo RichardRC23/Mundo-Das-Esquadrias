@@ -35,9 +35,12 @@
   const aluminumLines = ["Linha 16", "Linha 20", "Linha 25", "Linha 30", "Suprema", "Gold", "Modular", "Fachada", "Outro perfil"];
   let quotes = [];
   let prices = [];
+  const selectedPriceIds = new Set();
+  let priceFormDirty = false;
   let draftColorPrices = {};
   let draftGlassPrices = {};
   let draftLinePrices = {};
+  let draftCombinationPrices = {};
   let draftDefaultPrice = { preco_m2_centavos: 0, preco_minimo_centavos: 0, instalacao_centavos: 0 };
   let activePriceColor = "";
   let activePriceVariation = "aluminio";
@@ -175,32 +178,43 @@
       return target.append(element("div", "empty", "Cadastre o primeiro preço para ativar estimativas no formulário."));
     }
     const query = $("prices-search").value.trim().toLocaleLowerCase("pt-BR");
+    const categoryFilter = $("prices-category-filter").value;
+    const modelFilter = $("prices-model-filter").value;
+    const completenessFilter = $("prices-completeness-filter").value;
     const visiblePrices = prices.filter((price) => {
       const searchable = [categories[price.categoria], price.modelo, price.descricao,
         ...Object.keys(price.precos_linhas || {}), ...Object.keys(price.precos_cores || {}), ...Object.keys(price.precos_vidros || {})]
         .filter(Boolean).join(" ").toLocaleLowerCase("pt-BR");
-      return searchable.includes(query);
+      const incomplete = isPriceIncomplete(price);
+      return searchable.includes(query) && (!categoryFilter || price.categoria === categoryFilter)
+        && (!modelFilter || `${price.categoria}::${price.modelo}` === modelFilter)
+        && (!completenessFilter || (completenessFilter === "incompleto") === incomplete);
     });
-    $("prices-count").textContent = query
+    const filtering = query || categoryFilter || modelFilter || completenessFilter;
+    $("prices-count").textContent = filtering
       ? `${visiblePrices.length} de ${prices.length} ${prices.length === 1 ? "regra encontrada" : "regras encontradas"}.`
       : `${prices.length} ${prices.length === 1 ? "regra cadastrada" : "regras cadastradas"}.`;
     if (!visiblePrices.length) return target.append(element("div", "empty", "Nenhum preço encontrado. Tente outro termo."));
     visiblePrices.forEach((price) => {
       const row = element("article", "price-row");
+      const selection = element("input", "price-row-check"); selection.type = "checkbox"; selection.checked = selectedPriceIds.has(price.id);
+      selection.setAttribute("aria-label", `Selecionar ${categories[price.categoria]} ${price.modelo}`);
+      selection.addEventListener("change", () => { selection.checked ? selectedPriceIds.add(price.id) : selectedPriceIds.delete(price.id); updateBulkCount(); });
       const info = element("div"); info.append(element("h3", "", `${categories[price.categoria]} · ${price.modelo}`));
       info.append(element("p", "", `${price.ativo ? "Ativo" : "Inativo"} · Mínimo ${money(price.preco_minimo_centavos)} · Instalação ${money(price.instalacao_centavos)}`));
+      info.append(element("p", isPriceIncomplete(price) ? "price-incomplete" : "price-complete", isPriceIncomplete(price) ? "Cadastro incompleto: revise as linhas ou o preço base." : "Cadastro completo."));
       const colorPrices = Object.entries(price.precos_cores || {});
       if (colorPrices.length) info.append(element("p", "price-colors", colorPrices.map(([color, value]) => {
-        const values = typeof value === "number" ? { preco_m2_centavos: value } : value;
-        return `${color}: ${money(values.preco_m2_centavos)}/m²`;
+        const values = normalizePriceVariant(value, price);
+        return `${color}: ${priceSummary(values)}`;
       }).join(" · ")));
       const glassPrices = Object.entries(price.precos_vidros || {});
       if (glassPrices.length) info.append(element("p", "price-glasses", `Vidros: ${glassPrices.map(([color, value]) => {
-        const values = typeof value === "number" ? { preco_m2_centavos: value } : value;
-        return `${color}: ${money(values.preco_m2_centavos)}/m²`;
+        const values = normalizePriceVariant(value, price);
+        return `${color}: ${priceSummary(values)}`;
       }).join(" · ")}`));
       const linePrices = Object.entries(price.precos_linhas || {});
-      if (linePrices.length) info.append(element("p", "price-lines", `Linhas: ${linePrices.map(([line, value]) => `${line}: ${money(value.preco_m2_centavos)}/m²`).join(" · ")}`));
+      if (linePrices.length) info.append(element("p", "price-lines", `Linhas: ${linePrices.map(([line, value]) => `${line}: ${priceSummary(value)}`).join(" · ")}`));
       const edit = element("button", "", "Editar"); edit.type = "button";
       edit.addEventListener("click", () => editPrice(price));
       const variations = activePriceVariation === "vidro" ? price.precos_vidros : activePriceVariation === "linha" ? price.precos_linhas : price.precos_cores;
@@ -209,8 +223,35 @@
       const displayedPrice = activePriceColor
         ? displayedCents == null ? "Não cadastrado" : `${money(displayedCents)}/m²`
         : `${money(price.preco_m2_centavos)}/m²`;
-      row.append(info, element("strong", "", displayedPrice), edit); target.append(row);
+      row.append(selection, info, element("strong", "", displayedPrice), edit); target.append(row);
     });
+    updateBulkCount();
+  }
+  function isPriceIncomplete(price) {
+    if (!Number(price.preco_m2_centavos)) return true;
+    if (["porta", "janela"].includes(price.categoria)) return aluminumLines.some((line) => !price.precos_linhas?.[line]?.preco_m2_centavos);
+    return false;
+  }
+  function normalizePriceVariant(value, base) {
+    if (typeof value === "number") return { preco_m2_centavos: value, preco_minimo_centavos: base.preco_minimo_centavos, instalacao_centavos: base.instalacao_centavos };
+    return { preco_minimo_centavos: base.preco_minimo_centavos, instalacao_centavos: base.instalacao_centavos, ...(value || {}) };
+  }
+  function priceSummary(value) {
+    return `${money(value.preco_m2_centavos)}/m² · mín. ${money(value.preco_minimo_centavos || 0)} · inst. ${money(value.instalacao_centavos || 0)}`;
+  }
+  function updateBulkCount() {
+    const count = selectedPriceIds.size;
+    $("prices-selected-count").textContent = `${count} ${count === 1 ? "selecionado" : "selecionados"}`;
+  }
+  function refreshPriceFilters() {
+    const category = $("prices-category-filter").value;
+    const oldModel = $("prices-model-filter").value;
+    const categoriesPresent = [...new Set(prices.map((price) => price.categoria))];
+    $("prices-category-filter").replaceChildren(new Option("Todas", ""), ...categoriesPresent.map((key) => new Option(categories[key] || key, key)));
+    $("prices-category-filter").value = category;
+    const modelOptions = prices.filter((price) => !category || price.categoria === category);
+    $("prices-model-filter").replaceChildren(new Option("Todos", ""), ...modelOptions.map((price) => new Option(`${categories[price.categoria]} · ${price.modelo}`, `${price.categoria}::${price.modelo}`)));
+    $("prices-model-filter").value = [...$("prices-model-filter").options].some((option) => option.value === oldModel) ? oldModel : "";
   }
   function stars(note) {
     const value = element("span", "admin-feedback-stars", "★".repeat(note) + "☆".repeat(5 - note));
@@ -343,6 +384,7 @@
       : { ...fallback, ...(value || {}) };
   }
   function editPrice(price, scroll = true) {
+    priceFormDirty = false;
     $("price-id").value = price.id;
     $("price-category").value = price.categoria;
     modelSuggestions(price.modelo);
@@ -351,6 +393,7 @@
     draftColorPrices = Object.fromEntries(Object.entries(price.precos_cores || {}).map(([color, value]) => [color, normalizeColorPrice(value, draftDefaultPrice)]));
     draftGlassPrices = Object.fromEntries(Object.entries(price.precos_vidros || {}).map(([color, value]) => [color, normalizeColorPrice(value, draftDefaultPrice)]));
     draftLinePrices = Object.fromEntries(Object.entries(price.precos_linhas || {}));
+    draftCombinationPrices = { ...(price.precos_combinacoes || {}) };
     activePriceVariation = "aluminio";
     selectedAluminumColor = "";
     selectedGlassColor = "";
@@ -361,12 +404,14 @@
     if (scroll) $("price-form").scrollIntoView({ behavior: "smooth", block: "start" });
   }
   function prepareNewPriceForSelectedModel() {
+    priceFormDirty = false;
     $("price-id").value = "";
     $("price-description").value = "";
     draftDefaultPrice = { preco_m2_centavos: 0, preco_minimo_centavos: 0, instalacao_centavos: 0 };
     draftColorPrices = {};
     draftGlassPrices = {};
     draftLinePrices = {};
+    draftCombinationPrices = {};
     activePriceVariation = "aluminio";
     selectedAluminumColor = "";
     selectedGlassColor = "";
@@ -382,9 +427,83 @@
     else prepareNewPriceForSelectedModel();
   }
   function clearPriceForm() {
+    priceFormDirty = false;
     $("price-form").reset(); $("price-id").value = ""; $("price-minimum").value = "0"; $("price-installation").value = "0"; $("price-active").checked = true;
-    draftDefaultPrice = { preco_m2_centavos: 0, preco_minimo_centavos: 0, instalacao_centavos: 0 }; draftColorPrices = {}; draftGlassPrices = {}; draftLinePrices = {}; activePriceVariation = "aluminio"; selectedAluminumColor = ""; selectedGlassColor = ""; activePriceColor = ""; refreshPriceColorOptions(false);
+    draftDefaultPrice = { preco_m2_centavos: 0, preco_minimo_centavos: 0, instalacao_centavos: 0 }; draftColorPrices = {}; draftGlassPrices = {}; draftLinePrices = {}; draftCombinationPrices = {}; activePriceVariation = "aluminio"; selectedAluminumColor = ""; selectedGlassColor = ""; activePriceColor = ""; refreshPriceColorOptions(false);
     $("price-form-title").textContent = "Novo preço"; $("price-cancel").hidden = true; modelSuggestions();
+  }
+  function csvCell(value) { return `"${String(value ?? "").replaceAll('"', '""')}"`; }
+  function parseCsv(source) {
+    source = source.replace(/^\uFEFF/, "");
+    const rows = []; let row = []; let cell = ""; let quoted = false;
+    for (let i = 0; i < source.length; i += 1) {
+      const char = source[i];
+      if (quoted && char === '"' && source[i + 1] === '"') { cell += '"'; i += 1; }
+      else if (char === '"') quoted = !quoted;
+      else if (char === "," && !quoted) { row.push(cell); cell = ""; }
+      else if ((char === "\n" || char === "\r") && !quoted) { if (char === "\r" && source[i + 1] === "\n") i += 1; row.push(cell); rows.push(row); row = []; cell = ""; }
+      else cell += char;
+    }
+    if (cell || row.length) { row.push(cell); rows.push(row); }
+    return rows.filter((values) => values.some((value) => value.trim()));
+  }
+  function exportPricesCsv() {
+    const columns = ["categoria", "modelo", "descricao", "preco_m2_centavos", "preco_minimo_centavos", "instalacao_centavos", "ativo", "precos_cores_json", "precos_vidros_json", "precos_linhas_json", "precos_combinacoes_json"];
+    const lines = [columns.map(csvCell).join(","), ...prices.map((price) => columns.map((column) => {
+      if (column === "ativo") return csvCell(price.ativo ? "true" : "false");
+      if (column.endsWith("_json")) return csvCell(JSON.stringify(column === "precos_cores_json" ? price.precos_cores || {} : column === "precos_vidros_json" ? price.precos_vidros || {} : column === "precos_linhas_json" ? price.precos_linhas || {} : price.precos_combinacoes || {}));
+      return csvCell(price[column]);
+    }).join(","))];
+    const blob = new Blob(["\uFEFF", lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+    const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `precos-mundo-das-esquadrias-${new Date().toISOString().slice(0, 10)}.csv`; link.click(); window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+  }
+  async function importPricesCsv(file) {
+    const rows = parseCsv(await file.text());
+    if (rows.length < 2) throw new Error("O CSV não contém linhas de preços.");
+    const headers = rows[0].map((header) => header.trim());
+    const required = ["categoria", "modelo", "preco_m2_centavos", "preco_minimo_centavos", "instalacao_centavos"];
+    if (required.some((key) => !headers.includes(key))) throw new Error("Use o modelo CSV exportado pelo painel para importar.");
+    const index = Object.fromEntries(headers.map((header, position) => [header, position]));
+    const staged = rows.slice(1).map((cells) => Object.fromEntries(headers.map((header) => [header, cells[index[header]] ?? ""])));
+    const updates = staged.map((row) => {
+      const current = prices.find((price) => price.categoria === row.categoria && price.modelo === row.modelo);
+      if (!current) return null;
+      const readJson = (name, fallback) => row[name] ? JSON.parse(row[name]) : fallback;
+      return { current, body: { ...current, categoria: row.categoria, modelo: row.modelo, descricao: row.descricao || "",
+        preco_m2_centavos: Number(row.preco_m2_centavos), preco_minimo_centavos: Number(row.preco_minimo_centavos), instalacao_centavos: Number(row.instalacao_centavos),
+        ativo: row.ativo !== "false", precos_cores: readJson("precos_cores_json", current.precos_cores || {}),
+        precos_vidros: readJson("precos_vidros_json", current.precos_vidros || {}), precos_linhas: readJson("precos_linhas_json", current.precos_linhas || {}),
+        precos_combinacoes: readJson("precos_combinacoes_json", current.precos_combinacoes || {}) } };
+    }).filter(Boolean);
+    if (!updates.length) throw new Error("Não encontrei modelos do CSV que correspondam aos preços cadastrados.");
+    if (!window.confirm(`O arquivo tem ${updates.length} modelo(s) correspondente(s). A importação vai atualizar esses preços. Continuar?`)) return;
+    for (const update of updates) await ContaAPI.request(`/api/admin/precos/${update.current.id}`, { method: "PUT", body: update.body });
+    prices = (await ContaAPI.request("/api/admin/precos")).precos; refreshPriceFilters(); renderPrices(); await loadSummary();
+    message(`${updates.length} preço(s) importado(s). Itens sem correspondência foram ignorados.`, true);
+  }
+  async function applyBulkPriceChanges() {
+    const chosen = prices.filter((price) => selectedPriceIds.has(price.id));
+    if (!chosen.length) return message("Selecione pelo menos um preço na lista.");
+    const fields = [["bulk-price-square", "preco_m2_centavos"], ["bulk-price-minimum", "preco_minimo_centavos"], ["bulk-price-installation", "instalacao_centavos"]];
+    const changes = Object.fromEntries(fields.filter(([id]) => $(id).value !== "").map(([id, key]) => [key, Math.round(Number($(id).value) * 100)]));
+    if (!Object.keys(changes).length) return message("Preencha pelo menos um valor para aplicar.");
+    if (!window.confirm(`Aplicar os campos preenchidos em ${chosen.length} modelos? Os preços por linha, cor e vidro serão preservados.`)) return;
+    for (const price of chosen) await ContaAPI.request(`/api/admin/precos/${price.id}`, { method: "PUT", body: { ...price, ...changes,
+      precos_cores: price.precos_cores || {}, precos_vidros: price.precos_vidros || {}, precos_linhas: price.precos_linhas || {}, precos_combinacoes: price.precos_combinacoes || {} } });
+    prices = (await ContaAPI.request("/api/admin/precos")).precos; selectedPriceIds.clear(); refreshPriceFilters(); renderPrices(); await loadSummary();
+    fields.forEach(([id]) => { $(id).value = ""; }); message(`Preços atualizados em ${chosen.length} modelos.`, true);
+  }
+  async function loadPriceHistory() {
+    const { historico } = await ContaAPI.request("/api/admin/precos/historico");
+    const target = $("prices-history-list"); target.replaceChildren();
+    if (!historico.length) return target.append(element("p", "", "Ainda não há alterações registradas."));
+    historico.forEach((entry) => {
+      const row = element("article", "price-history-row");
+      row.append(element("strong", "", `${categories[entry.categoria] || entry.categoria} · ${entry.modelo}`));
+      row.append(element("p", "", `${entry.acao} por ${entry.administrador_nome} · ${new Date(`${entry.criado_em}Z`).toLocaleString("pt-BR")}`));
+      if (entry.antes || entry.depois) row.append(element("small", "", `${entry.antes ? money(entry.antes.preco_m2_centavos) : "Novo"} → ${money(entry.depois?.preco_m2_centavos || 0)} por m²`));
+      target.append(row);
+    });
   }
   function percentFromBp(value) { return (Number(value || 0) / 100).toFixed(2); }
   function centsFromInput(id) { return Math.round(Number($(id).value || 0) * 100); }
@@ -513,14 +632,16 @@
       $("metric-quotes").textContent = summary.orcamentos.total;
       $("metric-approved").textContent = summary.orcamentos.aprovados;
       $("metric-prices").textContent = summary.precos_ativos;
-      renderRecent(); renderQuotes(); renderPrices(); renderFeedbackSummary(); renderFeedbacks(); modelSuggestions();
+      refreshPriceFilters(); renderRecent(); renderQuotes(); renderPrices(); renderFeedbackSummary(); renderFeedbacks(); modelSuggestions();
       fillCostSettings(); renderMaterials(); renderRecipes(); populateCostSelects(); recipeSuggestions();
       $("admin-loading").hidden = true; $("admin-content").hidden = false;
     } catch (error) { handleError(error); $("admin-loading").hidden = true; }
   }
 
-  document.querySelectorAll("[data-view]").forEach((button) => button.addEventListener("click", () => showView(button.dataset.view)));
-  document.querySelectorAll("[data-go]").forEach((button) => button.addEventListener("click", () => showView(button.dataset.go)));
+  const confirmPriceNavigation = (target) => !priceFormDirty || document.querySelector('[data-panel="precos"]')?.hidden || target === "precos" || window.confirm("Há alterações de preço ainda não salvas. Deseja sair desta tela?");
+  document.querySelectorAll("[data-view]").forEach((button) => button.addEventListener("click", () => { if (confirmPriceNavigation(button.dataset.view)) showView(button.dataset.view); }));
+  document.querySelectorAll("[data-go]").forEach((button) => button.addEventListener("click", () => { if (confirmPriceNavigation(button.dataset.go)) showView(button.dataset.go); }));
+  window.addEventListener("beforeunload", (event) => { if (priceFormDirty) { event.preventDefault(); event.returnValue = ""; } });
   $("quote-filter").addEventListener("change", renderQuotes);
   $("feedback-search").addEventListener("input", renderFeedbacks);
   $("feedback-type-filter").addEventListener("change", renderFeedbacks);
@@ -531,6 +652,25 @@
   $("price-category").addEventListener("change", () => { modelSuggestions(); loadSelectedPrice(); });
   $("price-model").addEventListener("change", loadSelectedPrice);
   $("prices-search").addEventListener("input", renderPrices);
+  $("prices-category-filter").addEventListener("change", () => { refreshPriceFilters(); renderPrices(); });
+  $("prices-model-filter").addEventListener("change", renderPrices);
+  $("prices-completeness-filter").addEventListener("change", renderPrices);
+  $("prices-export").addEventListener("click", exportPricesCsv);
+  $("prices-import-trigger").addEventListener("click", () => $("prices-import-file").click());
+  $("prices-import-file").addEventListener("change", async (event) => {
+    const [file] = event.currentTarget.files || [];
+    if (!file) return;
+    try { await importPricesCsv(file); } catch (error) { handleError(error); }
+    finally { event.currentTarget.value = ""; }
+  });
+  $("prices-bulk-save").addEventListener("click", () => applyBulkPriceChanges().catch(handleError));
+  $("prices-history-refresh").addEventListener("click", () => loadPriceHistory().catch(handleError));
+  document.querySelector(".price-history").addEventListener("toggle", (event) => { if (event.currentTarget.open) loadPriceHistory().catch(handleError); });
+  const markPriceFormDirty = (event) => {
+    if (["price-description", "price-square", "price-minimum", "price-installation", "price-active"].includes(event.target.id)) priceFormDirty = true;
+  };
+  $("price-form").addEventListener("input", markPriceFormDirty);
+  $("price-form").addEventListener("change", markPriceFormDirty);
   $("price-aluminum-select").addEventListener("change", () => {
     storeVisiblePrice();
     activePriceVariation = "aluminio";
@@ -568,6 +708,7 @@
       precos_cores: { ...draftColorPrices },
       precos_vidros: { ...draftGlassPrices },
       precos_linhas: { ...draftLinePrices },
+      precos_combinacoes: { ...draftCombinationPrices },
       ...draftDefaultPrice,
       ativo: $("price-active").checked,
     };
@@ -575,7 +716,8 @@
     try {
       await ContaAPI.request(id ? `/api/admin/precos/${id}` : "/api/admin/precos", { method: id ? "PUT" : "POST", body });
       prices = (await ContaAPI.request("/api/admin/precos")).precos;
-      renderPrices(); clearPriceForm(); await loadSummary(); message(id ? "Preço atualizado com sucesso." : "Preço cadastrado com sucesso.", true);
+      priceFormDirty = false;
+      refreshPriceFilters(); renderPrices(); clearPriceForm(); await loadSummary(); message(id ? "Preço atualizado com sucesso." : "Preço cadastrado com sucesso.", true);
     } catch (error) { handleError(error); }
     finally { submit.disabled = false; }
   });
