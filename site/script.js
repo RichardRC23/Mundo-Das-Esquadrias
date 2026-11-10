@@ -3,9 +3,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const btn = document.getElementById("menu-btn");
   const menu = document.getElementById("menu");
 
-  async function atualizarConta() {
+  let contaEmAndamento;
+  let ultimaConsultaConta = 0;
+  async function atualizarConta({ forcar = false } = {}) {
     const link = document.getElementById("link-conta");
     if (!link) return;
+    if (!forcar && Date.now() - ultimaConsultaConta < 12000) return contaEmAndamento;
+    if (contaEmAndamento) return contaEmAndamento;
+    contaEmAndamento = (async () => {
     const linksOrcamento = document.querySelectorAll("[data-orcamento-link]");
     link.textContent = "Logar/Cadastrar";
     link.href = "login.html";
@@ -39,10 +44,13 @@ document.addEventListener("DOMContentLoaded", () => {
         linksOrcamento.forEach((item) => { item.href = "orcamento.html"; });
       }
     } catch { /* Logged-out visitors keep the public login link. */ }
+    finally { ultimaConsultaConta = Date.now(); contaEmAndamento = null; }
+    })();
+    return contaEmAndamento;
   }
   atualizarConta();
-  window.addEventListener("pageshow", atualizarConta);
-  window.addEventListener("focus", atualizarConta);
+  window.addEventListener("pageshow", () => atualizarConta());
+  window.addEventListener("focus", () => atualizarConta());
   if (!btn || !menu) return;
 
   function fecharMenu() {
@@ -57,6 +65,9 @@ document.addEventListener("DOMContentLoaded", () => {
     btn.classList.toggle("active", aberto);
     btn.setAttribute("aria-expanded", String(aberto));
     btn.setAttribute("aria-label", aberto ? "Fechar menu" : "Abrir menu");
+    if (aberto && window.matchMedia("(max-width: 960px)").matches) {
+      window.requestAnimationFrame(() => menu.querySelector("a")?.focus({ preventScroll: true }));
+    }
   });
 
   // Fecha o menu ao clicar em um link (útil em dispositivos móveis)
@@ -85,9 +96,23 @@ document.addEventListener("DOMContentLoaded", () => {
   const slides = [...carrossel.querySelectorAll(".carrossel-slide")];
   const indicadores = [...carrossel.querySelectorAll(".carrossel-indicadores button")];
   const status = document.getElementById("carrossel-status");
-  const reduzirMovimento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const alternarRotacao = carrossel.querySelector(".carrossel-toggle");
+  const preferenciaMovimento = window.matchMedia("(prefers-reduced-motion: reduce)");
   let indiceAtual = 0;
   let temporizador;
+  let pausadoPeloUsuario = false;
+  let carrosselVisivel = true;
+
+  function movimentoReduzido() {
+    return preferenciaMovimento.matches || document.documentElement.dataset.a11yMotion === "reduced";
+  }
+
+  function atualizarBotaoRotacao() {
+    if (!alternarRotacao) return;
+    const pausado = pausadoPeloUsuario || movimentoReduzido();
+    alternarRotacao.setAttribute("aria-pressed", String(pausadoPeloUsuario));
+    alternarRotacao.innerHTML = pausado ? '<span aria-hidden="true">▶</span> Retomar apresentação' : '<span aria-hidden="true">Ⅱ</span> Pausar apresentação';
+  }
 
   function mostrarSlide(novoIndice, anunciar = true) {
     indiceAtual = (novoIndice + slides.length) % slides.length;
@@ -113,9 +138,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function iniciarRotacao() {
     pararRotacao();
-    if (!reduzirMovimento) {
+    if (!pausadoPeloUsuario && !movimentoReduzido() && carrosselVisivel && !document.hidden) {
       temporizador = window.setInterval(() => mostrarSlide(indiceAtual + 1, false), 6500);
     }
+    atualizarBotaoRotacao();
   }
 
   carrossel.querySelector(".anterior").addEventListener("click", () => {
@@ -132,6 +158,10 @@ document.addEventListener("DOMContentLoaded", () => {
       iniciarRotacao();
     });
   });
+  alternarRotacao?.addEventListener("click", () => {
+    pausadoPeloUsuario = !pausadoPeloUsuario;
+    iniciarRotacao();
+  });
   carrossel.addEventListener("mouseenter", pararRotacao);
   carrossel.addEventListener("mouseleave", iniciarRotacao);
   carrossel.addEventListener("focusin", pararRotacao);
@@ -144,5 +174,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (document.hidden) pararRotacao();
     else iniciarRotacao();
   });
+  preferenciaMovimento.addEventListener?.("change", iniciarRotacao);
+  new MutationObserver(iniciarRotacao).observe(document.documentElement, { attributes: true, attributeFilter: ["data-a11y-motion"] });
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver(([entry]) => {
+      carrosselVisivel = entry.isIntersecting;
+      if (carrosselVisivel) iniciarRotacao(); else pararRotacao();
+    }, { threshold: .15 }).observe(carrossel);
+  }
   iniciarRotacao();
 });

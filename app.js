@@ -437,8 +437,12 @@ async function createApp(options = {}) {
     res.json({ mensagem: "Sessão encerrada." });
   });
   app.use("/api", (_req, res) => res.status(404).json({ erro: "Recurso não encontrado." }));
-  app.use(express.static(siteDir, { dotfiles: "deny" }));
-  app.use("/img", express.static(path.join(__dirname, "img"), { dotfiles: "deny", index: false }));
+  const cacheStaticAsset = (res, filePath) => {
+    if (/\.(?:png|jpe?g|webp|svg|woff2?)$/i.test(filePath)) res.setHeader("Cache-Control", "public, max-age=2592000");
+    else if (/\.(?:css|js)$/i.test(filePath)) res.setHeader("Cache-Control", "public, max-age=0, must-revalidate");
+  };
+  app.use(express.static(siteDir, { dotfiles: "deny", setHeaders: cacheStaticAsset }));
+  app.use("/img", express.static(path.join(__dirname, "img"), { dotfiles: "deny", index: false, setHeaders: cacheStaticAsset }));
   app.use((error, _req, res, _next) => {
     if (error instanceof multer.MulterError) return res.status(400).json({ erro: error.field === "documento" ? "Envie apenas um PDF de até 5 MB." : "Envie apenas uma foto de até 2 MB." });
     if (error.code === "SQLITE_CONSTRAINT") return res.status(409).json({ erro: "Este e-mail ou telefone já está cadastrado." });

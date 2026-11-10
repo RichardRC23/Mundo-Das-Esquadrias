@@ -8,6 +8,7 @@
     <meta name="application-name" content="Mundo das Esquadrias"><meta name="theme-color" content="#0d3045"><link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png"><link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="image" href="img/trabalhos/fachada-comercial-otimizada.webp" type="image/webp" fetchpriority="high">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">     
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="acessibilidade.css">
@@ -23,7 +24,7 @@
             <a class="logo" href="index.html" aria-label="Mundo das Esquadrias — início">
                 <img src="../img/Mundo das Esquadrias 2.jpg" alt="" width="52" height="52">
                 <div class="logo-texto">
-                    <h1 class="logo-nome">Mundo das Esquadrias</h1>
+                    <span class="logo-nome">Mundo das Esquadrias</span>
                     <span class="logo-subtitulo">Alumínio e vidros</span>
                 </div>
             </a>
@@ -51,22 +52,23 @@
     </header>
 
     <!-- CARROSSEL DE TRABALHOS -->
-    <section class="banner carrossel" id="carrossel-trabalhos" aria-label="Trabalhos em destaque" tabindex="0">
+    <main id="conteudo-principal">
+    <section class="banner carrossel" id="carrossel-trabalhos" aria-label="Trabalhos em destaque" aria-roledescription="carrossel" tabindex="0">
         <div class="carrossel-trilho">
             <article class="carrossel-slide ativo" aria-hidden="false" data-titulo="Fachadas comerciais">
-                <img src="img/trabalhos/fachada-comercial.webp" alt="Fachada comercial moderna com grandes painéis de vidro e perfis de alumínio grafite">
+                <img src="img/trabalhos/fachada-comercial-otimizada.webp" alt="Fachada comercial moderna com grandes painéis de vidro e perfis de alumínio grafite" width="1400" height="788" decoding="async" fetchpriority="high">
                 <span class="slide-etiqueta">Imagem ilustrativa · Fachadas comerciais</span>
             </article>
             <article class="carrossel-slide" aria-hidden="true" data-titulo="Varandas envidraçadas">
-                <img src="img/trabalhos/varanda-envidracada.webp" alt="Varanda residencial ampla com fechamento em vidro transparente">
+                <img src="img/trabalhos/varanda-envidracada-otimizada.webp" alt="Varanda residencial ampla com fechamento em vidro transparente" width="1400" height="788" loading="lazy" decoding="async">
                 <span class="slide-etiqueta">Imagem ilustrativa · Varandas envidraçadas</span>
             </article>
             <article class="carrossel-slide" aria-hidden="true" data-titulo="Portas e janelas">
-                <img src="img/trabalhos/porta-aluminio.webp" alt="Entrada residencial contemporânea com porta e janelas de alumínio grafite">
+                <img src="img/trabalhos/porta-aluminio-otimizada.webp" alt="Entrada residencial contemporânea com porta e janelas de alumínio grafite" width="1400" height="788" loading="lazy" decoding="async">
                 <span class="slide-etiqueta">Imagem ilustrativa · Portas e janelas</span>
             </article>
             <article class="carrossel-slide" aria-hidden="true" data-titulo="Box de vidro">
-                <img src="img/trabalhos/box-vidro.webp" alt="Banheiro moderno com box de vidro temperado transparente">
+                <img src="img/trabalhos/box-vidro-otimizada.webp" alt="Banheiro moderno com box de vidro temperado transparente" width="1400" height="788" loading="lazy" decoding="async">
                 <span class="slide-etiqueta">Imagem ilustrativa · Box de vidro</span>
             </article>
         </div>
@@ -74,7 +76,7 @@
         <div class="banner-sombra" aria-hidden="true"></div>
         <div class="banner-conteudo">
             <span class="banner-destaque">Projetos feitos sob medida</span>
-            <h2>Excelência em Alumínio, Vidros e Estruturas</h2>
+            <h1>Excelência em Alumínio, Vidros e Estruturas</h1>
             <p>Portas, janelas, box, fachadas e fechamentos com acabamento profissional.</p>
             <div class="banner-acoes">
                 <a href="login.html?next=orcamento" class="btn" data-orcamento-link>Solicitar Orçamento Gratuito</a>
@@ -85,6 +87,7 @@
                 <li><span aria-hidden="true">✓</span> Atendimento direto</li>
                 <li><span aria-hidden="true">✓</span> Alumínio e vidro</li>
             </ul>
+            <button class="carrossel-toggle" type="button" aria-pressed="false"><span aria-hidden="true">Ⅱ</span> Pausar apresentação</button>
         </div>
 
         <button class="carrossel-seta anterior" type="button" aria-label="Ver trabalho anterior">‹</button>
@@ -149,10 +152,10 @@
         <h2>Veja como alumínio e vidro transformam os ambientes.</h2>
         <p class="home-gallery-intro">Explore composições de fachadas, portas, box e fechamentos. Cada orçamento é personalizado conforme medidas, materiais e acabamento.</p>
         <div class="grid home-gallery-grid">
-            <a class="home-gallery-card" href="galeria.html"><img src="img/trabalhos/fachada-comercial.webp" alt="Fachada comercial com vidro e alumínio" loading="lazy"><span><small>Comercial</small><strong>Fachadas</strong><em>Ver referências →</em></span></a>
-            <a class="home-gallery-card" href="galeria.html"><img src="img/trabalhos/porta-aluminio.webp" alt="Porta e esquadrias de alumínio grafite" loading="lazy"><span><small>Residencial</small><strong>Portas e janelas</strong><em>Ver referências →</em></span></a>
-            <a class="home-gallery-card" href="galeria.html"><img src="img/trabalhos/box-vidro.webp" alt="Box de vidro transparente em banheiro" loading="lazy"><span><small>Banheiro</small><strong>Box de vidro</strong><em>Ver referências →</em></span></a>
-            <a class="home-gallery-card" href="galeria.html"><img src="img/trabalhos/varanda-envidracada.webp" alt="Varanda residencial com fechamento de vidro" loading="lazy"><span><small>Residencial</small><strong>Fechamentos</strong><em>Ver referências →</em></span></a>
+            <a class="home-gallery-card" href="galeria.html"><img src="img/trabalhos/fachada-comercial-otimizada.webp" alt="Fachada comercial com vidro e alumínio" width="1400" height="788" loading="lazy" decoding="async"><span><small>Comercial</small><strong>Fachadas</strong><em>Ver referências →</em></span></a>
+            <a class="home-gallery-card" href="galeria.html"><img src="img/trabalhos/porta-aluminio-otimizada.webp" alt="Porta e esquadrias de alumínio grafite" width="1400" height="788" loading="lazy" decoding="async"><span><small>Residencial</small><strong>Portas e janelas</strong><em>Ver referências →</em></span></a>
+            <a class="home-gallery-card" href="galeria.html"><img src="img/trabalhos/box-vidro-otimizada.webp" alt="Box de vidro transparente em banheiro" width="1400" height="788" loading="lazy" decoding="async"><span><small>Banheiro</small><strong>Box de vidro</strong><em>Ver referências →</em></span></a>
+            <a class="home-gallery-card" href="galeria.html"><img src="img/trabalhos/varanda-envidracada-otimizada.webp" alt="Varanda residencial com fechamento de vidro" width="1400" height="788" loading="lazy" decoding="async"><span><small>Residencial</small><strong>Fechamentos</strong><em>Ver referências →</em></span></a>
         </div>
         <p class="home-gallery-note">Imagens ilustrativas. O resultado final varia conforme o projeto e a visita técnica.</p>
     </section>
@@ -195,6 +198,7 @@
         </div>
     </section>
 
+    </main>
     <!-- RODAPÉ -->
     <footer class="site-footer">
         <div class="footer-conteudo">

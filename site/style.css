@@ -345,7 +345,7 @@ section {
     text-transform: uppercase;
 }
 
-.info-hero h2 {
+.info-hero :is(h1, h2) {
     max-width: 760px;
     margin: 18px auto 12px;
     color: #062f4d;
@@ -539,6 +539,13 @@ body.gallery-open { overflow: hidden; }
 }
 
 @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+    }
     .site-header a, .menu-btn span { transition: none; }
 }
 
@@ -611,7 +618,7 @@ body.gallery-open { overflow: hidden; }
     text-transform: uppercase;
 }
 
-.banner h2 {
+.banner h1 {
     max-width: 720px;
     font-size: clamp(2.3rem, 5vw, 4rem);
     line-height: 1.04;
@@ -725,9 +732,33 @@ body.gallery-open { overflow: hidden; }
     background: #fff;
 }
 
+.carrossel-toggle {
+    position: absolute;
+    z-index: 4;
+    right: 28px;
+    bottom: 88px;
+    min-height: 42px;
+    padding: 9px 13px;
+    border: 1px solid rgba(255,255,255,.48);
+    border-radius: 999px;
+    color: #fff;
+    background: rgba(2,28,48,.72);
+    backdrop-filter: blur(7px);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.carrossel-toggle:hover { background: #0874b8; }
+
 .carrossel button:focus-visible,
 .carrossel a:focus-visible {
     outline: 3px solid #b9ecff;
+    outline-offset: 3px;
+}
+
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 3px solid #0aa6d2;
     outline-offset: 3px;
 }
 
@@ -1549,4 +1580,19 @@ body.gallery-open { overflow: hidden; }
         gap: 12px;
         flex-direction: column;
     }
+}
+
+@media (max-width: 680px) {
+    .carrossel-toggle {
+        position: static;
+        min-height: 38px;
+        margin-top: 16px;
+        padding: 7px 11px;
+        font-size: 11px;
+    }
+}
+
+@media (forced-colors: active) {
+    .btn, .carrossel-seta, .carrossel-toggle, .gallery-toolbar button { border: 2px solid ButtonText; }
+    .carrossel-indicadores button { border: 1px solid ButtonText; }
 }
