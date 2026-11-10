@@ -659,6 +659,7 @@ test("only administrators manage quotes and real price rules produce customer es
   assert.ok(publicCatalog.data.precos.some(({ categoria, modelo }) => categoria === "box" && modelo === "Box até o teto Caixa Quadrada"));
   assert.ok(!publicCatalog.data.precos.some(({ categoria, modelo }) => categoria === "box" && modelo === "Até o teto"));
   assert.ok(!publicCatalog.data.precos.some(({ categoria, modelo }) => categoria === "box" && modelo === "De abrir"));
+  assert.ok(!publicCatalog.data.precos.some(({ categoria, modelo }) => categoria === "box" && modelo === "Outro modelo"));
   assert.ok(!publicCatalog.data.precos.some(({ categoria, modelo }) => categoria === "box" && modelo === "Frontal de correr F2"));
   assert.ok(!publicCatalog.data.precos.some(({ categoria, modelo }) => categoria === "box" && modelo === "Frontal de correr"));
   const f2RoundRule = publicCatalog.data.precos.find(({ categoria, modelo }) => categoria === "box" && modelo === "Frontal de Correr F2 Caixa Redonda");
